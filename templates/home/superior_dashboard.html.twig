@@ -1,0 +1,235 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Superior Dashboard | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ── Welcome Banner ── #}
+<div class="welcome-banner">
+    <div class="banner-main d-flex align-items-center gap-3">
+        <div class="user-avatar">
+            {% if app.user.profilePicture %}
+                <img src="{{ asset('images/profiles/' ~ app.user.profilePicture) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+            {% else %}
+                {{ app.user.firstName|first }}{{ app.user.lastName|first }}
+            {% endif %}
+        </div>
+        <div>
+            <h2 class="mb-0">Welcome, {{ app.user.firstName }}!</h2>
+            <p>SET-SEF Evaluation Management System — Superior Panel</p>
+        </div>
+    </div>
+    <div class="banner-bottom">
+        {% set cay = current_academic_year() %}
+        {% if cay %}
+        <span><i class="bi bi-mortarboard-fill me-1"></i>{{ cay.label }}</span>
+        {% endif %}
+        <span><i class="bi bi-calendar3 me-1"></i>{{ 'now'|date('l, F d, Y') }}</span>
+        <span><i class="bi bi-clipboard-check me-1"></i>{{ openEvaluations|length }} active evaluation(s)</span>
+    </div>
+</div>
+
+{# ═══════ STAT CARDS ROW ═══════ #}
+<div class="analytics-grid mb-4">
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#F0FDF4;color:#16A34A">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ openEvaluations|length }}</span>
+            <span class="analytics-stat-label">Active Evaluations</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#FEF3C7;color:#D97706">
+            <i class="bi bi-award"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ deans|length }}</span>
+            <span class="analytics-stat-label">Deans</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#EFF6FF;color:#2563EB">
+            <i class="bi bi-person-badge"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ deptHeads|length }}</span>
+            <span class="analytics-stat-label">Department Heads</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#F3E8FF;color:#7C3AED">
+            <i class="bi bi-building"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ departments|length }}</span>
+            <span class="analytics-stat-label">Departments</span>
+        </div>
+    </div>
+</div>
+
+{# ═══════ PERSONNEL TO EVALUATE ═══════ #}
+{% if openEvaluations|length > 0 %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex align-items-center gap-2">
+        <i class="bi bi-pencil-square text-primary"></i>
+        <span class="fw-bold">Personnel to Evaluate</span>
+    </div>
+    <div class="card-body p-0">
+        {% for eval in openEvaluations %}
+        <div class="p-3 border-bottom">
+            <h6 class="mb-2">
+                <span class="badge bg-success me-1">Open</span>
+                {{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }} — {{ eval.schoolYear ?? '' }} {{ eval.semester ?? '' }}
+            </h6>
+
+            {# Deans #}
+            {% if deans|length > 0 %}
+            <p class="fw-semibold text-muted small mb-2"><i class="bi bi-award me-1"></i>Deans</p>
+            <div class="table-responsive mb-3">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dean in deans %}
+                        {% set key = eval.id ~ '-' ~ dean.id %}
+                        <tr>
+                            <td>{{ dean.fullName }}</td>
+                            <td>{{ dean.department ? dean.department.departmentName : '—' }}</td>
+                            <td>
+                                {% if evaluated[key] is defined and evaluated[key] %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Submitted</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if evaluated[key] is not defined or not evaluated[key] %}
+                                    <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: dean.id}) }}"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil-square me-1"></i>Evaluate
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {# Department Heads #}
+            {% if deptHeads|length > 0 %}
+            <p class="fw-semibold text-muted small mb-2"><i class="bi bi-person-badge me-1"></i>Department Heads</p>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for head in deptHeads %}
+                        {% set key = eval.id ~ '-' ~ head.id %}
+                        <tr>
+                            <td>{{ head.fullName }}</td>
+                            <td>{{ head.department ? head.department.departmentName : '—' }}</td>
+                            <td>
+                                {% if evaluated[key] is defined and evaluated[key] %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Submitted</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if evaluated[key] is not defined or not evaluated[key] %}
+                                    <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: head.id}) }}"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil-square me-1"></i>Evaluate
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>No active evaluation periods at this time.
+</div>
+{% endif %}
+
+{# ═══════ EVALUATION RESULTS SUMMARY ═══════ #}
+{% if myEvaluations|length > 0 %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex align-items-center gap-2">
+        <i class="bi bi-bar-chart-line text-success"></i>
+        <span class="fw-bold">Evaluation Results Overview</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Evaluation Period</th>
+                        <th>Evaluatee</th>
+                        <th>Department</th>
+                        <th class="text-center">Avg. Rating</th>
+                        <th class="text-center">Evaluators</th>
+                        <th class="text-center">Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in myEvaluations %}
+                    <tr>
+                        <td>{{ item.evaluation.evaluationType }} — {{ item.evaluation.schoolYear ?? '' }}</td>
+                        <td>{{ item.evaluatee.fullName }}</td>
+                        <td>{{ item.evaluatee.department ? item.evaluatee.department.departmentName : '—' }}</td>
+                        <td class="text-center fw-bold">{{ item.average }}</td>
+                        <td class="text-center">{{ item.evaluators }}</td>
+                        <td class="text-center">
+                            {% set level = 'Poor' %}
+                            {% if item.average >= 4.5 %}{% set level = 'Excellent' %}
+                            {% elseif item.average >= 3.5 %}{% set level = 'Very Good' %}
+                            {% elseif item.average >= 2.5 %}{% set level = 'Good' %}
+                            {% elseif item.average >= 1.5 %}{% set level = 'Fair' %}
+                            {% endif %}
+                            <span class="badge bg-{{ level == 'Excellent' ? 'success' : (level == 'Very Good' ? 'primary' : (level == 'Good' ? 'info' : (level == 'Fair' ? 'warning' : 'danger'))) }}">
+                                {{ level }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if deans|length == 0 and deptHeads|length == 0 %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    No Deans or Department Heads found. Users need to have their employment status set to "Dean", "Department Head", or "Chair" to appear here.
+</div>
+{% endif %}
+{% endblock %}

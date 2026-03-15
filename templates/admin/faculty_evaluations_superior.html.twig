@@ -1,0 +1,751 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ faculty.fullName }} | SEF Evaluations{% endblock %}
+
+{% block body %}
+
+{# ── Header Section ── #}
+<div class="fes-header">
+    <div class="fes-header-bg"></div>
+    <div class="fes-header-inner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fes-avatar">
+                    {% if faculty.profilePicture %}
+                        <img src="{{ asset('images/profiles/' ~ faculty.profilePicture) }}" alt="Profile" class="fes-avatar-img">
+                    {% else %}
+                        {{ faculty.firstName|first|upper }}{{ faculty.lastName|first|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 class="fes-name">{{ faculty.fullName }}</h4>
+                    <div class="fes-meta">
+                        {% if faculty.department %}
+                        <span class="fes-meta-tag"><i class="bi bi-building"></i> {{ faculty.department.departmentName }}</span>
+                        {% endif %}
+                        {% if faculty.employmentStatus %}
+                        <span class="fes-meta-tag"><i class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
+                        {% endif %}
+                        {% if faculty.campus %}
+                        <span class="fes-meta-tag"><i class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('admin_results_superior') }}" class="btn btn-sm fes-btn-back">
+                    <i class="bi bi-arrow-left me-1"></i>Back to SEF Results
+                </a>
+                {% if evaluations|length > 0 %}
+                <a href="{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fes-btn-print">
+                    <i class="bi bi-printer me-1"></i>Print All
+                </a>
+                <button type="button" id="fesToggleSelect" class="btn btn-sm fes-btn-select">
+                    <i class="bi bi-check2-square me-1"></i>Select to Print
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Stats Row ── #}
+{% if evaluations|length > 0 %}
+<div class="fes-stats">
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-purple"><i class="bi bi-clipboard-data"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ evaluations|length }}</div>
+            <div class="fes-stat-label">Evaluations</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-green"><i class="bi bi-graph-up"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ overallAvg|number_format(2) }}</div>
+            <div class="fes-stat-label">Overall Average</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-blue"><i class="bi bi-people"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ totalEvaluators }}</div>
+            <div class="fes-stat-label">Total Evaluators</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-amber"><i class="bi bi-trophy"></i></div>
+        <div>
+            {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
+            <div class="fes-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
+            <div class="fes-stat-label">Performance</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Section Title ── #}
+<div class="fes-section-title">
+    <div class="d-flex align-items-center justify-content-between">
+        <h6><i class="bi bi-journal-text me-2"></i>SEF Evaluation History</h6>
+        <label class="fes-select-all" id="fesSelectAllWrap" style="display:none;">
+            <input type="checkbox" id="fesSelectAll" class="form-check-input">
+            <span>Select All</span>
+        </label>
+    </div>
+</div>
+
+{# ── Evaluation Cards ── #}
+{% if evaluations|length > 0 %}
+<div class="fes-list">
+    {% for item in evaluations %}
+    {% set ev = item.evaluation %}
+    {% set pct = (item.average / 5 * 100)|round(0) %}
+    <div class="fes-eval-card" data-eval-id="{{ ev.id }}">
+        <div class="fes-eval-left">
+            <div class="fes-eval-check" style="display:none;">
+                <input type="checkbox" class="form-check-input fes-check" value="{{ ev.id }}">
+            </div>
+            <div class="fes-eval-type">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div class="fes-eval-info">
+                <div class="fes-eval-title">SEF &mdash; {{ ev.semester }}</div>
+                <div class="fes-eval-sub">
+                    <span><i class="bi bi-calendar3"></i> {{ ev.schoolYear }}</span>
+                    {% if ev.faculty %}
+                    <span><i class="bi bi-person"></i> {{ ev.faculty }}</span>
+                    {% endif %}
+                </div>
+                <div class="fes-eval-rating">
+                    <span class="fes-eval-score">{{ item.average|number_format(2) }}</span>
+                    <span class="fes-eval-of">/ 5</span>
+                    <div class="fes-bar">
+                        <div class="fes-bar-fill {% if item.average >= 4.5 %}bar-green{% elseif item.average >= 3.5 %}bar-blue{% elseif item.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
+                    </div>
+                    <span class="fes-eval-count"><i class="bi bi-people-fill"></i> {{ item.evaluators }} evaluator{{ item.evaluators != 1 ? 's' : '' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="fes-eval-right">
+            {% if item.level == 'Always manifested' %}
+                <span class="fes-badge badge-green"><i class="bi bi-star-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Often manifested' %}
+                <span class="fes-badge badge-blue"><i class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Sometimes manifested' %}
+                <span class="fes-badge badge-teal"><i class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Seldom manifested' %}
+                <span class="fes-badge badge-yellow"><i class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
+            {% else %}
+                <span class="fes-badge badge-red"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
+            {% endif %}
+            <a href="{{ path('admin_results_superior_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank"
+               class="fes-print-btn">
+                <i class="bi bi-printer"></i> Print
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="fes-empty">
+    <div class="fes-empty-icon"><i class="bi bi-clipboard-x"></i></div>
+    <h6 class="fw-bold text-dark mb-1">No SEF Evaluations Found</h6>
+    <p class="text-muted small mb-0">This faculty has not been evaluated via SEF in any period yet.</p>
+</div>
+{% endif %}
+
+{# ── Floating Action Bar ── #}
+<div class="fes-action-bar" id="fesActionBar">
+    <div class="fes-action-inner">
+        <span class="fes-action-count"><span id="fesSelCount">0</span> evaluation(s) selected</span>
+        <a href="#" id="fesPrintSelected" target="_blank" class="btn btn-sm fes-action-print">
+            <i class="bi bi-printer me-1"></i>Print Selected
+        </a>
+        <button type="button" id="fesCancelSelect" class="btn btn-sm fes-action-cancel">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+    </div>
+</div>
+
+{# ═══════════════════════════════════
+   STYLES — Purple SEF theme
+   ═══════════════════════════════════ #}
+<style>
+/* ── Header ── */
+.fes-header {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    background: #3b1f6e;
+}
+.fes-header-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1e1042 0%, #3b1f6e 35%, #6d28d9 60%, #a855f7 100%);
+    opacity: 0.95;
+}
+.fes-header-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(139,92,246,.2) 0%, transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(168,85,247,.15) 0%, transparent 50%);
+}
+.fes-header-inner {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 2rem;
+}
+.fes-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.12);
+    border: 2px solid rgba(255,255,255,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.fes-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fes-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+}
+.fes-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.fes-meta-tag {
+    font-size: .72rem;
+    color: rgba(255,255,255,.75);
+    background: rgba(255,255,255,.08);
+    padding: 2px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.fes-btn-back {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    transition: all .2s;
+}
+.fes-btn-back:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+.fes-btn-print {
+    background: #fff;
+    color: #3b1f6e;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    transition: all .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.fes-btn-print:hover {
+    background: #f3f0ff;
+    color: #3b1f6e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+/* ── Stats ── */
+.fes-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.fes-stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.fes-stat-card:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 4px 12px rgba(0,0,0,.06);
+}
+.fes-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.stat-blue { background: #eff6ff; color: #2563eb; }
+.stat-green { background: #f0fdf4; color: #16a34a; }
+.stat-purple { background: #faf5ff; color: #7c3aed; }
+.stat-amber { background: #fffbeb; color: #d97706; }
+.fes-stat-num {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.fes-stat-label {
+    font-size: .7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 500;
+}
+
+/* ── Section Title ── */
+.fes-section-title {
+    margin-bottom: .75rem;
+}
+.fes-section-title h6 {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* ── Evaluation Cards ── */
+.fes-list {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+}
+.fes-eval-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all .2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+}
+.fes-eval-card:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 4px 16px rgba(0,0,0,.07);
+    transform: translateY(-1px);
+}
+.fes-eval-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+.fes-eval-type {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    background: #faf5ff;
+    color: #7c3aed;
+}
+.fes-eval-info {
+    min-width: 0;
+}
+.fes-eval-title {
+    font-size: .9rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+.fes-eval-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: .72rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+.fes-eval-sub i {
+    margin-right: 3px;
+}
+.fes-eval-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fes-eval-score {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.fes-eval-of {
+    font-size: .7rem;
+    color: #94a3b8;
+}
+.fes-bar {
+    width: 100px;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.fes-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease;
+}
+.bar-green { background: linear-gradient(90deg, #16a34a, #4ade80); }
+.bar-blue { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.bar-yellow { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.bar-red { background: linear-gradient(90deg, #dc2626, #f87171); }
+.fes-eval-count {
+    font-size: .7rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+/* ── Right Side ── */
+.fes-eval-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.fes-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.badge-green { background: #dcfce7; color: #15803d; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-teal { background: #ccfbf1; color: #0f766e; }
+.badge-yellow { background: #fef3c7; color: #b45309; }
+.badge-red { background: #fee2e2; color: #dc2626; }
+.fes-print-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: #7c3aed;
+    background: #faf5ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 4px 12px;
+    text-decoration: none;
+    transition: all .2s;
+}
+.fes-print-btn:hover {
+    background: #ede9fe;
+    color: #6d28d9;
+    border-color: #c4b5fd;
+}
+
+/* ── Empty ── */
+.fes-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.fes-empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: #94a3b8;
+    margin-bottom: .75rem;
+}
+
+/* ── Animation ── */
+@keyframes fesSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fes-eval-card, .fes-stat-card, .fes-empty {
+    animation: fesSlideIn .3s ease forwards;
+    opacity: 0;
+}
+.fes-stat-card:nth-child(1) { animation-delay: .05s; }
+.fes-stat-card:nth-child(2) { animation-delay: .1s; }
+.fes-stat-card:nth-child(3) { animation-delay: .15s; }
+.fes-stat-card:nth-child(4) { animation-delay: .2s; }
+.fes-eval-card:nth-child(1) { animation-delay: .1s; }
+.fes-eval-card:nth-child(2) { animation-delay: .15s; }
+.fes-eval-card:nth-child(3) { animation-delay: .2s; }
+.fes-eval-card:nth-child(4) { animation-delay: .25s; }
+.fes-eval-card:nth-child(5) { animation-delay: .3s; }
+.fes-eval-card:nth-child(n+6) { animation-delay: .35s; }
+
+/* ── Select Mode Button ── */
+.fes-btn-select {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    transition: all .2s;
+}
+.fes-btn-select:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+.fes-btn-select.active {
+    background: #fbbf24;
+    border-color: #f59e0b;
+    color: #78350f;
+}
+
+/* ── Select All ── */
+.fes-select-all {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+}
+.fes-select-all .form-check-input {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ── Checkbox in Card ── */
+.fes-eval-check {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.fes-eval-check .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.fes-eval-card.selectable {
+    cursor: pointer;
+}
+.fes-eval-card.selected {
+    border-color: #7c3aed;
+    background: #faf5ff;
+    box-shadow: 0 0 0 2px rgba(124,58,237,.15);
+}
+
+/* ── Floating Action Bar ── */
+.fes-action-bar {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    transition: bottom .3s ease;
+}
+.fes-action-bar.show {
+    bottom: 24px;
+}
+.fes-action-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1e1042;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    white-space: nowrap;
+}
+.fes-action-count {
+    font-size: .82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,.8);
+}
+#fesSelCount {
+    color: #c084fc;
+    font-weight: 700;
+}
+.fes-action-print {
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 16px;
+    text-decoration: none;
+    transition: all .2s;
+}
+.fes-action-print:hover {
+    background: #6d28d9;
+    color: #fff;
+}
+.fes-action-cancel {
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.8);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    transition: all .2s;
+}
+.fes-action-cancel:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .fes-stats { grid-template-columns: repeat(2, 1fr); }
+    .fes-eval-card { flex-direction: column; align-items: flex-start; }
+    .fes-eval-right { flex-direction: row; width: 100%; justify-content: space-between; }
+    .fes-action-inner { padding: 8px 14px; gap: 8px; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('fesToggleSelect');
+    const selectAllWrap = document.getElementById('fesSelectAllWrap');
+    const selectAllCb = document.getElementById('fesSelectAll');
+    const actionBar = document.getElementById('fesActionBar');
+    const selCountEl = document.getElementById('fesSelCount');
+    const printSelBtn = document.getElementById('fesPrintSelected');
+    const cancelBtn = document.getElementById('fesCancelSelect');
+    const cards = document.querySelectorAll('.fes-eval-card');
+    const checks = document.querySelectorAll('.fes-check');
+    const checkWraps = document.querySelectorAll('.fes-eval-check');
+    const facultyId = {{ faculty.id }};
+    const basePrintUrl = '{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}';
+    let selectMode = false;
+
+    if (!toggleBtn) return;
+
+    function enterSelectMode() {
+        selectMode = true;
+        toggleBtn.classList.add('active');
+        toggleBtn.innerHTML = '<i class="bi bi-x-lg me-1"></i>Cancel Selection';
+        selectAllWrap.style.display = 'flex';
+        checkWraps.forEach(w => w.style.display = 'flex');
+        cards.forEach(c => c.classList.add('selectable'));
+        updateCount();
+    }
+
+    function exitSelectMode() {
+        selectMode = false;
+        toggleBtn.classList.remove('active');
+        toggleBtn.innerHTML = '<i class="bi bi-check2-square me-1"></i>Select to Print';
+        selectAllWrap.style.display = 'none';
+        checkWraps.forEach(w => w.style.display = 'none');
+        cards.forEach(c => { c.classList.remove('selectable', 'selected'); });
+        checks.forEach(cb => cb.checked = false);
+        selectAllCb.checked = false;
+        actionBar.classList.remove('show');
+    }
+
+    function updateCount() {
+        const selected = document.querySelectorAll('.fes-check:checked');
+        const count = selected.length;
+        selCountEl.textContent = count;
+
+        if (count > 0) {
+            actionBar.classList.add('show');
+            const ids = Array.from(selected).map(cb => cb.value);
+            const params = ids.map(id => 'evals[]=' + id).join('&');
+            printSelBtn.href = basePrintUrl + '&' + params;
+        } else {
+            actionBar.classList.remove('show');
+        }
+
+        selectAllCb.checked = checks.length > 0 && count === checks.length;
+        selectAllCb.indeterminate = count > 0 && count < checks.length;
+
+        cards.forEach(card => {
+            const cb = card.querySelector('.fes-check');
+            if (cb && cb.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+
+    toggleBtn.addEventListener('click', function() {
+        selectMode ? exitSelectMode() : enterSelectMode();
+    });
+
+    cancelBtn.addEventListener('click', exitSelectMode);
+
+    selectAllCb.addEventListener('change', function() {
+        checks.forEach(cb => cb.checked = selectAllCb.checked);
+        updateCount();
+    });
+
+    checks.forEach(cb => {
+        cb.addEventListener('change', updateCount);
+    });
+
+    cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!selectMode) return;
+            if (e.target.closest('a, button, .fes-print-btn')) return;
+            const cb = card.querySelector('.fes-check');
+            if (cb) {
+                cb.checked = !cb.checked;
+                updateCount();
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

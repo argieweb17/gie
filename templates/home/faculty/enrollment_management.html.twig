@@ -1,0 +1,989 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Enrollment Management | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<style>
+/* ── Hero ── */
+.em-hero {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 50%, #2dd4bf 100%);
+    border-radius: 18px;
+    padding: 2rem 2.5rem;
+    color: #fff;
+    margin-bottom: 1.75rem;
+    position: relative;
+    overflow: hidden;
+}
+.em-hero::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    right: -8%;
+    width: 320px;
+    height: 320px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.em-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    left: 15%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+}
+.em-hero-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; }
+.em-hero-sub { opacity: .8; font-size: .88rem; margin-top: .25rem; }
+.em-hero-back {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    border-radius: 10px;
+    padding: .45rem 1rem;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+.em-hero-back:hover { background: rgba(255,255,255,.25); color: #fff; }
+
+/* ── Stat Cards ── */
+.em-stat {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid rgba(0,0,0,.05);
+    transition: transform .18s, box-shadow .18s;
+    position: relative;
+    overflow: hidden;
+}
+.em-stat:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,.08); }
+.em-stat::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+}
+.em-stat.s1::after { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+.em-stat.s2::after { background: linear-gradient(90deg,#0f766e,#2dd4bf); }
+.em-stat.s3::after { background: linear-gradient(90deg,#d97706,#fbbf24); }
+.em-stat.s4::after { background: linear-gradient(90deg,#7c3aed,#c4b5fd); }
+.em-stat-num { font-size: 2.1rem; font-weight: 800; line-height: 1; }
+.em-stat-label { font-size: .76rem; color: #6b7280; margin-top: .3rem; font-weight: 500; }
+.em-stat-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+}
+
+/* ── Nav Tabs ── */
+.em-nav {
+    display: flex;
+    gap: .35rem;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: .3rem;
+    margin-bottom: 1.5rem;
+}
+.em-nav-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    padding: .6rem .75rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+}
+.em-nav-btn:hover { color: #0f766e; background: rgba(255,255,255,.6); }
+.em-nav-btn.active {
+    background: #fff;
+    color: #0f766e;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.em-nav-btn .em-nav-count {
+    background: #e2e8f0;
+    color: #475569;
+    font-size: .68rem;
+    font-weight: 700;
+    padding: .1rem .45rem;
+    border-radius: 10px;
+}
+.em-nav-btn.active .em-nav-count {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+/* ── Cards ── */
+.em-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,.05);
+    overflow: hidden;
+}
+.em-card-head {
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.em-card-title {
+    margin: 0;
+    font-weight: 700;
+    font-size: .92rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.em-card-title i { color: #0f766e; font-size: 1rem; }
+.em-card-body { padding: 1.25rem 1.5rem; }
+
+/* ── Tables ── */
+.em-tbl { border-collapse: separate; border-spacing: 0; width: 100%; }
+.em-tbl thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    padding: .65rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+.em-tbl tbody td {
+    padding: .7rem 1rem;
+    font-size: .84rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.em-tbl tbody tr { transition: background .1s; }
+.em-tbl tbody tr:hover { background: #f8fafc; }
+.em-tbl .code { font-weight: 700; color: #0f766e; white-space: nowrap; }
+
+/* ── Badges ── */
+.em-b-ok { background: #dcfce7; color: #166534; font-weight: 600; font-size: .7rem; padding: .3rem .65rem; border-radius: 6px; display: inline-flex; align-items: center; gap: .3rem; }
+.em-b-no { background: #fee2e2; color: #991b1b; font-weight: 600; font-size: .7rem; padding: .3rem .65rem; border-radius: 6px; display: inline-flex; align-items: center; gap: .3rem; }
+.em-b-wait { background: #fef3c7; color: #92400e; font-weight: 600; font-size: .7rem; padding: .3rem .65rem; border-radius: 6px; display: inline-flex; align-items: center; gap: .3rem; }
+.em-b-sec { background: #f0fdfa; color: #0f766e; font-weight: 700; font-size: .7rem; padding: .25rem .6rem; border-radius: 6px; }
+
+/* ── Subject Tabs ── */
+.em-stab {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: .65rem 1.1rem;
+    background: #fff;
+    color: #475569;
+    font-size: .82rem;
+    transition: all .18s;
+    cursor: pointer;
+    text-align: left;
+}
+.em-stab:hover { border-color: #0f766e; color: #0f766e; background: #f0fdfa; }
+.em-stab.active {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15,118,110,.25);
+}
+.em-stab.active .em-stab-sub { color: rgba(255,255,255,.7); }
+.em-stab-code { font-weight: 800; font-size: .88rem; }
+.em-stab-sub { font-size: .68rem; color: #94a3b8; margin-top: 2px; }
+
+/* ── Section Groups ── */
+.em-sgrp {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    transition: box-shadow .15s;
+}
+.em-sgrp:hover { box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+.em-sgrp-head {
+    background: #f8fafc;
+    padding: .65rem 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e8f0;
+}
+.em-sgrp-name {
+    font-weight: 700;
+    font-size: .85rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+.em-sgrp-cnt {
+    background: #0f766e;
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    padding: .15rem .6rem;
+    border-radius: 20px;
+}
+.em-sgrp-head.warn { background: #fef3c7; }
+.em-sgrp-head.warn .em-sgrp-name { color: #92400e; }
+.em-sgrp-head.warn .em-sgrp-cnt { background: #d97706; }
+.em-sgrp.collapsed .table-responsive { display: none; }
+.em-sgrp-toggle {
+    background: none; border: none; padding: .15rem; color: #64748b;
+    font-size: .85rem; cursor: pointer; transition: transform .2s;
+    border-radius: 4px;
+}
+.em-sgrp-toggle:hover { background: rgba(0,0,0,.05); }
+.em-sgrp.collapsed .em-sgrp-toggle { transform: rotate(-90deg); }
+
+/* ── Toolbar ── */
+.em-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.em-search-wrap { position: relative; }
+.em-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .82rem; pointer-events: none; }
+.em-search {
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    padding: .45rem .8rem .45rem 2.2rem;
+    font-size: .82rem;
+    width: 230px;
+    transition: border-color .15s, box-shadow .15s;
+    background: #fff;
+}
+.em-search:focus { border-color: #0f766e; outline: none; box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
+.em-tbtn {
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    border-radius: 10px;
+    padding: .45rem .85rem;
+    font-size: .78rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+.em-tbtn:hover { border-color: #0f766e; color: #0f766e; background: #f0fdfa; }
+.em-tbtn.red:hover { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+.em-tbtn i { font-size: .88rem; }
+.em-sep { width: 1px; height: 26px; background: #e2e8f0; margin: 0 .2rem; }
+
+/* ── Bulk Bar ── */
+.em-bulk {
+    background: linear-gradient(135deg, #f0fdfa, #ecfdf5);
+    border: 1.5px solid #99f6e4;
+    border-radius: 12px;
+    padding: .8rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+/* ── Action Buttons ── */
+.em-act-ok {
+    background: #16a34a; color: #fff; border: none; border-radius: 8px;
+    padding: .3rem .55rem; font-size: .78rem; transition: background .15s;
+}
+.em-act-ok:hover { background: #15803d; color: #fff; }
+.em-act-no {
+    background: transparent; color: #dc2626; border: 1px solid #fca5a5; border-radius: 8px;
+    padding: .3rem .55rem; font-size: .78rem; transition: all .15s;
+}
+.em-act-no:hover { background: #fee2e2; border-color: #dc2626; }
+.em-act-sec {
+    background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; border-radius: 8px;
+    padding: .3rem .55rem; font-size: .78rem; transition: all .15s;
+}
+.em-act-sec:hover { background: #ede9fe; border-color: #7c3aed; color: #6d28d9; }
+
+/* ── Empty State ── */
+.em-empty {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    color: #94a3b8;
+}
+.em-empty-icon {
+    width: 72px; height: 72px;
+    border-radius: 20px;
+    background: #f1f5f9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: #cbd5e1;
+    margin-bottom: .75rem;
+}
+.em-empty-title { font-weight: 700; font-size: .95rem; color: #64748b; margin-bottom: .3rem; }
+.em-empty-desc { font-size: .82rem; color: #94a3b8; }
+
+/* ── Modals ── */
+.em-modal .modal-content { border: none; border-radius: 18px; overflow: hidden; }
+.em-modal .modal-header { border: none; padding: 1.25rem 1.5rem; color: #fff; }
+.em-modal .modal-header .btn-close { filter: brightness(0) invert(1); }
+.em-modal .modal-body { padding: 1.5rem; }
+.em-modal .em-info {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.em-modal .em-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: .4rem 0;
+    font-size: .84rem;
+    color: #475569;
+}
+.em-modal .em-info-row:not(:last-child) { border-bottom: 1px solid #e2e8f0; }
+.em-modal .em-info-lbl { font-weight: 700; color: #1e293b; }
+.em-modal .modal-footer { border-top: 1px solid #f1f5f9; padding: 1rem 1.5rem; }
+.em-modal-btn {
+    border: none; color: #fff; border-radius: 10px;
+    padding: .55rem 1.5rem; font-weight: 700; font-size: .85rem;
+    transition: opacity .15s;
+}
+.em-modal-btn:hover { opacity: .9; color: #fff; }
+</style>
+
+{# ════════════════════════ HERO ════════════════════════ #}
+<div class="em-hero">
+    <div class="d-flex align-items-center justify-content-between position-relative" style="z-index:1;">
+        <div>
+            <div class="em-hero-title"><i class="bi bi-people-fill me-2"></i>Enrollment Management</div>
+            <div class="em-hero-sub">Manage students enrolled in your assigned subjects</div>
+        </div>
+        <a href="{{ path('app_dashboard') }}" class="em-hero-back">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+{# ════════════════════════ STATS ════════════════════════ #}
+{% set totalSections = 0 %}
+{% for data in sectionData %}
+    {% for secName in data.sections|keys %}
+        {% if secName != 'Unassigned' %}{% set totalSections = totalSections + 1 %}{% endif %}
+    {% endfor %}
+{% endfor %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="em-stat s1">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="em-stat-num" style="color:#2563eb;">{{ enrollments|length }}</div>
+                    <div class="em-stat-label">Total Enrollments</div>
+                </div>
+                <div class="em-stat-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-people-fill"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="em-stat s2">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="em-stat-num" style="color:#0f766e;">{{ subjectCounts|length }}</div>
+                    <div class="em-stat-label">Subjects</div>
+                </div>
+                <div class="em-stat-icon" style="background:#f0fdfa;color:#0f766e;"><i class="bi bi-book-fill"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="em-stat s3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="em-stat-num" style="color:#d97706;">{{ pendingCount }}</div>
+                    <div class="em-stat-label">Pending Approval</div>
+                </div>
+                <div class="em-stat-icon" style="background:#fef3c7;color:#d97706;"><i class="bi bi-clock-fill"></i></div>
+            </div>
+            {% if pendingCount > 0 %}
+                <form method="post" action="{{ path('faculty_enrollment_approve_all') }}" class="mt-2" onsubmit="return confirm('Approve all {{ pendingCount }} pending enrollment(s)?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('faculty_approve_all') }}">
+                    <button type="submit" class="btn btn-success btn-sm w-100" style="font-size:.75rem;border-radius:10px;font-weight:600;">
+                        <i class="bi bi-check-all me-1"></i>Approve All
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="em-stat s4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="em-stat-num" style="color:#7c3aed;">{{ totalSections }}</div>
+                    <div class="em-stat-label">Active Sections</div>
+                </div>
+                <div class="em-stat-icon" style="background:#f5f3ff;color:#7c3aed;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ════════════════════════ TAB NAV ════════════════════════ #}
+<div class="em-nav" role="tablist">
+    <button class="em-nav-btn active" data-bs-toggle="pill" data-bs-target="#tab-subjects" type="button" role="tab">
+        <i class="bi bi-book"></i> Subjects
+        <span class="em-nav-count">{{ subjectCounts|length }}</span>
+    </button>
+    <button class="em-nav-btn" data-bs-toggle="pill" data-bs-target="#tab-sections" type="button" role="tab">
+        <i class="bi bi-grid-3x3-gap"></i> Sectioning
+        <span class="em-nav-count">{{ totalSections }}</span>
+    </button>
+    <button class="em-nav-btn" data-bs-toggle="pill" data-bs-target="#tab-enrollments" type="button" role="tab">
+        <i class="bi bi-table"></i> All Enrollments
+        <span class="em-nav-count">{{ enrollments|length }}</span>
+    </button>
+</div>
+
+{# ════════════════════════ TAB CONTENT ════════════════════════ #}
+<div class="tab-content">
+
+{# ── TAB 1: Per Subject Overview ── #}
+<div class="tab-pane fade show active" id="tab-subjects" role="tabpanel">
+    <div class="em-card">
+        <div class="em-card-head">
+            <h6 class="em-card-title"><i class="bi bi-list-columns-reverse"></i>Per Subject Overview</h6>
+        </div>
+        {% if subjectCounts|length > 0 %}
+            <div class="table-responsive">
+                <table class="em-tbl">
+                    <thead>
+                        <tr>
+                            <th>Subject Code</th>
+                            <th>Subject Name</th>
+                            <th>Section</th>
+                            <th class="text-center">Students</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in subjectCounts %}
+                            <tr>
+                                <td class="code">{{ row.subject.subjectCode }}</td>
+                                <td>{{ row.subject.subjectName }}</td>
+                                <td>
+                                    {% if row.subject.section %}
+                                        <span class="em-b-sec">{{ row.subject.section }}</span>
+                                    {% else %}
+                                        <span style="color:#94a3b8;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span style="background:#0f766e;color:#fff;font-size:.72rem;font-weight:700;padding:.25rem .65rem;border-radius:20px;">{{ row.count }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="em-empty">
+                <div class="em-empty-icon"><i class="bi bi-book"></i></div>
+                <div class="em-empty-title">No Subjects Yet</div>
+                <div class="em-empty-desc">Students haven't enrolled in your assigned subjects yet.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── TAB 2: Sectioning Management ── #}
+<div class="tab-pane fade" id="tab-sections" role="tabpanel">
+    <div class="em-card">
+        <div class="em-card-head">
+            <h6 class="em-card-title"><i class="bi bi-grid-3x3-gap"></i>Sectioning Management</h6>
+        </div>
+        <div class="em-card-body">
+            {% if sectionData|length > 0 %}
+                {# Subject selector #}
+                <div class="d-flex flex-wrap gap-2 mb-4" role="tablist" id="secSubjectTabs">
+                    {% for idx, data in sectionData %}
+                        <button class="em-stab {{ idx == 0 ? 'active' : '' }}"
+                                data-bs-toggle="pill" data-bs-target="#sec-pane-{{ idx }}"
+                                type="button" role="tab">
+                            <div class="em-stab-code">{{ data.subject.subjectCode }}</div>
+                            <div class="em-stab-sub">{{ data.subject.subjectName|length > 28 ? data.subject.subjectName[:28] ~ '…' : data.subject.subjectName }}</div>
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <div class="tab-content">
+                    {% for idx, data in sectionData %}
+                        <div class="tab-pane fade {{ idx == 0 ? 'show active' : '' }}" id="sec-pane-{{ idx }}" role="tabpanel">
+
+                            {# Toolbar #}
+                            <div class="em-bar">
+                                <div class="em-search-wrap">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" class="em-search em-sec-search" data-pane="sec-pane-{{ idx }}" placeholder="Search students...">
+                                </div>
+                                <div class="em-sep"></div>
+                                <button type="button" class="em-tbtn" data-bs-toggle="modal" data-bs-target="#autoSectionModal"
+                                        data-subject-id="{{ data.subject.id }}" data-subject-code="{{ data.subject.subjectCode }}"
+                                        data-total-students="{% set ts = 0 %}{% for s in data.sections %}{% set ts = ts + s|length %}{% endfor %}{{ ts }}">
+                                    <i class="bi bi-shuffle"></i> Auto-Distribute
+                                </button>
+                                <form method="post" action="{{ path('faculty_enrollment_clear_sections', {subjectId: data.subject.id}) }}" class="d-inline" onsubmit="return confirm('Clear ALL section assignments for {{ data.subject.subjectCode }}?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('faculty_clear_sections_' ~ data.subject.id) }}">
+                                    <button type="submit" class="em-tbtn red"><i class="bi bi-eraser"></i> Clear All</button>
+                                </form>
+                            </div>
+
+                            {# Bulk assign #}
+                            <form method="post" action="{{ path('faculty_enrollment_bulk_section') }}" id="bulk-form-{{ idx }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('faculty_bulk_section') }}">
+                                <div class="em-bulk">
+                                    <div class="form-check mb-0">
+                                        <input type="checkbox" class="form-check-input" id="sec-check-all-{{ idx }}"
+                                               onchange="document.querySelectorAll('#sec-pane-{{ idx }} .sec-chk').forEach(c=>c.checked=this.checked)">
+                                        <label class="form-check-label small fw-bold" for="sec-check-all-{{ idx }}">Select All</label>
+                                    </div>
+                                    <div class="vr" style="opacity:.25;"></div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-arrow-right-circle text-muted"></i>
+                                        <input type="text" name="section" class="form-control form-control-sm" style="width:130px;border-radius:10px;" placeholder="Section (e.g. A)">
+                                        <button type="submit" class="btn btn-sm text-white fw-bold" style="background:#0f766e;border-radius:10px;font-size:.78rem;" onclick="return confirm('Assign section to selected students?')">
+                                            <i class="bi bi-check2-all me-1"></i>Assign
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {# Section groups #}
+                                {% for secName, students in data.sections %}
+                                    <div class="em-sgrp">
+                                        <div class="em-sgrp-head {{ secName == 'Unassigned' ? 'warn' : '' }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="em-sgrp-toggle" onclick="this.closest('.em-sgrp').classList.toggle('collapsed')">
+                                                    <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div class="em-sgrp-name">
+                                                    <i class="bi {{ secName == 'Unassigned' ? 'bi-exclamation-triangle-fill' : 'bi-folder-fill' }}"></i>
+                                                    {{ secName == 'Unassigned' ? 'Unassigned Students' : 'Section ' ~ secName }}
+                                                </div>
+                                            </div>
+                                            <span class="em-sgrp-cnt">{{ students|length }} student{{ students|length != 1 ? 's' : '' }}</span>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="em-tbl">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width:35px;"></th>
+                                                        <th>Student Name</th>
+                                                        <th>School ID</th>
+                                                        <th>Department</th>
+                                                        <th>Status</th>
+                                                        <th style="width:180px;">Section</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for enrollment in students %}
+                                                        {% set st = enrollment.student %}
+                                                        <tr>
+                                                            <td><input type="checkbox" name="enrollment_ids[]" value="{{ enrollment.id }}" class="form-check-input sec-chk"></td>
+                                                            <td class="fw-bold">{{ st.fullName }}</td>
+                                                            <td>{{ st.schoolId ?: '—' }}</td>
+                                                            <td>{{ st.department ? st.department.departmentName : '—' }}</td>
+                                                            <td>
+                                                                {% if enrollment.status == 'approved' %}
+                                                                    <span class="em-b-ok"><i class="bi bi-check-circle"></i>Approved</span>
+                                                                {% elseif enrollment.status == 'rejected' %}
+                                                                    <span class="em-b-no"><i class="bi bi-x-circle"></i>Rejected</span>
+                                                                {% else %}
+                                                                    <span class="em-b-wait"><i class="bi bi-clock"></i>Pending</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="text" class="form-control" value="{{ enrollment.section ?: '' }}"
+                                                                           form="sec-single-{{ enrollment.id }}" name="section" placeholder="—" style="border-radius:8px 0 0 8px;">
+                                                                    <button type="submit" form="sec-single-{{ enrollment.id }}" class="btn btn-outline-secondary btn-sm" title="Save" style="border-radius:0 8px 8px 0;">
+                                                                        <i class="bi bi-check-lg"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </form>
+
+                            {# Individual section update forms #}
+                            {% for secName, students in data.sections %}
+                                {% for enrollment in students %}
+                                    <form method="post" action="{{ path('faculty_enrollment_update_section', {id: enrollment.id}) }}" id="sec-single-{{ enrollment.id }}" class="d-none">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('faculty_section_update_' ~ enrollment.id) }}">
+                                    </form>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="em-empty">
+                    <div class="em-empty-icon"><i class="bi bi-grid-3x3-gap"></i></div>
+                    <div class="em-empty-title">No Sections to Manage</div>
+                    <div class="em-empty-desc">Once students enroll in your subjects, you can organize them into sections here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── TAB 3: Full Enrollment List (Grouped by Student) ── #}
+<div class="tab-pane fade" id="tab-enrollments" role="tabpanel">
+    <div class="em-card">
+        <div class="em-card-head">
+            <h6 class="em-card-title"><i class="bi bi-table"></i>All Enrollments</h6>
+            {% if enrollments|length > 0 %}
+                <div class="em-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="em-search" id="enrollListSearch" placeholder="Search enrollments..." style="width:220px;">
+                </div>
+            {% endif %}
+        </div>
+        {% if enrollments|length > 0 %}
+            {# Group enrollments by student ID using a simpler approach #}
+            {% set sortedEnrollments = enrollments|sort((a, b) => a.student.fullName <=> b.student.fullName) %}
+            {% set lastStudentId = null %}
+            {% set prevStudent = null %}
+            {% set studentEnrollments = [] %}
+            {% set allGroups = [] %}
+
+            {% for enrollment in sortedEnrollments %}
+                {% if lastStudentId is not null and lastStudentId != enrollment.student.id %}
+                    {# Student changed, save the group #}
+                    {% set allGroups = allGroups|merge([{ sid: lastStudentId, student: prevStudent, enrollments: studentEnrollments }]) %}
+                    {% set studentEnrollments = [] %}
+                {% endif %}
+                {% set lastStudentId = enrollment.student.id %}
+                {% set prevStudent = enrollment.student %}
+                {% set studentEnrollments = studentEnrollments|merge([enrollment]) %}
+            {% endfor %}
+            
+            {# Don't forget the last group #}
+            {% if lastStudentId is not null %}
+                {% set allGroups = allGroups|merge([{ sid: lastStudentId, student: prevStudent, enrollments: studentEnrollments }]) %}
+            {% endif %}
+
+            <div class="table-responsive">
+                <table class="em-tbl" id="enrollListTable">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>School ID</th>
+                            <th>Department</th>
+                            <th>Subject</th>
+                            <th>Schedule</th>
+                            <th>Section</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in allGroups %}
+                            {% set sid = group.sid %}
+                            {% set student = group.student %}
+                            {% set studentEnrollments = group.enrollments %}
+                            {# Parent row: student name (clickable) #}
+                            <tr class="em-student-row" data-student-id="{{ sid }}" onclick="toggleStudentRows({{ sid }})" style="cursor:pointer;background:#f8fafc;">
+                                <td class="fw-bold" colspan="3">
+                                    <div style="display:flex;align-items:center;gap:.5rem;">
+                                        <i class="bi bi-chevron-right em-student-chevron" id="chevron-{{ sid }}" style="font-size:.7rem;transition:transform .2s;color:#64748b;"></i>
+                                        <i class="bi bi-person-circle" style="font-size:1.1rem;color:#2563eb;"></i>
+                                        {{ student.fullName }}
+                                        <span style="font-size:.72rem;color:#94a3b8;font-weight:400;margin-left:.25rem;">{{ student.schoolId ?: '' }}</span>
+                                        <span style="font-size:.68rem;color:#fff;background:#2563eb;padding:.15rem .5rem;border-radius:20px;font-weight:700;margin-left:.25rem;">{{ studentEnrollments|length }} subject{{ studentEnrollments|length != 1 ? 's' : '' }}</span>
+                                    </div>
+                                </td>
+                                <td colspan="5" style="font-size:.78rem;color:#64748b;">
+                                    {{ student.department ? student.department.departmentName : '—' }}
+                                </td>
+                            </tr>
+                            {# Child rows: subjects (hidden by default) #}
+                            {% for enrollment in studentEnrollments %}
+                                {% set subject = enrollment.subject %}
+                                <tr class="em-subject-row em-child-{{ sid }}" style="display:none;">
+                                    <td style="padding-left:2.5rem;">
+                                        <span style="color:#94a3b8;font-size:.72rem;">└</span>
+                                    </td>
+                                    <td>{{ student.schoolId ?: '—' }}</td>
+                                    <td>{{ student.department ? student.department.departmentName : '—' }}</td>
+                                    <td>
+                                        <span class="code">{{ subject.subjectCode }}</span>
+                                        <div class="text-muted" style="font-size:.73rem;">{{ subject.subjectName }}</div>
+                                    </td>
+                                    <td style="font-size:.8rem;">{{ enrollment.schedule ?: subject.schedule ?: '—' }}</td>
+                                    <td>
+                                        {% set sec = enrollment.section ?: subject.section %}
+                                        {% if sec %}
+                                            <span class="em-b-sec">{{ sec }}</span>
+                                        {% else %}
+                                            <span style="color:#94a3b8;">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if enrollment.status == 'approved' %}
+                                            <span class="em-b-ok"><i class="bi bi-check-circle"></i>Approved</span>
+                                        {% elseif enrollment.status == 'rejected' %}
+                                            <span class="em-b-no"><i class="bi bi-x-circle"></i>Rejected</span>
+                                        {% else %}
+                                            <span class="em-b-wait"><i class="bi bi-clock"></i>Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button type="button" class="em-act-sec" title="Assign Section"
+                                                    data-bs-toggle="modal" data-bs-target="#sectionModal"
+                                                    data-enroll-id="{{ enrollment.id }}"
+                                                    data-student-name="{{ student.fullName }}"
+                                                    data-school-id="{{ student.schoolId ?: '—' }}"
+                                                    data-subject-code="{{ subject.subjectCode }}"
+                                                    data-subject-name="{{ subject.subjectName }}"
+                                                    data-current-section="{{ enrollment.section ?: '' }}"
+                                                    data-status="{{ enrollment.status }}">
+                                                <i class="bi bi-grid-3x3-gap"></i>
+                                            </button>
+                                            {% if enrollment.status != 'approved' %}
+                                                <form method="post" action="{{ path('faculty_enrollment_approve', {id: enrollment.id}) }}" class="d-inline">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('faculty_enrollment_action_' ~ enrollment.id) }}">
+                                                    <button type="submit" class="em-act-ok" title="Approve"><i class="bi bi-check-lg"></i></button>
+                                                </form>
+                                            {% endif %}
+                                            {% if enrollment.status != 'rejected' %}
+                                                <form method="post" action="{{ path('faculty_enrollment_reject', {id: enrollment.id}) }}" class="d-inline" onsubmit="return confirm('Reject this enrollment?')">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('faculty_enrollment_action_' ~ enrollment.id) }}">
+                                                    <button type="submit" class="em-act-no" title="Reject"><i class="bi bi-x-lg"></i></button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="em-empty">
+                <div class="em-empty-icon"><i class="bi bi-people"></i></div>
+                <div class="em-empty-title">No Enrollments Yet</div>
+                <div class="em-empty-desc">Enrollment records will appear here once students enroll in your subjects.</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>{# /tab-content #}
+
+{# ════════════════════════ SECTION MODAL ════════════════════════ #}
+<div class="modal fade em-modal" id="sectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#0f766e,#14b8a6);">
+                <div>
+                    <h5 class="modal-title"><i class="bi bi-grid-3x3-gap me-2"></i>Assign Section</h5>
+                    <div style="font-size:.8rem;opacity:.75;" id="modalSubtitle">Update section assignment</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="sectionModalForm">
+                <div class="modal-body">
+                    <input type="hidden" name="_token" id="modalCsrfToken">
+                    <div class="em-info">
+                        <div class="em-info-row"><span class="em-info-lbl">Student</span><span id="modalStudentName">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">School ID</span><span id="modalSchoolId">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">Subject</span><span id="modalSubject">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">Status</span><span id="modalStatus">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">Current Section</span><span id="modalCurrentSection">—</span></div>
+                    </div>
+                    <label for="modalSectionInput" class="form-label fw-bold" style="font-size:.85rem;">New Section</label>
+                    <input type="text" class="form-control" id="modalSectionInput" name="section" placeholder="Enter section (e.g. A, B, C)" autocomplete="off" style="border-radius:12px;padding:.65rem 1rem;">
+                    <div class="form-text">Leave empty to unassign.</div>
+                    <div class="mt-3">
+                        <div class="fw-bold mb-2" style="font-size:.78rem;color:#475569;">Quick Select</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for qs in ['A','B','C','D','E','F'] %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm em-quick-sec" style="border-radius:10px;min-width:42px;font-weight:700;" onclick="document.getElementById('modalSectionInput').value='{{ qs }}';">{{ qs }}</button>
+                            {% endfor %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" style="border-radius:10px;font-weight:700;" onclick="document.getElementById('modalSectionInput').value='';"><i class="bi bi-x-lg me-1"></i>Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal" style="border-radius:10px;">Cancel</button>
+                    <button type="submit" class="em-modal-btn" style="background:linear-gradient(135deg,#0f766e,#14b8a6);"><i class="bi bi-check-circle me-1"></i>Save Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ════════════════════════ AUTO-DISTRIBUTE MODAL ════════════════════════ #}
+<div class="modal fade em-modal" id="autoSectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">
+                <div>
+                    <h5 class="modal-title"><i class="bi bi-shuffle me-2"></i>Auto-Distribute Students</h5>
+                    <div style="font-size:.8rem;opacity:.75;" id="autoModalSubtitle">Distribute evenly across sections</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="autoSectionForm">
+                <div class="modal-body">
+                    <input type="hidden" name="_token" id="autoCsrfToken">
+                    <div class="em-info">
+                        <div class="em-info-row"><span class="em-info-lbl">Subject</span><span id="autoSubjectCode" class="fw-bold" style="color:#0f766e;">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">Total Students</span><span id="autoTotalStudents">—</span></div>
+                        <div class="em-info-row"><span class="em-info-lbl">Preview</span><span id="autoPreview" class="text-muted">—</span></div>
+                    </div>
+                    <label for="autoSectionsInput" class="form-label fw-bold" style="font-size:.85rem;">Sections (comma-separated)</label>
+                    <input type="text" class="form-control" id="autoSectionsInput" name="sections" value="A,B" placeholder="A,B,C" autocomplete="off" style="border-radius:12px;padding:.65rem 1rem;">
+                    <div class="form-text">Students sorted alphabetically, distributed round-robin.</div>
+                    <div class="mt-3">
+                        <div class="fw-bold mb-2" style="font-size:.78rem;color:#475569;">Presets</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for preset in [['A,B','A, B'],['A,B,C','A, B, C'],['A,B,C,D','A-D'],['A,B,C,D,E','A-E'],['1,2,3','1, 2, 3']] %}
+                                <button type="button" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;font-weight:600;" onclick="document.getElementById('autoSectionsInput').value='{{ preset[0] }}';updateAutoPreview();">{{ preset[1] }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal" style="border-radius:10px;">Cancel</button>
+                    <button type="submit" class="em-modal-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"><i class="bi bi-shuffle me-1"></i>Distribute Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ════════════════════════ JS ════════════════════════ #}
+<script>
+// CSRF tokens
+const sectionCsrfTokens = { {% for e in enrollments %}{{ e.id }}:'{{ csrf_token('faculty_section_update_' ~ e.id) }}',{% endfor %} };
+const autoSectionTokens = { {% for d in sectionData %}{{ d.subject.id }}:'{{ csrf_token('faculty_auto_section_' ~ d.subject.id) }}',{% endfor %} };
+
+// ── Section Modal ──
+document.getElementById('sectionModal').addEventListener('show.bs.modal', function(e) {
+    const b = e.relatedTarget, id = b.dataset.enrollId;
+    document.getElementById('sectionModalForm').action = '/faculty/enrollment/' + id + '/update-section';
+    document.getElementById('modalCsrfToken').value = sectionCsrfTokens[id] || '';
+    document.getElementById('modalStudentName').textContent = b.dataset.studentName;
+    document.getElementById('modalSchoolId').textContent = b.dataset.schoolId;
+    document.getElementById('modalSubject').innerHTML = '<span style="font-weight:700;color:#0f766e;">' + b.dataset.subjectCode + '</span> — ' + b.dataset.subjectName;
+    document.getElementById('modalSectionInput').value = b.dataset.currentSection;
+    document.getElementById('modalSubtitle').textContent = b.dataset.studentName + ' — ' + b.dataset.subjectCode;
+    const cs = b.dataset.currentSection;
+    document.getElementById('modalCurrentSection').innerHTML = cs
+        ? '<span class="em-b-sec">' + cs + '</span>'
+        : '<span style="color:#94a3b8;">Unassigned</span>';
+    const st = b.dataset.status;
+    document.getElementById('modalStatus').innerHTML = st === 'approved'
+        ? '<span class="em-b-ok"><i class="bi bi-check-circle"></i>Approved</span>'
+        : st === 'rejected'
+            ? '<span class="em-b-no"><i class="bi bi-x-circle"></i>Rejected</span>'
+            : '<span class="em-b-wait"><i class="bi bi-clock"></i>Pending</span>';
+    document.querySelectorAll('.em-quick-sec').forEach(function(btn) {
+        btn.classList.toggle('btn-primary', btn.textContent.trim() === cs);
+        btn.classList.toggle('btn-outline-secondary', btn.textContent.trim() !== cs);
+    });
+});
+
+// ── Auto-Distribute Modal ──
+let autoTotalStudents = 0;
+document.getElementById('autoSectionModal').addEventListener('show.bs.modal', function(e) {
+    const b = e.relatedTarget;
+    autoTotalStudents = parseInt(b.dataset.totalStudents) || 0;
+    document.getElementById('autoSectionForm').action = '/faculty/enrollment/auto-section/' + b.dataset.subjectId;
+    document.getElementById('autoCsrfToken').value = autoSectionTokens[b.dataset.subjectId] || '';
+    document.getElementById('autoSubjectCode').textContent = b.dataset.subjectCode;
+    document.getElementById('autoTotalStudents').textContent = autoTotalStudents;
+    document.getElementById('autoModalSubtitle').textContent = b.dataset.subjectCode + ' — ' + autoTotalStudents + ' students';
+    document.getElementById('autoSectionsInput').value = 'A,B';
+    updateAutoPreview();
+});
+document.getElementById('autoSectionsInput').addEventListener('input', updateAutoPreview);
+function updateAutoPreview() {
+    const secs = document.getElementById('autoSectionsInput').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const el = document.getElementById('autoPreview');
+    if (!secs.length || !autoTotalStudents) { el.textContent = '—'; return; }
+    const p = Math.floor(autoTotalStudents/secs.length), r = autoTotalStudents%secs.length;
+    el.innerHTML = secs.map((s,i) => s+': '+(p+(i<r?1:0))).join(' &nbsp;<span style="color:#cbd5e1;">|</span>&nbsp; ');
+}
+
+// ── Search: Sectioning ──
+document.querySelectorAll('.em-sec-search').forEach(function(inp) {
+    inp.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim(),
+              pane = document.getElementById(this.dataset.pane);
+        if (!pane) return;
+        pane.querySelectorAll('.em-sgrp').forEach(function(g) {
+            let vis = 0;
+            const rows = g.querySelectorAll('tbody tr');
+            rows.forEach(function(r) {
+                const m = !q || r.textContent.toLowerCase().includes(q);
+                r.style.display = m ? '' : 'none';
+                if (m) vis++;
+            });
+            const badge = g.querySelector('.em-sgrp-cnt');
+            if (badge) badge.textContent = q ? vis+' of '+rows.length : rows.length+' student'+(rows.length!==1?'s':'');
+        });
+    });
+});
+
+// ── Search: Enrollment List ──
+const es = document.getElementById('enrollListSearch');
+if (es) es.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('#enrollListTable tbody .em-student-row').forEach(function(row) {
+        const sid = row.dataset.studentId;
+        const children = document.querySelectorAll('#enrollListTable tbody .em-child-' + sid);
+        const allText = row.textContent + Array.from(children).map(r => r.textContent).join(' ');
+        const match = !q || allText.toLowerCase().includes(q);
+        row.style.display = match ? '' : 'none';
+        if (!match) {
+            children.forEach(r => r.style.display = 'none');
+            const chev = document.getElementById('chevron-' + sid);
+            if (chev) chev.style.transform = '';
+        }
+    });
+});
+
+// ── Toggle student subject rows ──
+function toggleStudentRows(sid) {
+    const children = document.querySelectorAll('#enrollListTable .em-child-' + sid);
+    const chevron = document.getElementById('chevron-' + sid);
+    const isOpen = children.length > 0 && children[0].style.display !== 'none';
+    children.forEach(r => r.style.display = isOpen ? 'none' : '');
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+</script>
+{% endblock %}

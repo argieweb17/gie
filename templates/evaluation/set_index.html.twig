@@ -1,0 +1,214 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Evaluate Teachers | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<style>
+.ev-page { max-width: 1140px; margin: 0 auto; }
+.ev-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
+.ev-breadcrumb a { color: #64748b; text-decoration: none; }
+.ev-breadcrumb a:hover { color: #2563eb; }
+.ev-breadcrumb .sep { color: #cbd5e1; }
+.ev-breadcrumb .current { color: #1e293b; font-weight: 600; }
+.ev-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.ev-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
+.ev-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
+
+.ev-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.ev-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
+.ev-chip-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; color: #fff; flex-shrink: 0; }
+.ev-chip-val { font-weight: 700; }
+
+.ev-panel { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.04); overflow: hidden; }
+.ev-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; }
+.ev-panel-title { font-size: .88rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: .45rem; }
+.ev-panel-title i { color: #2563eb; font-size: 1rem; }
+.ev-panel-count { font-weight: 400; color: #94a3b8; font-size: .78rem; margin-left: .15rem; }
+
+.ev-search-wrap { position: relative; }
+.ev-search-wrap i { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: #94a3b8; pointer-events: none; }
+.ev-search-wrap input { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: .4rem .75rem .4rem 2rem; font-size: .8rem; width: 200px; transition: border-color .15s, box-shadow .15s; background: #f8fafc; }
+.ev-search-wrap input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.08); background: #fff; }
+
+.ev-list { display: flex; flex-direction: column; }
+.ev-item { display: flex; align-items: center; gap: .85rem; padding: .85rem 1.25rem; border-bottom: 1px solid #f1f5f9; transition: background .1s; }
+.ev-item:last-child { border-bottom: none; }
+.ev-item:hover { background: #f8fafc; }
+.ev-item-avatar { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: .5px; }
+.ev-item-body { flex: 1; min-width: 0; }
+.ev-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ev-item-code { display: inline-flex; align-items: center; gap: .25rem; background: #eff6ff; color: #1d4ed8; padding: .15rem .5rem; border-radius: 6px; font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
+.ev-item-name { font-weight: 600; font-size: .88rem; color: #0f172a; }
+.ev-item-desc { font-size: .78rem; color: #64748b; margin-top: .1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+.ev-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
+.ev-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
+
+.ev-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .65rem; border-radius: 50px; font-size: .72rem; font-weight: 600; letter-spacing: .2px; }
+.ev-badge-pending { background: #f1f5f9; color: #64748b; }
+.ev-badge-draft { background: #fef9c3; color: #854d0e; }
+.ev-badge-submitted { background: #dcfce7; color: #166534; }
+
+.ev-action-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .15s; border: none; cursor: pointer; white-space: nowrap; }
+.ev-action-evaluate { background: #2563eb; color: #fff; }
+.ev-action-evaluate:hover { background: #1d4ed8; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
+.ev-action-continue { background: #f59e0b; color: #fff; }
+.ev-action-continue:hover { background: #d97706; color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,.25); }
+.ev-action-done { background: #f0fdf4; color: #16a34a; cursor: default; }
+
+.ev-item-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+/* Empty State */
+.ev-empty { text-align: center; padding: 4rem 2rem 3.5rem; }
+.ev-empty-illustration { width: 130px; height: 130px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.ev-empty-illustration::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px dashed #d1d5db; animation: ev-spin 20s linear infinite; }
+@keyframes ev-spin { to { transform: rotate(360deg); } }
+.ev-empty-illustration i { font-size: 3.2rem; color: #2563eb; opacity: .5; }
+.ev-empty-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
+.ev-empty-desc { font-size: .84rem; color: #64748b; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+@media (max-width: 768px) {
+    .ev-header-title { font-size: 1.25rem; }
+    .ev-item { padding: .75rem 1rem; }
+    .ev-item-desc { max-width: 180px; }
+    .ev-search-wrap input { width: 150px; }
+}
+</style>
+
+{% set submittedCount = 0 %}
+{% set draftCount = 0 %}
+{% set pendingCount = 0 %}
+{% for item in subjects %}
+    {% if item.submitted %}{% set submittedCount = submittedCount + 1 %}
+    {% elseif item.hasDraft %}{% set draftCount = draftCount + 1 %}
+    {% else %}{% set pendingCount = pendingCount + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="ev-page">
+
+<div class="ev-breadcrumb">
+    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <span class="sep">/</span>
+    <span class="current">Evaluate Teachers</span>
+</div>
+
+<div class="ev-header">
+    <div>
+        <h1 class="ev-header-title">Evaluate Teachers</h1>
+        <div class="ev-header-sub">Student Evaluation for Teacher (SET) &middot; Rate your enrolled subjects</div>
+    </div>
+</div>
+
+{% if subjects|length > 0 %}
+<div class="ev-chips">
+    <div class="ev-chip">
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="bi bi-journal-text"></i></span>
+        <span><span class="ev-chip-val">{{ subjects|length }}</span> Total</span>
+    </div>
+    {% if pendingCount > 0 %}
+    <div class="ev-chip">
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i class="bi bi-clock"></i></span>
+        <span><span class="ev-chip-val">{{ pendingCount }}</span> Pending</span>
+    </div>
+    {% endif %}
+    {% if draftCount > 0 %}
+    <div class="ev-chip">
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i class="bi bi-pencil"></i></span>
+        <span><span class="ev-chip-val">{{ draftCount }}</span> Drafts</span>
+    </div>
+    {% endif %}
+    <div class="ev-chip">
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-check-circle"></i></span>
+        <span><span class="ev-chip-val">{{ submittedCount }}</span> Submitted</span>
+    </div>
+</div>
+
+<div class="ev-panel mb-4">
+    <div class="ev-panel-head">
+        <div class="ev-panel-title">
+            <i class="bi bi-pencil-square"></i>
+            Subjects to Evaluate
+            <span class="ev-panel-count">({{ subjects|length }})</span>
+        </div>
+        <div class="ev-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="search" id="evSearch" placeholder="Search...">
+        </div>
+    </div>
+    <div class="ev-list" id="evList">
+        {% set colors = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
+        {% for item in subjects %}
+            {% set colorIdx = loop.index0 % colors|length %}
+            <div class="ev-item" data-search="{{ item.subject.subjectCode }} {{ item.subject.subjectName }} {{ item.faculty.fullName }}">
+                <div class="ev-item-avatar" style="background:{{ colors[colorIdx] }};">
+                    {{ item.subject.subjectCode[:2]|upper }}
+                </div>
+                <div class="ev-item-body">
+                    <div class="ev-item-top">
+                        <span class="ev-item-code">{{ item.subject.subjectCode }}</span>
+                        {% if item.submitted %}
+                            <span class="ev-badge ev-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                        {% elseif item.hasDraft %}
+                            <span class="ev-badge ev-badge-draft"><i class="bi bi-pencil-fill"></i> Draft</span>
+                        {% else %}
+                            <span class="ev-badge ev-badge-pending"><i class="bi bi-clock"></i> Pending</span>
+                        {% endif %}
+                    </div>
+                    <div class="ev-item-desc">{{ item.subject.subjectName }}</div>
+                    <div class="ev-item-meta">
+                        <span><i class="bi bi-person"></i> {{ item.faculty.fullName }}</span>
+                        {% if item.evaluation.section %}<span><i class="bi bi-grid-3x3-gap"></i> Sec {{ item.evaluation.section|upper }}</span>{% endif %}
+                        {% if item.evaluation.time ?? null %}<span><i class="bi bi-clock"></i> {{ item.evaluation.time }}</span>{% endif %}
+                        <span><i class="bi bi-calendar3"></i> {{ item.evaluation.label }}</span>
+                    </div>
+                </div>
+                <div class="ev-item-actions">
+                    {% if item.submitted %}
+                        <span class="ev-action-btn ev-action-done"><i class="bi bi-check2-all"></i> Done</span>
+                    {% elseif item.hasDraft %}
+                        <a href="{{ path('evaluation_set_form', {evalId: item.evaluation.id, subjectId: item.subject.id}) }}" class="ev-action-btn ev-action-continue">
+                            <i class="bi bi-pencil-square"></i> Continue
+                        </a>
+                    {% else %}
+                        <a href="{{ path('evaluation_set_form', {evalId: item.evaluation.id, subjectId: item.subject.id}) }}" class="ev-action-btn ev-action-evaluate">
+                            <i class="bi bi-pencil-square"></i> Evaluate
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+<div class="ev-panel mb-4">
+    <div class="ev-panel-head">
+        <div class="ev-panel-title"><i class="bi bi-pencil-square"></i> Subjects to Evaluate</div>
+    </div>
+    <div class="ev-empty">
+        <div class="ev-empty-illustration">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="ev-empty-title">No evaluations available</div>
+        <div class="ev-empty-desc">Evaluations will appear here when an evaluation period is open and you are enrolled in subjects.</div>
+    </div>
+</div>
+{% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('evSearch');
+    const list = document.getElementById('evList');
+    if (input && list) {
+        input.addEventListener('input', () => {
+            const term = input.value.trim().toLowerCase();
+            list.querySelectorAll('.ev-item').forEach(item => {
+                item.style.display = !term || (item.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

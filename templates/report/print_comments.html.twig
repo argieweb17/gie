@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluation Report — {{ faculty.fullName }}</title>
+    <style>
+        /* ══════════════════════════════════════════════
+           PRINT LAYOUT — Edit this file to customise
+           the printed evaluation report.
+           Matches Official NORSU QUAMC format.
+           ══════════════════════════════════════════════ */
+
+        @page {
+            size: A4 portrait;
+            margin: 12mm 16mm 12mm 16mm;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px 36px;
+            color: #000;
+            font-size: 11px;
+            line-height: 1.35;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── Letterhead ── */
+        .letterhead {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .letterhead img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* ── Title Block ── */
+        .title-block {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .title-block h2 {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        .title-block h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        /* ── Faculty Info Table ── */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+            font-size: 11px;
+        }
+        .info-table td {
+            padding: 2px 4px;
+            border: none;
+            vertical-align: bottom;
+        }
+        .info-table .lbl {
+            font-weight: 400;
+            white-space: nowrap;
+        }
+        .info-table .val {
+            font-weight: 700;
+            border-bottom: 1px solid #000;
+            padding-left: 6px;
+        }
+        .info-table .val-right {
+            font-weight: 700;
+            border-bottom: 1px solid #000;
+            text-align: left;
+            padding-left: 6px;
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+        .results-table th,
+        .results-table td {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            text-align: center;
+        }
+        .results-table th {
+            font-weight: 700;
+            font-size: 10px;
+        }
+        .results-table .area-cell {
+            text-align: left;
+            font-weight: 400;
+            padding-left: 10px;
+        }
+        .results-table .total-row td {
+            font-weight: 700;
+        }
+        .results-table .verbal-row td {
+            font-weight: 700;
+            font-size: 11px;
+        }
+        .results-table .subject-row td {
+            border-top: 1px solid #000;
+        }
+
+        /* ── Rating Scale ── */
+        .rating-scale {
+            margin: 14px 0 8px;
+            font-size: 10px;
+            font-style: italic;
+        }
+        .rating-scale strong {
+            font-style: normal;
+        }
+
+        /* ── Purpose ── */
+        .purpose {
+            margin-bottom: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* ── Comments Section ── */
+        .comments-section {
+            margin-bottom: 20px;
+        }
+        .comments-section h3 {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .comments-section ol {
+            margin: 0;
+            padding-left: 22px;
+            font-size: 11px;
+        }
+        .comments-section ol li {
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+        .no-comments {
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* ── Signatures ── */
+        .signature-section {
+            margin-top: 60px;
+            font-size: 10px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 100px;
+        }
+        .sig-block {
+            text-align: left;
+        }
+        .sig-label {
+            margin-bottom: 30px;
+        }
+        .sig-name {
+            font-weight: 700;
+            font-size: 10px;
+        }
+        .sig-title {
+            font-size: 9px;
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            margin-top: 30px;
+            padding: 12px 0;
+            font-size: 10px;
+            line-height: 1.20;
+        }
+        .disclaimer strong { font-style: normal; }
+
+        /* ── Footer Table ── */
+        .doc-footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 60px;
+            font-size: 9px;
+        }
+        .doc-footer-table td {
+            border: 1px solid #000;
+            padding: 3px 6px;
+            vertical-align: middle;
+        }
+        .doc-footer-table .ft-lbl {
+            font-weight: 700;
+            white-space: nowrap;
+            width: 22%;
+        }
+        .doc-footer-table .ft-val {
+            width: 20%;
+        }
+        .doc-footer-table .ft-page {
+            text-align: right;
+            border: 1px solid #000;
+            font-size: 10px;
+            padding: 3px 10px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        /* ── Page Break ── */
+        .page-break {
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+
+        /* ── Print-specific ── */
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    {# ═══════════════════════════════════════════
+       LETTERHEAD
+       ═══════════════════════════════════════════ #}
+    <div class="letterhead">
+        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+    </div>
+
+    {# ═══════════════════════════════════════════
+       TITLE BLOCK
+       ═══════════════════════════════════════════ #}
+    <div class="title-block">
+        <h1>Office of the University Quality Assurance Management Center</h1>
+        <br>
+        <h2>RESULT OF {{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }}</h2>
+
+    </div>
+
+    {# ═══════════════════════════════════════════
+       FACULTY INFO
+       ═══════════════════════════════════════════ #}
+    <table class="info-table">
+        <tr>
+            <td class="lbl">Name of Faculty:</td>
+            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
+            <td class="lbl">Subject:</td>
+            <td class="val-right">{{ evaluation.subject ?? 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">College/Department:</td>
+            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
+            <td class="lbl">Semester:</td>
+            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Campus:</td>
+            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
+            <td class="lbl">School Year:</td>
+            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+        </tr>
+    </table>
+
+    {# ═══════════════════════════════════════════
+       SUMMARY RESULTS TABLE
+       ═══════════════════════════════════════════ #}
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th rowspan="3" style="width:30%">Areas of Instruction</th>
+                <th colspan="3">{{ evaluation.subject ?? evaluation.evaluationType }}</th>
+                <th colspan="2">Composite Results</th>
+            </tr>
+            <tr>
+                <th colspan="3">Baccalaureate Course</th>
+                <th rowspan="2">Weighted<br>Mean</th>
+                <th rowspan="2">Weighted<br>Rating</th>
+            </tr>
+            <tr>
+                <th>Weighted<br>Mean</th>
+                <th>Weight<br>(%)</th>
+                <th>Weighted<br>Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categorySummary %}
+            <tr>
+                <td class="area-cell">{{ cat.name }}</td>
+                <td>{{ cat.mean|number_format(2) }}</td>
+                <td>{{ cat.weightPct }}%</td>
+                <td>{{ cat.weightedRating|number_format(2) }}</td>
+                <td>{{ cat.mean|number_format(2) }}</td>
+                <td>{{ cat.weightedRating|number_format(2) }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td class="area-cell">Total</td>
+                <td></td>
+                <td>100%</td>
+                <td>{{ compositeTotal|number_format(2) }}</td>
+                <td></td>
+                <td>{{ compositeTotal|number_format(2) }}</td>
+            </tr>
+            <tr class="verbal-row">
+                <td class="area-cell" style="font-weight:400;">Verbal Description</td>
+                <td colspan="3">{{ performanceLevel|upper }}</td>
+                <td colspan="2">{{ performanceLevel|upper }}</td>
+            </tr>
+            <tr class="subject-row">
+                <td class="area-cell">{{ evaluation.subject ?? evaluation.evaluationType }}</td>
+                <td>{{ evaluatorCount }}</td>
+            
+            </tr>
+        </tbody>
+    </table>
+
+    {# ═══════════════════════════════════════════
+       RATING SCALE
+       ═══════════════════════════════════════════ #}
+    <div class="rating-scale">
+        <strong>RATING SCALE:</strong>
+        5 – <em>Always manifested</em>;
+        4 – <em>Often manifested</em>;
+        3 – <em>Sometimes manifested</em>;
+        2 – <em>Seldom manifested</em>; and
+        1 – <em>Never/Rarely manifested</em>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       PURPOSE
+       ═══════════════════════════════════════════ #}
+    <div class="purpose">
+        Purpose: <span style="font-weight:400;">For IPCR Requirement only.</span>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       SIGNATURE SECTION
+       ═══════════════════════════════════════════ #}
+   <div class="signature-section">
+        <div class="sig-block">
+            <div class="sig-label">Prepared by:</div>
+            <div class="sig-name">ARGIE PAIR PAGBUNOCAN</div>
+            <div class="sig-title">QUAMC Staff</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-label">Certified true and correct:</div>
+            <div class="sig-name">CESAR P. ESTROPE, Ed.D.</div>
+            <div class="sig-title">Director, Quality Assurance Management Center</div>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       DISCLAIMER
+       ═══════════════════════════════════════════ #}
+    <div class="disclaimer">
+        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
+        addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
+        the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
+        any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the
+        sender. Thank you</em>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       DOCUMENT FOOTER — PAGE 1
+       ═══════════════════════════════════════════ #}
+    <table class="doc-footer-table">
+        <tr>
+            <td class="ft-lbl">Correspondence ID</td>
+            <td class="ft-val"></td>
+            <td class="ft-lbl"></td>
+            <td class="ft-val"></td>
+            <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>2</strong></td>
+        </tr>
+        <tr>
+            <td class="ft-lbl">Issue Date</td>
+            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
+            <td class="ft-lbl">Issue Status</td>
+            <td class="ft-val"></td>
+        </tr>
+        <tr>
+            <td class="ft-lbl">Reviewed &amp; authorized by</td>
+            <td class="ft-val">ODQA</td>
+            <td class="ft-lbl">Approved by</td>
+            <td class="ft-val">ODQA</td>
+        </tr>
+    </table>
+
+    {# ═══════════════════════════════════════════
+       PAGE BREAK — COMMENTS PAGE
+       ═══════════════════════════════════════════ #}
+    <div class="page-break"></div>
+
+    {# ═══════════════════════════════════════════
+       LETTERHEAD (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <div class="letterhead">
+        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+    </div>
+
+    {# ═══════════════════════════════════════════
+       TITLE BLOCK (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <div class="title-block">
+        <h1>Office of the University Quality Assurance Management Center</h1>
+        <br>
+        <h2>{{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }} — COMMENTS</h2>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       FACULTY INFO (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <table class="info-table">
+        <tr>
+            <td class="lbl">Name of Faculty:</td>
+            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
+            <td class="lbl">Subject:</td>
+            <td class="val-right">{{ evaluation.subject ?? 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">College/Department:</td>
+            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
+            <td class="lbl">Semester:</td>
+            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Campus:</td>
+            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
+            <td class="lbl">School Year:</td>
+            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+        </tr>
+    </table>
+
+    {# ═══════════════════════════════════════════
+       COMMENTS (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <div class="comments-section">
+        <h3>Evaluator Comments ({{ comments|length }})</h3>
+        {% if comments|length > 0 %}
+        <ol>
+            {% for c in comments %}
+                <li>{{ c }}</li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="no-comments">No comments were submitted for this evaluation.</p>
+        {% endif %}
+    </div>
+
+    {# ═══════════════════════════════════════════
+       SIGNATURE SECTION (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <div class="signature-section">
+        <div class="sig-block">
+            <div class="sig-label">Prepared by:</div>
+            <div class="sig-name">ARGIE PAIR PAGBUNOCAN</div>
+            <div class="sig-title">QUAMC Staff</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-label">Certified true and correct:</div>
+            <div class="sig-name">CESAR P. ESTROPE, Ed.D.</div>
+            <div class="sig-title">Director, Quality Assurance Management Center</div>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       DISCLAIMER (PAGE 2)
+       ═══════════════════════════════════════════ #}
+    <div class="disclaimer">
+        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
+        addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
+        the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
+        any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the
+        sender. Thank you</em>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       DOCUMENT FOOTER — PAGE 2
+       ═══════════════════════════════════════════ #}
+    <table class="doc-footer-table">
+        <tr>
+            <td class="ft-lbl">Correspondence ID</td>
+            <td class="ft-val"></td>
+            <td class="ft-lbl"></td>
+            <td class="ft-val"></td>
+            <td rowspan="3" class="ft-page">Page <strong>2</strong> of <strong>2</strong></td>
+        </tr>
+        <tr>
+            <td class="ft-lbl">Issue Date</td>
+            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
+            <td class="ft-lbl">Issue Status</td>
+            <td class="ft-val"></td>
+        </tr>
+        <tr>
+            <td class="ft-lbl">Reviewed &amp; authorized by</td>
+            <td class="ft-val">ODQA</td>
+            <td class="ft-lbl">Approved by</td>
+            <td class="ft-val">ODQA</td>
+        </tr>
+    </table>
+
+    {# Auto-trigger print dialog #}
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() { window.print(); }, 400);
+        });
+    </script>
+</body>
+</html>

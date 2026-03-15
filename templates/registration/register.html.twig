@@ -1,0 +1,2379 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create Account | QUAMC Evaluation{% endblock %}
+
+{% block body_class %}no-navbar{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════════════════
+   REGISTRATION PAGE — Professional Split Layout
+   ═══════════════════════════════════════════════════ #}
+
+<div class="rg-page">
+    {# ── LEFT PANEL: Decorative branding ── #}
+    <div class="rg-brand-panel">
+        <div class="rg-brand-bg"></div>
+        <div class="rg-brand-content">
+            <div class="rg-brand-logo-wrap">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="rg-brand-logo">
+            </div>
+            <h1 class="rg-brand-title">SET-SEF Evaluation System</h1>
+            <p class="rg-brand-sub">Join the Negros Oriental State University evaluation community</p>
+
+            <div class="rg-brand-features">
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <strong>Secure Platform</strong>
+                        <span>Enterprise-grade data protection</span>
+                    </div>
+                </div>
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div>
+                        <strong>Smart Analytics</strong>
+                        <span>Data-driven evaluation insights</span>
+                    </div>
+                </div>
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-people"></i></div>
+                    <div>
+                        <strong>Collaborative</strong>
+                        <span>University-wide assessment tools</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rg-brand-footer">
+                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── RIGHT PANEL: Registration form ── #}
+    <div class="rg-form-panel">
+        <div class="rg-form-scroll">
+            <div class="rg-form-inner">
+
+                {# Step progress indicator #}
+                <div class="rg-steps" id="rgSteps">
+                    <div class="rg-step active" data-step="1">
+                        <div class="rg-step-num">1</div>
+                        <span>Select Role</span>
+                    </div>
+                    <div class="rg-step-line"></div>
+                    <div class="rg-step" data-step="2">
+                        <div class="rg-step-num">2</div>
+                        <span>Your Details</span>
+                    </div>
+                </div>
+
+                <h2 class="rg-title" id="rgTitle">Choose your role</h2>
+                <p class="rg-subtitle" id="rgSubtitle">Select how you'll use the evaluation system</p>
+
+                {# ═══ STEP 1: Role Selection ═══ #}
+                <div id="roleStep" class="rg-step-content">
+                    <div class="rg-role-grid">
+                        <button type="button" class="rg-role-card" data-role="student" onclick="selectRole('student')">
+                            <div class="rg-role-icon-wrap rg-role-student">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Student</h4>
+                                <p>Evaluate faculty performance and participate in academic assessments</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="faculty" onclick="selectRole('faculty')">
+                            <div class="rg-role-icon-wrap rg-role-faculty">
+                                <i class="bi bi-person-workspace"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Faculty</h4>
+                                <p>Access evaluation results, analytics and faculty development tools</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="staff" onclick="selectRole('staff')">
+                            <div class="rg-role-icon-wrap rg-role-staff">
+                                <i class="bi bi-clipboard2-check-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Staff</h4>
+                                <p>Manage evaluations, generate reports and oversee processes</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="superior" onclick="selectRole('superior')">
+                            <div class="rg-role-icon-wrap rg-role-superior">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Superior</h4>
+                                <p>Evaluate Deans and Department Heads, review institutional performance</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+                    </div>
+
+                    <div class="rg-login-link mt-4">
+                        Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
+                    </div>
+                </div>
+
+                {# ═══ STEP 2: Registration Form ═══ #}
+                <div id="formStep" class="rg-step-content d-none">
+                    <div class="rg-selected-role" id="selectedRoleBadge">
+                        <span class="rg-role-pill" id="rolePill"></span>
+                        <button type="button" class="rg-change-role" id="changeRoleBtn">
+                            <i class="bi bi-arrow-left-short"></i>Change
+                        </button>
+                    </div>
+
+                    {{ form_start(registrationForm, {'attr': {'id': 'regForm', 'class': 'rg-form', 'novalidate': 'novalidate'}}) }}
+
+                        {# Hidden role select + unused Symfony widgets #}
+                        <div class="d-none">
+                            {{ form_widget(registrationForm.role) }}
+                            {{ form_widget(registrationForm.course) }}
+                            {{ form_widget(registrationForm.department) }}
+                        </div>
+
+                        {# ── Honeypot: hidden from humans, bots auto-fill it ── #}
+                        <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden;">
+                            <label for="reg_website">Leave this empty</label>
+                            {{ form_widget(registrationForm.website, {'attr': {'id': 'reg_website', 'tabindex': '-1', 'autocomplete': 'off'}}) }}
+                        </div>
+
+                        {# ── Timestamp for timing-based bot detection ── #}
+                        {{ form_widget(registrationForm._ts) }}
+
+                        {# ── Security error alert ── #}
+                        {% if securityError|default(null) %}
+                        <div class="rg-security-alert">
+                            <i class="bi bi-shield-exclamation"></i>
+                            <div>
+                                <strong>Security Notice</strong>
+                                <p>{{ securityError }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {# ── Section: Personal Information ── #}
+                        <div class="rg-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-person-circle"></i>
+                                <span>Personal Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">First Name <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person"></i>
+                                        {{ form_widget(registrationForm.firstName, {'attr': {'placeholder': 'First name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.firstName) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Last Name <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person"></i>
+                                        {{ form_widget(registrationForm.lastName, {'attr': {'placeholder': 'Last name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.lastName) }}
+                                </div>
+                            </div>
+                            <div class="mt-3 role-field" data-for="faculty staff superior" id="emailField" style="display:none">
+                                <label class="rg-label">Email Address <span class="text-danger">*</span></label>
+                                <div class="rg-input-wrap">
+                                    <i class="bi bi-envelope"></i>
+                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input'}}) }}
+                                </div>
+                                {{ form_errors(registrationForm.email) }}
+                            </div>
+                        </div>
+
+                        {# ── Section: Student Details ── #}
+                        <div class="rg-section role-field" data-for="student" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-mortarboard"></i>
+                                <span>Academic Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Student ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-badge"></i>
+                                        {{ form_widget(registrationForm.schoolId, {'attr': {'placeholder': 'e.g. 2024-00123', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.schoolId) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Year Level</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-layers"></i>
+                                        {{ form_widget(registrationForm.yearLevel, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.yearLevel) }}
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">College</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-bank2"></i>
+                                        <select id="studentCollege" class="form-select rg-select" onchange="filterStudentDepts()" required>
+                                            <option value="">Select college</option>
+                                            {% for college in colleges %}
+                                                <option value="{{ college }}">{{ college }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Department</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <select id="studentDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
+                                            <option value="">Select college first</option>
+                                        </select>
+                                    </div>
+                                    {{ form_errors(registrationForm.department) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Faculty Details ── #}
+                        <div class="rg-section role-field" data-for="faculty" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-person-workspace"></i>
+                                <span>Faculty Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Campus</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ form_widget(registrationForm.campus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.campus) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">College</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-bank2"></i>
+                                        <select id="facultyCollege" class="form-select rg-select" onchange="filterFacultyDepts()" required>
+                                            <option value="">Select college</option>
+                                            {% for college in colleges %}
+                                                <option value="{{ college }}">{{ college }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Department</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <select id="facultyDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
+                                            <option value="">Select college first</option>
+                                        </select>
+                                    </div>
+                                    {{ form_errors(registrationForm.department) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employment Status</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-briefcase"></i>
+                                        {{ form_widget(registrationForm.employmentStatus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.employmentStatus) }}
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employee ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Staff Details ── #}
+                        <div class="rg-section role-field" data-for="staff" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-clipboard2-check"></i>
+                                <span>Staff Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Office / Unit</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <input type="text" class="form-control rg-input" name="_office" placeholder="e.g. Registrar's Office" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Staff ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_staff_id" placeholder="e.g. STF-0001" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Superior Information ── #}
+                        <div class="rg-section role-field" data-for="superior" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-star"></i>
+                                <span>Superior Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Position / Designation</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-briefcase"></i>
+                                        <select class="form-select rg-select" name="_position" required>
+                                            <option value="">Select position</option>
+                                            <option value="President">President</option>
+                                            <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
+                                            <option value="Campus Director">Campus Director</option>
+                                            <option value="Dean">Dean</option>
+                                            <option value="Program Chair">Program Chair</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employee ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Academic Rank</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-award"></i>
+                                        <select class="form-select rg-select" name="_academic_rank" required>
+                                            <option value="">Select academic rank</option>
+                                            <option value="Part-time">Part-time</option>
+                                            <option value="Temporary">Temporary</option>
+                                            <option value="Instructor">Instructor</option>
+                                            <option value="Assistant Professor">Assistant Professor</option>
+                                            <option value="Associate Professor">Associate Professor</option>
+                                            <option value="Professor">Professor</option>
+                                            <option value="University Professor">University Professor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Security ── #}
+                        <div class="rg-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-shield-lock"></i>
+                                <span>Create Password</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Password <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-lock"></i>
+                                        {{ form_widget(registrationForm.plainPassword.first, {'attr': {'placeholder': 'Create a password', 'class': 'form-control rg-input', 'id': 'regPwd', 'autocomplete': 'new-password', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.plainPassword.first) }}
+                                    <div class="rg-pwd-strength" id="pwdStrength">
+                                        <div class="rg-pwd-bar"><span id="pwdBar"></span></div>
+                                        <small id="pwdText">Enter a password</small>
+                                    </div>
+                                    {# Password requirements checklist #}
+                                    <div class="rg-pwd-requirements" id="pwdRequirements">
+                                        <div class="rg-pwd-req" id="reqLength">
+                                            <i class="bi bi-circle"></i>
+                                            <span>At least 8 characters</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqUpper">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One uppercase letter (A–Z)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqLower">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One lowercase letter (a–z)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqNumber">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One number (0–9)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqSpecial">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One special character (!@#$...)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Confirm Password <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-shield-lock-fill"></i>
+                                        {{ form_widget(registrationForm.plainPassword.second, {'attr': {'placeholder': 'Confirm password', 'class': 'form-control rg-input', 'id': 'regPwdConfirm', 'autocomplete': 'new-password', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.plainPassword) }}
+                                    {# Password match indicator #}
+                                    <div class="rg-pwd-match d-none" id="pwdMatchIndicator">
+                                        <i class="bi bi-circle"></i>
+                                        <span>Passwords match</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Terms & Data Privacy ── #}
+                        <div class="rg-section rg-terms-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-file-earmark-lock2"></i>
+                                <span>Terms & Data Privacy</span>
+                            </div>
+                            <div class="rg-terms-box">
+                                <div class="rg-terms-scroll">
+                                    <h6>Data Privacy Notice</h6>
+                                    <p>In compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>, the information you provide will be used solely for the purpose of faculty evaluation and academic quality assurance within NORSU.</p>
+                                    <h6>Terms of Use</h6>
+                                    <ul>
+                                        <li>Your evaluation responses will be kept <strong>confidential</strong> and used only for institutional improvement.</li>
+                                        <li>You agree not to share your account credentials with others.</li>
+                                        <li>Any misuse of the system may result in account suspension.</li>
+                                        <li>Anonymous evaluation data may be used in aggregate reports.</li>
+                                    </ul>
+                                    <h6>Data Collection</h6>
+                                    <p>We collect: name, email, school/employee ID, department, and evaluation responses. This data is stored securely and access is restricted to authorized personnel only.</p>
+                                </div>
+                            </div>
+                            <div class="rg-terms-check">
+                                <label class="rg-checkbox-wrap" id="termsCheckboxWrap">
+                                    <input type="checkbox" name="{{ registrationForm.agreeTerms.vars.full_name }}" id="agreeTermsCheck" value="1" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">
+                                    <span class="rg-checkbox-box" id="termsCheckboxBox">
+                                        <i class="bi bi-check-lg"></i>
+                                    </span>
+                                    <span class="rg-checkbox-label">
+                                        I have read and agree to the <strong>Terms of Use</strong> and <strong>Data Privacy Policy</strong> in accordance with RA 10173.
+                                    </span>
+                                </label>
+                                {{ form_errors(registrationForm.agreeTerms) }}
+                            </div>
+                        </div>
+
+                        {# Approval notice #}
+                        <div class="rg-notice role-field" data-for="faculty staff superior" style="display:none">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Admin Approval Required</strong>
+                                <p>Faculty, Staff, and Superior accounts require administrator approval before access is granted.</p>
+                            </div>
+                        </div>
+
+                        {# Submit button #}
+                        <button type="submit" class="rg-submit-btn" id="regSubmitBtn">
+                            <span class="rg-submit-text">
+                                <i class="bi bi-person-plus-fill me-2"></i>Create Account
+                            </span>
+                            <span class="rg-submit-loading d-none">
+                                <span class="rg-loading-spinner"></span>
+                                <span>Creating Account</span>
+                                <span class="rg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
+                            </span>
+                            <span class="rg-btn-progress"></span>
+                        </button>
+
+                        <div class="rg-login-link mt-3">
+                            Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
+                        </div>
+                    {% do registrationForm.agreeTerms.setRendered %}
+                    {{ form_end(registrationForm) }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   APPROVAL CONFIRMATION MODAL (before submit)
+   ═══════════════════════════════════════════════════ #}
+<div class="modal fade" id="approvalConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content" style="border:none;border-radius:1.25rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.18);">
+            <div class="modal-body text-center px-4 py-4 position-relative">
+                <div class="rg-confirm-icon-wrap mb-3">
+                    <div class="rg-confirm-icon">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mb-2" style="color:#1E293B;font-size:1.2rem;">Admin Approval Required</h4>
+                <p style="font-size:0.88rem;color:#64748B;margin-bottom:0.75rem;line-height:1.5;">
+                    Your account will need to be <strong style="color:#D97706;">approved by an administrator</strong> before you can log in.
+                </p>
+
+                <div class="rg-confirm-info">
+                    <div class="rg-confirm-info-item">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Approval may take some time. Please wait for the admin to activate your account.</span>
+                    </div>
+                    <div class="rg-confirm-info-item">
+                        <i class="bi bi-envelope-check"></i>
+                        <span>You may contact the QUAMC office for faster processing.</span>
+                    </div>
+                </div>
+
+                <div class="rg-confirm-contact">
+                    <div class="rg-confirm-contact-header">
+                        <i class="bi bi-headset"></i>
+                        <strong>Contact Admin</strong>
+                    </div>
+                    <div class="rg-confirm-contact-row">
+                        <a href="mailto:quamc@norsu.edu.ph" class="rg-confirm-chip">
+                            <i class="bi bi-envelope-fill"></i> quamc@norsu.edu.ph
+                        </a>
+                        <a href="tel:+63351234567" class="rg-confirm-chip">
+                            <i class="bi bi-telephone-fill"></i> (035) 123-4567
+                        </a>
+                    </div>
+                </div>
+
+                <p style="font-size:0.82rem;color:#94A3B8;margin-top:0.75rem;margin-bottom:1rem;">Do you want to proceed with registration?</p>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="rg-confirm-cancel-btn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="rg-confirm-proceed-btn" id="confirmProceedBtn">
+                        <i class="bi bi-check-lg me-1"></i>Yes, Create Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   REGISTRATION SUCCESS MODAL
+   ═══════════════════════════════════════════════════ #}
+<div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content rg-success-modal">
+            <div class="modal-body text-center px-4 py-5 position-relative">
+                {# Confetti #}
+                <div class="success-confetti">
+                    <span class="confetti-piece" style="--x:-60px;--y:-40px;--r:45deg;--c:#3B82F6;--d:0.1s"></span>
+                    <span class="confetti-piece" style="--x:70px;--y:-50px;--r:-30deg;--c:#10B981;--d:0.2s"></span>
+                    <span class="confetti-piece" style="--x:-80px;--y:20px;--r:60deg;--c:#F59E0B;--d:0.15s"></span>
+                    <span class="confetti-piece" style="--x:90px;--y:10px;--r:-45deg;--c:#8B5CF6;--d:0.25s"></span>
+                    <span class="confetti-piece" style="--x:-40px;--y:-70px;--r:20deg;--c:#EC4899;--d:0.05s"></span>
+                    <span class="confetti-piece" style="--x:50px;--y:-65px;--r:-60deg;--c:#06B6D4;--d:0.3s"></span>
+                    <span class="confetti-piece" style="--x:-95px;--y:-15px;--r:75deg;--c:#F97316;--d:0.12s"></span>
+                    <span class="confetti-piece" style="--x:85px;--y:-25px;--r:-15deg;--c:#14B8A6;--d:0.22s"></span>
+                    <span class="confetti-piece confetti-rect" style="--x:60px;--y:40px;--r:30deg;--c:#6366F1;--d:0.18s"></span>
+                    <span class="confetti-piece confetti-rect" style="--x:-70px;--y:50px;--r:-50deg;--c:#EF4444;--d:0.08s"></span>
+                </div>
+
+                <div class="success-check-wrap mb-3">
+                    <svg class="success-check-svg" viewBox="0 0 100 100">
+                        <circle class="success-circle" cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="3"/>
+                        <polyline class="success-tick" points="30,52 45,65 70,38" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <h4 class="fw-bold mb-2" style="color:#1E293B;">Account Created!</h4>
+
+                {% if registeredRole|default(null) == 'student' %}
+                    <p class="text-muted mb-1" style="font-size:0.95rem;">
+                        Your student account has been successfully created.
+                    </p>
+                    <p class="text-muted mb-4" style="font-size:0.9rem;">
+                        You can now log in with your credentials.
+                    </p>
+                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Log In Now
+                    </a>
+                {% else %}
+                    <p class="text-muted mb-1" style="font-size:0.95rem;">
+                        Your account has been successfully created.
+                    </p>
+                    <div class="rg-modal-notice">
+                        <i class="bi bi-hourglass-split"></i>
+                        <div>
+                            <strong>Pending Approval</strong>
+                            <span>Your account requires administrator approval before you can log in.</span>
+                        </div>
+                    </div>
+
+                    {# ── Admin Contact Information ── #}
+                    <div class="rg-modal-contact">
+                        <div class="rg-modal-contact-header">
+                            <i class="bi bi-headset"></i>
+                            <strong>Contact the Administrator</strong>
+                        </div>
+                        <p class="rg-modal-contact-desc">For faster approval or any questions, reach out to the QUAMC office:</p>
+                        <div class="rg-modal-contact-items">
+                            <a href="mailto:quamc@norsu.edu.ph" class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-email"><i class="bi bi-envelope-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Email</span>
+                                    <span class="rg-contact-value">quamc@norsu.edu.ph</span>
+                                </div>
+                            </a>
+                            <a href="tel:+63351234567" class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-phone"><i class="bi bi-telephone-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Phone</span>
+                                    <span class="rg-contact-value">(035) 123-4567</span>
+                                </div>
+                            </a>
+                            <div class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-office"><i class="bi bi-geo-alt-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Office</span>
+                                    <span class="rg-contact-value">QUAMC Office, Admin Bldg.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Go to Login
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════════════════ #}
+<style>
+/* ── Page layout ── */
+.rg-page {
+    display: flex;
+    min-height: 100vh;
+    background: #F8FAFC;
+}
+
+/* ── Left brand panel ── */
+.rg-brand-panel {
+    position: relative;
+    width: 420px;
+    min-width: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+.rg-brand-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,#1E3A8A 0%,#1E40AF 40%,#059669 100%);
+    z-index: 0;
+}
+.rg-brand-bg::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    top: -150px;
+    right: -120px;
+    animation: float 8s ease-in-out infinite;
+}
+.rg-brand-bg::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    bottom: -80px;
+    left: -60px;
+    animation: float 10s ease-in-out infinite reverse;
+}
+.rg-brand-content {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 2.5rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+}
+.rg-brand-logo-wrap {
+    width: 90px;
+    height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+.rg-brand-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+.rg-brand-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+.rg-brand-sub {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+}
+.rg-brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.rg-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+.rg-feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.625rem;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.rg-feature-item strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+}
+.rg-feature-item span {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+.rg-brand-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+    font-size: 0.78rem;
+    opacity: 0.6;
+}
+
+/* ── Right form panel ── */
+.rg-form-panel {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+.rg-form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+}
+.rg-form-inner {
+    width: 100%;
+    max-width: 580px;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+
+
+/* ── Step progress ── */
+.rg-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 1.75rem;
+}
+.rg-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+}
+.rg-step.active {
+    opacity: 1;
+}
+.rg-step.completed .rg-step-num {
+    background: #059669;
+    color: #fff;
+}
+.rg-step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #E5E7EB;
+    color: #6B7280;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.rg-step.active .rg-step-num {
+    background: linear-gradient(135deg,#1E40AF,#059669);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+}
+.rg-step span {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+}
+.rg-step-line {
+    width: 60px;
+    height: 2px;
+    background: #E5E7EB;
+    margin: 0 0.75rem;
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+}
+.rg-step-line.active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,#1E40AF,#059669);
+    animation: rgLineExpand 0.4s ease forwards;
+}
+@keyframes rgLineExpand {
+    from { width: 0; }
+    to   { width: 100%; }
+}
+
+/* ── Titles ── */
+.rg-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.3px;
+}
+.rg-subtitle {
+    font-size: 0.9rem;
+    color: #6B7280;
+    margin-bottom: 1.75rem;
+}
+
+/* ── Role cards ── */
+.rg-role-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.rg-role-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 0.875rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+    width: 100%;
+}
+.rg-role-card:hover {
+    border-color: #1E40AF;
+    background: #F5F8FF;
+    box-shadow: 0 4px 16px rgba(30,64,175,0.1);
+    transform: translateX(4px);
+}
+.rg-role-card:hover .rg-role-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+.rg-role-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+.rg-role-card:hover .rg-role-icon-wrap {
+    transform: scale(1.08);
+}
+.rg-role-student {
+    background: linear-gradient(135deg,#DBEAFE,#EFF6FF);
+    color: #1E40AF;
+}
+.rg-role-faculty {
+    background: linear-gradient(135deg,#D1FAE5,#ECFDF5);
+    color: #059669;
+}
+.rg-role-staff {
+    background: linear-gradient(135deg,#FEF3C7,#FFFBEB);
+    color: #D97706;
+}
+.rg-role-superior {
+    background: linear-gradient(135deg,#EDE9FE,#F5F3FF);
+    color: #7C3AED;
+}
+.rg-role-info {
+    flex: 1;
+    min-width: 0;
+}
+.rg-role-info h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1E293B;
+    margin-bottom: 0.15rem;
+}
+.rg-role-info p {
+    font-size: 0.78rem;
+    color: #6B7280;
+    margin: 0;
+    line-height: 1.4;
+}
+.rg-role-arrow {
+    font-size: 1.1rem;
+    color: #1E40AF;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.25s;
+}
+
+/* ── Selected role badge ── */
+.rg-selected-role {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+.rg-role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+.rg-change-role {
+    background: none;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+.rg-change-role:hover {
+    background: #F3F4F6;
+    color: #374151;
+    border-color: #D1D5DB;
+}
+
+/* ── Form sections ── */
+.rg-section {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.875rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+}
+.rg-section:hover {
+    border-color: #CBD5E1;
+}
+.rg-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1E40AF;
+    margin-bottom: 1rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid #F1F5F9;
+}
+.rg-section-label i {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* ── Input fields ── */
+.rg-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.35rem;
+}
+.rg-input-wrap {
+    position: relative;
+}
+.rg-input-wrap > i {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+    font-size: 0.95rem;
+    z-index: 2;
+    pointer-events: none;
+}
+.rg-input, .rg-select {
+    padding-left: 2.5rem !important;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 0.625rem;
+    font-size: 0.9rem;
+    height: 42px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: #FAFBFC;
+}
+.rg-input:focus, .rg-select:focus {
+    border-color: #1E40AF;
+    box-shadow: 0 0 0 3px rgba(30,64,175,0.1);
+    background-color: #fff;
+}
+
+/* ── Password strength meter ── */
+.rg-pwd-strength {
+    margin-top: 0.5rem;
+}
+.rg-pwd-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: #E5E7EB;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+}
+.rg-pwd-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+    width: 0;
+}
+.rg-pwd-strength small {
+    font-size: 0.72rem;
+    color: #9CA3AF;
+}
+
+/* ── Security error alert ── */
+.rg-security-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #FEF2F2, #FFF1F2);
+    border: 1px solid #FECACA;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: #991B1B;
+    animation: rgShakeIn 0.4s ease;
+}
+.rg-security-alert i {
+    font-size: 1.1rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+    color: #DC2626;
+}
+.rg-security-alert strong {
+    display: block;
+    font-size: 0.82rem;
+    margin-bottom: 0.1rem;
+    color: #7F1D1D;
+}
+.rg-security-alert p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #991B1B;
+    line-height: 1.4;
+}
+@keyframes rgShakeIn {
+    0% { transform: translateX(-8px); opacity: 0; }
+    25% { transform: translateX(6px); }
+    50% { transform: translateX(-4px); }
+    75% { transform: translateX(2px); }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ── Password requirements checklist ── */
+.rg-pwd-requirements {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.rg-pwd-req {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: #9CA3AF;
+    transition: color 0.2s;
+}
+.rg-pwd-req i {
+    font-size: 0.6rem;
+    transition: color 0.2s;
+}
+.rg-pwd-req.met {
+    color: #059669;
+}
+.rg-pwd-req.met i::before {
+    content: "\F26A"; /* bi-check-circle-fill */
+    font-family: "bootstrap-icons" !important;
+}
+.rg-pwd-req.unmet {
+    color: #9CA3AF;
+}
+
+/* ── Password match indicator ── */
+.rg-pwd-match {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    transition: color 0.2s;
+    color: #9CA3AF;
+}
+.rg-pwd-match i {
+    font-size: 0.65rem;
+}
+.rg-pwd-match.matched {
+    color: #059669;
+}
+.rg-pwd-match.matched i::before {
+    content: "\F26A";
+    font-family: "bootstrap-icons" !important;
+}
+.rg-pwd-match.unmatched {
+    color: #DC2626;
+}
+.rg-pwd-match.unmatched i::before {
+    content: "\F622"; /* bi-x-circle-fill */
+    font-family: "bootstrap-icons" !important;
+}
+
+/* ── Terms & Data Privacy section ── */
+.rg-terms-box {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    background: #FAFBFC;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+}
+.rg-terms-scroll {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 0.85rem 1rem;
+    font-size: 0.76rem;
+    color: #475569;
+    line-height: 1.55;
+}
+.rg-terms-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.rg-terms-scroll::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+.rg-terms-scroll::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}
+.rg-terms-scroll h6 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1E293B;
+    margin: 0.5rem 0 0.25rem;
+}
+.rg-terms-scroll h6:first-child {
+    margin-top: 0;
+}
+.rg-terms-scroll ul {
+    padding-left: 1rem;
+    margin: 0.25rem 0 0.5rem;
+}
+.rg-terms-scroll ul li {
+    margin-bottom: 0.2rem;
+}
+.rg-terms-check {
+    padding: 0;
+}
+/* Custom checkbox */
+.rg-checkbox-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+.rg-checkbox-box {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    border: 2px solid #CBD5E1;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    transition: all 0.2s ease;
+    margin-top: 1px;
+    font-size: 0;
+    color: transparent;
+}
+.rg-checkbox-box.checked {
+    background: linear-gradient(135deg, #1E40AF, #059669);
+    border-color: #1E40AF;
+    color: #fff;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.3);
+}
+.rg-checkbox-wrap:hover .rg-checkbox-box {
+    border-color: #1E40AF;
+}
+.rg-checkbox-label {
+    font-size: 0.78rem;
+    color: #475569;
+    line-height: 1.5;
+}
+.rg-checkbox-label strong {
+    color: #1E40AF;
+}
+.rg-terms-section .form-error-message,
+.rg-terms-check .invalid-feedback,
+.rg-terms-check li.form-error-message {
+    color: #DC2626;
+    font-size: 0.75rem;
+    margin-top: 0.4rem;
+    list-style: none;
+    padding: 0;
+}
+
+/* ── Notice ── */
+.rg-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg,#EFF6FF,#F0FDF4);
+    border: 1px solid #BFDBFE;
+    margin-bottom: 1.25rem;
+    font-size: 0.82rem;
+    color: #1E40AF;
+}
+.rg-notice i {
+    font-size: 1.1rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+.rg-notice strong {
+    display: block;
+    font-size: 0.82rem;
+    margin-bottom: 0.15rem;
+}
+.rg-notice p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+/* ── Submit button ── */
+.rg-submit-btn {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+}
+.rg-submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent,rgba(255,255,255,0.1),transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+}
+.rg-submit-btn:hover::before {
+    transform: translateX(100%);
+}
+.rg-submit-btn:hover {
+    box-shadow: 0 6px 20px rgba(30,64,175,0.3);
+    transform: translateY(-1px);
+}
+.rg-submit-btn:active {
+    transform: translateY(0);
+}
+.rg-submit-btn.rg-btn-loading {
+    pointer-events: none;
+    background: linear-gradient(135deg,#1a3279,#1a38a0 50%,#047857);
+    box-shadow: 0 4px 15px rgba(30,64,175,0.35);
+}
+.rg-submit-btn.rg-btn-loading::before {
+    animation: rgShimmerLoop 1.5s infinite;
+}
+.rg-submit-text,
+.rg-submit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s, transform 0.3s;
+}
+.rg-submit-text {
+    opacity: 1;
+    transform: translateY(0);
+}
+.rg-submit-btn.rg-btn-loading .rg-submit-text {
+    opacity: 0;
+    transform: translateY(8px);
+    position: absolute;
+}
+.rg-submit-loading {
+    opacity: 0;
+    transform: translateY(-8px);
+    gap: 0;
+}
+.rg-submit-btn.rg-btn-loading .rg-submit-loading {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* Custom spinner */
+.rg-loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: rgSpin 0.7s linear infinite;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+/* Bouncing dots */
+.rg-loading-dots {
+    display: inline-flex;
+    margin-left: 1px;
+}
+.rg-loading-dots span {
+    animation: rgDotBounce 1.2s ease-in-out infinite;
+    font-weight: 700;
+}
+.rg-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.rg-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+/* Progress bar at bottom of button */
+.rg-btn-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+    border-radius: 0 0 0.75rem 0.75rem;
+    transition: width 0.3s;
+}
+.rg-submit-btn.rg-btn-loading .rg-btn-progress {
+    animation: rgProgress 2s ease-in-out infinite;
+}
+@keyframes rgSpin {
+    to { transform: rotate(360deg); }
+}
+@keyframes rgDotBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes rgShimmerLoop {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+@keyframes rgProgress {
+    0% { width: 0; left: 0; }
+    50% { width: 70%; left: 15%; }
+    100% { width: 0; left: 100%; }
+}
+
+/* ── Login link ── */
+.rg-login-link {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6B7280;
+}
+.rg-login-link a {
+    color: #1E40AF;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.rg-login-link a:hover {
+    color: #1E3A8A;
+    text-decoration: underline;
+}
+
+/* ── Success modal ── */
+.rg-success-modal {
+    border: none;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+    background: linear-gradient(180deg, #f0fdf4 0%, #fff 40%);
+}
+.rg-modal-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 2rem;
+    border-radius: 0.625rem;
+    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.rg-modal-btn:hover {
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30,64,175,0.3);
+    transform: translateY(-1px);
+}
+.rg-modal-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-radius: 0.625rem;
+    background: #FEF3C7;
+    margin: 1rem auto 1.25rem;
+    max-width: 360px;
+    font-size: 0.82rem;
+}
+.rg-modal-notice i {
+    color: #D97706;
+    font-size: 1.1rem;
+    margin-top: 0.1rem;
+}
+.rg-modal-notice strong {
+    display: block;
+    color: #92400E;
+    margin-bottom: 0.1rem;
+}
+.rg-modal-notice span {
+    color: #78350F;
+    font-size: 0.78rem;
+    line-height: 1.3;
+}
+
+/* ── Approval confirmation modal ── */
+.rg-confirm-icon-wrap {
+    display: flex;
+    justify-content: center;
+}
+.rg-confirm-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: #D97706;
+    animation: rgPulseIcon 2s ease-in-out infinite;
+}
+@keyframes rgPulseIcon {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217,119,6,0.2); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(217,119,6,0); }
+}
+.rg-confirm-info {
+    text-align: left;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin: 0.75rem auto;
+    max-width: 370px;
+}
+.rg-confirm-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #92400E;
+    line-height: 1.4;
+    padding: 0.3rem 0;
+}
+.rg-confirm-info-item i {
+    font-size: 0.9rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+    color: #D97706;
+}
+.rg-confirm-contact {
+    text-align: left;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem auto 0;
+    max-width: 370px;
+}
+.rg-confirm-contact-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #1E40AF;
+    font-size: 0.78rem;
+    margin-bottom: 0.5rem;
+}
+.rg-confirm-contact-header i {
+    font-size: 0.9rem;
+}
+.rg-confirm-contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.rg-confirm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2rem;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1E40AF;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.rg-confirm-chip:hover {
+    background: #DBEAFE;
+    color: #1E3A8A;
+    transform: translateY(-1px);
+}
+.rg-confirm-chip i {
+    font-size: 0.7rem;
+}
+.rg-confirm-cancel-btn {
+    padding: 0.55rem 1.5rem;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 0.625rem;
+    background: #fff;
+    color: #6B7280;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.rg-confirm-cancel-btn:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+    color: #374151;
+}
+.rg-confirm-proceed-btn {
+    padding: 0.55rem 1.5rem;
+    border: none;
+    border-radius: 0.625rem;
+    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.rg-confirm-proceed-btn:hover {
+    box-shadow: 0 4px 14px rgba(30,64,175,0.3);
+    transform: translateY(-1px);
+}
+
+/* ── Admin contact section in modal ── */
+.rg-modal-contact {
+    text-align: left;
+    margin: 1rem auto 1.25rem;
+    max-width: 360px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    padding: 1rem 1.1rem;
+}
+.rg-modal-contact-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #1E40AF;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+.rg-modal-contact-header i {
+    font-size: 1rem;
+}
+.rg-modal-contact-header strong {
+    font-weight: 700;
+}
+.rg-modal-contact-desc {
+    font-size: 0.75rem;
+    color: #64748B;
+    margin: 0 0 0.75rem;
+    line-height: 1.4;
+}
+.rg-modal-contact-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+.rg-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.5rem;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+a.rg-contact-item:hover {
+    border-color: #1E40AF;
+    background: #EFF6FF;
+    transform: translateX(3px);
+}
+.rg-contact-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.rg-contact-email {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+.rg-contact-phone {
+    background: #D1FAE5;
+    color: #059669;
+}
+.rg-contact-office {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.rg-contact-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin-bottom: 0.15rem;
+}
+.rg-contact-value {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1E293B;
+    line-height: 1.2;
+}
+
+/* ── Success modal checkmark & confetti animations ── */
+.success-confetti {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--c, #3B82F6);
+    opacity: 0;
+    animation: confettiBurst 0.8s ease-out var(--d, 0s) forwards;
+}
+.confetti-piece.confetti-rect {
+    width: 12px;
+    height: 6px;
+    border-radius: 2px;
+}
+@keyframes confettiBurst {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg) scale(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(var(--x, 0), var(--y, 0)) rotate(var(--r, 0deg)) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(var(--x, 0) * 1.5), calc(var(--y, 0) * 1.5 + 30px)) rotate(calc(var(--r, 0deg) * 2)) scale(0.6);
+    }
+}
+.success-check-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+.success-check-svg {
+    width: 80px;
+    height: 80px;
+}
+.success-circle {
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    animation: successCircleDraw 0.6s ease-out 0.15s forwards;
+}
+@keyframes successCircleDraw {
+    to { stroke-dashoffset: 0; }
+}
+.success-tick {
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    animation: successTickDraw 0.4s ease-out 0.6s forwards;
+}
+@keyframes successTickDraw {
+    to { stroke-dashoffset: 0; }
+}
+
+/* ── Step transition ── */
+.rg-step-content {
+    animation: rgFadeIn 0.35s ease forwards;
+}
+@keyframes rgFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Form section stagger animation ── */
+.rg-form .rg-section {
+    animation: rgSlideUp 0.4s ease both;
+}
+.rg-form .rg-section:nth-child(2) { animation-delay: 0.05s; }
+.rg-form .rg-section:nth-child(3) { animation-delay: 0.1s; }
+.rg-form .rg-section:nth-child(4) { animation-delay: 0.15s; }
+.rg-form .rg-section:nth-child(5) { animation-delay: 0.2s; }
+@keyframes rgSlideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Brand panel entrance animations ── */
+.rg-brand-logo-wrap {
+    animation: scaleIn 0.6s ease 0.2s both;
+}
+.rg-brand-title {
+    animation: slideUp 0.5s ease 0.35s both;
+}
+.rg-brand-sub {
+    animation: slideUp 0.5s ease 0.45s both;
+}
+.rg-feature-item {
+    opacity: 0;
+    animation: slideUp 0.4s ease both;
+}
+.rg-feature-item:nth-child(1) { animation-delay: 0.55s; }
+.rg-feature-item:nth-child(2) { animation-delay: 0.65s; }
+.rg-feature-item:nth-child(3) { animation-delay: 0.75s; }
+
+/* ── Role card entrance animations ── */
+.rg-role-card {
+    opacity: 0;
+    animation: rgSlideUp 0.4s ease both;
+}
+.rg-role-card:nth-child(1) { animation-delay: 0.15s; }
+.rg-role-card:nth-child(2) { animation-delay: 0.25s; }
+.rg-role-card:nth-child(3) { animation-delay: 0.35s; }
+
+/* ═══ RESPONSIVE ═══ */
+/* ═══ TABLET ═══ */
+@media (max-width: 991.98px) {
+    .rg-brand-panel {
+        display: none;
+    }
+    .rg-page {
+        background: linear-gradient(135deg,rgba(30,58,138,0.92),rgba(30,64,175,0.88) 40%,rgba(5,150,105,0.82) 100%);
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 0.75rem;
+    }
+    .rg-form-panel {
+        max-width: 520px;
+        width: 100%;
+        margin: 0 auto;
+        border-radius: 1.25rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08);
+        background: #fff;
+        overflow: hidden;
+        max-height: calc(100vh - 1.5rem);
+        max-height: calc(100dvh - 1.5rem);
+    }
+    .rg-form-scroll {
+        padding: 1.75rem 1.5rem;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    .rg-form-inner {
+        padding-top: 0;
+        padding-bottom: 1rem;
+    }
+
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 575.98px) {
+    .rg-page {
+        align-items: center;
+        padding: 0.5rem;
+    }
+    .rg-form-panel {
+        margin: 0;
+        border-radius: 1rem;
+        max-width: 100%;
+        max-height: calc(100vh - 1rem);
+        max-height: calc(100dvh - 1rem);
+    }
+    .rg-form-scroll {
+        padding: 1.25rem 1rem;
+    }
+    .rg-title {
+        font-size: 1.25rem;
+    }
+    .rg-subtitle {
+        font-size: 0.82rem;
+        margin-bottom: 1.25rem;
+    }
+    /* Role cards - bigger touch targets */
+    .rg-role-card {
+        padding: 0.95rem 1rem;
+        min-height: 64px;
+    }
+    .rg-role-icon-wrap {
+        width: 42px;
+        height: 42px;
+        font-size: 1.15rem;
+    }
+    .rg-role-info h4 {
+        font-size: 0.88rem;
+    }
+    .rg-role-info p {
+        font-size: 0.74rem;
+    }
+    .rg-role-arrow {
+        opacity: 0.5;
+        transform: translateX(0);
+    }
+    /* Section cards */
+    .rg-section {
+        padding: 1rem;
+        border-radius: 0.75rem;
+    }
+    .rg-section-label {
+        font-size: 0.78rem;
+    }
+    /* Inputs - minimum 44px touch target */
+    .rg-input, .rg-select {
+        height: 42px;
+        font-size: 0.88rem;
+    }
+    /* Steps */
+    .rg-steps {
+        margin-bottom: 1.25rem;
+    }
+    .rg-step span {
+        font-size: 0.72rem;
+    }
+    .rg-step-num {
+        width: 28px;
+        height: 28px;
+        font-size: 0.72rem;
+    }
+    .rg-step-line {
+        width: 40px;
+    }
+    /* Submit button */
+    .rg-submit-btn {
+        padding: 0.85rem;
+        font-size: 0.95rem;
+        min-height: 48px;
+    }
+    /* Login link */
+    .rg-login-link {
+        font-size: 0.82rem;
+        padding: 0.5rem 0;
+    }
+    /* Selected role badge */
+    .rg-role-pill {
+        font-size: 0.75rem;
+    }
+    .rg-change-role {
+        min-height: 36px;
+        padding: 0.35rem 0.85rem;
+    }
+    /* Notice */
+    .rg-notice {
+        font-size: 0.8rem;
+        padding: 0.75rem 0.85rem;
+    }
+    /* Password strength */
+    .rg-pwd-bar {
+        height: 5px;
+    }
+}
+
+/* ═══ SMALL MOBILE ═══ */
+@media (max-width: 400px) {
+    .rg-page {
+        padding: 0.25rem;
+    }
+    .rg-form-panel {
+        border-radius: 0.75rem;
+        max-height: calc(100dvh - 0.5rem);
+    }
+    .rg-form-scroll {
+        padding: 1rem 0.85rem;
+    }
+    .rg-title {
+        font-size: 1.15rem;
+    }
+    .rg-subtitle {
+        font-size: 0.78rem;
+    }
+    .rg-role-card {
+        gap: 0.75rem;
+    }
+    .rg-section {
+        padding: 0.85rem;
+    }
+    .rg-section-label {
+        font-size: 0.75rem;
+    }
+    .rg-label {
+        font-size: 0.78rem;
+    }
+    .rg-input, .rg-select {
+        height: 40px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rg-step-content,
+    .rg-form .rg-section,
+    .rg-brand-bg::before,
+    .rg-brand-bg::after,
+    .rg-brand-logo-wrap,
+    .rg-brand-title,
+    .rg-brand-sub,
+    .rg-feature-item,
+    .rg-role-card {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+}
+</style>
+
+{# ═══════════════════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════════════════ #}
+<script>
+(function() {
+    'use strict';
+
+    /* ── DOM references ── */
+    var roleStep     = document.getElementById('roleStep');
+    var formStep     = document.getElementById('formStep');
+    var rgTitle      = document.getElementById('rgTitle');
+    var rgSubtitle   = document.getElementById('rgSubtitle');
+    var rolePill     = document.getElementById('rolePill');
+    var changeRoleBtn= document.getElementById('changeRoleBtn');
+    var roleSelect   = document.getElementById('{{ registrationForm.role.vars.id }}');
+    var regForm      = document.getElementById('regForm');
+    var submitBtn    = document.getElementById('regSubmitBtn');
+    var stepsEl      = document.getElementById('rgSteps');
+
+    var roleConfig = {
+        student: { label: 'Student', icon: 'bi-mortarboard-fill', color: '#1E40AF', bg: 'linear-gradient(135deg,#1E40AF,#3B82F6)' },
+        faculty: { label: 'Faculty', icon: 'bi-person-workspace', color: '#059669', bg: 'linear-gradient(135deg,#059669,#10B981)' },
+        staff:    { label: 'Staff',    icon: 'bi-clipboard2-check-fill', color: '#D97706', bg: 'linear-gradient(135deg,#D97706,#F59E0B)' },
+        superior: { label: 'Superior', icon: 'bi-star-fill',             color: '#7C3AED', bg: 'linear-gradient(135deg,#7C3AED,#8B5CF6)' }
+    };
+
+    /* ── Step progress helpers ── */
+    function setStep(num) {
+        var steps = stepsEl.querySelectorAll('.rg-step');
+        var line  = stepsEl.querySelector('.rg-step-line');
+        steps.forEach(function(s) {
+            var n = parseInt(s.getAttribute('data-step'));
+            s.classList.remove('active', 'completed');
+            if (n === num)   s.classList.add('active');
+            if (n < num)     s.classList.add('completed');
+        });
+        if (line) {
+            if (num > 1) line.classList.add('active');
+            else         line.classList.remove('active');
+        }
+    }
+
+    /* ── Select role ── */
+    window.selectRole = function(role) {
+        var cfg = roleConfig[role];
+        if (!cfg) return;
+        if (roleSelect) roleSelect.value = role;
+
+        rolePill.innerHTML = '<i class="bi ' + cfg.icon + ' me-1"></i>' + cfg.label;
+        rolePill.style.background = cfg.bg;
+
+        rgTitle.textContent = 'Create your account';
+        rgSubtitle.textContent = 'Fill in your details to register as ' + cfg.label;
+
+        /* Show/hide role-specific fields & toggle required */
+        document.querySelectorAll('.role-field').forEach(function(el) {
+            var forRoles = el.getAttribute('data-for').split(' ');
+            var visible = forRoles.indexOf(role) !== -1;
+            el.style.display = visible ? '' : 'none';
+            el.querySelectorAll('input[required], select[required]').forEach(function(inp) {
+                if (!visible) {
+                    inp.removeAttribute('required');
+                    inp.setAttribute('data-was-required', '1');
+                } else {
+                    inp.setAttribute('required', 'required');
+                }
+            });
+        });
+
+        /* Prevent duplicate department field submission */
+        if (hiddenDeptSelect) hiddenDeptSelect.disabled = true;
+        if (role === 'student') {
+            if (studentDeptSel) studentDeptSel.disabled = false;
+            if (facultyDeptSel) facultyDeptSel.disabled = true;
+        } else if (role === 'faculty') {
+            if (studentDeptSel) studentDeptSel.disabled = true;
+            if (facultyDeptSel) facultyDeptSel.disabled = false;
+        } else {
+            if (studentDeptSel) studentDeptSel.disabled = true;
+            if (facultyDeptSel) facultyDeptSel.disabled = true;
+        }
+        if (role !== 'faculty' && facultyCollegeSel) {
+            facultyCollegeSel.value = '';
+            if (facultyDeptSel) {
+                facultyDeptSel.innerHTML = '<option value="">Select college first</option>';
+                facultyDeptSel.disabled = true;
+            }
+        }
+        if (role !== 'student' && studentCollegeSel) {
+            studentCollegeSel.value = '';
+            if (studentDeptSel) {
+                studentDeptSel.innerHTML = '<option value="">Select college first</option>';
+                studentDeptSel.disabled = true;
+            }
+        }
+
+        /* Transition steps */
+        setStep(2);
+        roleStep.classList.add('d-none');
+        formStep.classList.remove('d-none');
+        formStep.style.animation = 'none';
+        void formStep.offsetHeight;
+        formStep.style.animation = 'rgFadeIn 0.35s ease forwards';
+    };
+
+    /* ── Change role ── */
+    if (changeRoleBtn) {
+        changeRoleBtn.addEventListener('click', function() {
+            formStep.classList.add('d-none');
+            roleStep.classList.remove('d-none');
+            roleStep.style.animation = 'none';
+            void roleStep.offsetHeight;
+            roleStep.style.animation = 'rgFadeIn 0.35s ease forwards';
+            setStep(1);
+            rgTitle.textContent = 'Choose your role';
+            rgSubtitle.textContent = 'Select how you\'ll use the evaluation system';
+        });
+    }
+
+    /* ── Submit with approval confirmation for non-student roles ── */
+    var approvalModal = null;
+    var approvalModalEl = document.getElementById('approvalConfirmModal');
+    if (approvalModalEl) {
+        approvalModal = new bootstrap.Modal(approvalModalEl);
+    }
+    var confirmProceedBtn = document.getElementById('confirmProceedBtn');
+    var formConfirmed = false;
+
+    if (regForm) {
+        regForm.addEventListener('submit', function(e) {
+            var selectedRole = roleSelect ? roleSelect.value : '';
+            var needsApproval = (selectedRole === 'faculty' || selectedRole === 'staff' || selectedRole === 'superior');
+
+            /* Always validate the form first — if invalid, let the browser show errors */
+            if (!regForm.checkValidity()) {
+                regForm.reportValidity();
+                e.preventDefault();
+                return;
+            }
+
+            /* If non-student and not yet confirmed, show the approval modal */
+            if (needsApproval && !formConfirmed && approvalModal) {
+                e.preventDefault();
+                approvalModal.show();
+                return;
+            }
+
+            /* Show loading state on actual submit */
+            var load = submitBtn.querySelector('.rg-submit-loading');
+            if (load) load.classList.remove('d-none');
+            submitBtn.classList.add('rg-btn-loading');
+            submitBtn.disabled = true;
+        });
+    }
+
+    /* When user confirms in the modal, submit the form */
+    if (confirmProceedBtn) {
+        confirmProceedBtn.addEventListener('click', function() {
+            formConfirmed = true;
+            approvalModal.hide();
+            regForm.requestSubmit();
+        });
+    }
+
+    /* Reset confirmation flag if modal is dismissed */
+    if (approvalModalEl) {
+        approvalModalEl.addEventListener('hidden.bs.modal', function() {
+            formConfirmed = false;
+        });
+    }
+
+    /* ── Terms checkbox toggle ── */
+    var termsWrap = document.getElementById('termsCheckboxWrap');
+    var termsCheckbox = document.getElementById('agreeTermsCheck');
+    var termsBox = document.getElementById('termsCheckboxBox');
+    if (termsWrap && termsCheckbox && termsBox) {
+        termsWrap.addEventListener('click', function(e) {
+            e.preventDefault();
+            termsCheckbox.checked = !termsCheckbox.checked;
+            termsBox.classList.toggle('checked', termsCheckbox.checked);
+        });
+    }
+
+    /* ── Password strength meter + requirements checklist ── */
+    var pwdInput = document.getElementById('regPwd') || document.getElementById('{{ registrationForm.plainPassword.first.vars.id }}');
+    var pwdBar   = document.getElementById('pwdBar');
+    var pwdText  = document.getElementById('pwdText');
+    var pwdConfirmInput = document.getElementById('regPwdConfirm') || document.getElementById('{{ registrationForm.plainPassword.second.vars.id }}');
+    var pwdMatchIndicator = document.getElementById('pwdMatchIndicator');
+
+    /* Requirements elements */
+    var reqLength  = document.getElementById('reqLength');
+    var reqUpper   = document.getElementById('reqUpper');
+    var reqLower   = document.getElementById('reqLower');
+    var reqNumber  = document.getElementById('reqNumber');
+    var reqSpecial = document.getElementById('reqSpecial');
+
+    function setReq(el, met) {
+        if (!el) return;
+        var icon = el.querySelector('i');
+        if (met) {
+            el.classList.add('met');
+            el.classList.remove('unmet');
+            if (icon) { icon.className = 'bi bi-check-circle-fill'; }
+        } else {
+            el.classList.remove('met');
+            el.classList.add('unmet');
+            if (icon) { icon.className = 'bi bi-circle'; }
+        }
+    }
+
+    function checkPasswordMatch() {
+        if (!pwdConfirmInput || !pwdMatchIndicator) return;
+        var pwd = pwdInput ? pwdInput.value : '';
+        var confirm = pwdConfirmInput.value;
+        var icon = pwdMatchIndicator.querySelector('i');
+        if (!confirm) {
+            pwdMatchIndicator.classList.add('d-none');
+            return;
+        }
+        pwdMatchIndicator.classList.remove('d-none');
+        if (pwd === confirm) {
+            pwdMatchIndicator.classList.add('matched');
+            pwdMatchIndicator.classList.remove('unmatched');
+            pwdMatchIndicator.querySelector('span').textContent = 'Passwords match';
+            if (icon) icon.className = 'bi bi-check-circle-fill';
+        } else {
+            pwdMatchIndicator.classList.add('unmatched');
+            pwdMatchIndicator.classList.remove('matched');
+            pwdMatchIndicator.querySelector('span').textContent = 'Passwords do not match';
+            if (icon) icon.className = 'bi bi-x-circle-fill';
+        }
+    }
+
+    if (pwdInput && pwdBar && pwdText) {
+        pwdInput.addEventListener('input', function() {
+            var v = this.value;
+            var hasLength  = v.length >= 8;
+            var hasUpper   = /[A-Z]/.test(v);
+            var hasLower   = /[a-z]/.test(v);
+            var hasNumber  = /\d/.test(v);
+            var hasSpecial = /[^A-Za-z0-9]/.test(v);
+
+            /* Update requirements checklist */
+            setReq(reqLength, hasLength);
+            setReq(reqUpper, hasUpper);
+            setReq(reqLower, hasLower);
+            setReq(reqNumber, hasNumber);
+            setReq(reqSpecial, hasSpecial);
+
+            /* Calculate score for strength bar */
+            var score = 0;
+            if (hasLength) score++;
+            if (v.length >= 12) score++;
+            if (hasUpper && hasLower) score++;
+            if (hasNumber) score++;
+            if (hasSpecial) score++;
+
+            var levels = [
+                { w: '0%',   c: '#E5E7EB', t: 'Enter a password' },
+                { w: '20%',  c: '#EF4444', t: 'Weak' },
+                { w: '40%',  c: '#F59E0B', t: 'Fair' },
+                { w: '60%',  c: '#F59E0B', t: 'Good' },
+                { w: '80%',  c: '#10B981', t: 'Strong' },
+                { w: '100%', c: '#059669', t: 'Very Strong' }
+            ];
+            var lv = levels[score] || levels[0];
+            if (!v) lv = levels[0];
+            pwdBar.style.width = lv.w;
+            pwdBar.style.background = lv.c;
+            pwdText.textContent = lv.t;
+            pwdText.style.color = lv.c;
+
+            /* Re-check match */
+            checkPasswordMatch();
+        });
+    }
+
+    /* Confirm password match check */
+    if (pwdConfirmInput) {
+        pwdConfirmInput.addEventListener('input', checkPasswordMatch);
+    }
+
+    /* ── Success modal ── */
+    {% if registrationSuccess|default(false) %}
+    var successModal = new bootstrap.Modal(document.getElementById('registrationSuccessModal'));
+    successModal.show();
+    {% endif %}
+
+    /* ═══ College → Department filter (shared) ═══ */
+    var deptCollegeMap = {{ deptCollegeMap|json_encode|raw }};
+    var hiddenDeptSelect = document.getElementById('{{ registrationForm.department.vars.id }}');
+    var studentCollegeSel = document.getElementById('studentCollege');
+    var studentDeptSel    = document.getElementById('studentDepartment');
+    var facultyCollegeSel = document.getElementById('facultyCollege');
+    var facultyDeptSel    = document.getElementById('facultyDepartment');
+
+    /* Harvest all department options from the hidden Symfony select */
+    var allDeptOptions = [];
+    if (hiddenDeptSelect) {
+        Array.prototype.slice.call(hiddenDeptSelect.options).forEach(function(opt) {
+            if (opt.value) {
+                allDeptOptions.push({ value: opt.value, text: opt.text });
+            }
+        });
+        hiddenDeptSelect.disabled = true;
+    }
+
+    function filterDeptsByCollege(collegeSel, deptSel) {
+        var college = collegeSel.value;
+        deptSel.innerHTML = '';
+
+        if (!college) {
+            deptSel.innerHTML = '<option value="">Select college first</option>';
+            deptSel.disabled = true;
+            return;
+        }
+
+        var placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select department';
+        deptSel.appendChild(placeholder);
+
+        var count = 0;
+        allDeptOptions.forEach(function(opt) {
+            if (deptCollegeMap[opt.value] === college) {
+                var o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.text;
+                deptSel.appendChild(o);
+                count++;
+            }
+        });
+
+        deptSel.disabled = (count === 0);
+        if (count === 0) {
+            deptSel.innerHTML = '<option value="">No departments found</option>';
+        }
+    }
+
+    window.filterStudentDepts = function() {
+        filterDeptsByCollege(studentCollegeSel, studentDeptSel);
+    };
+
+    window.filterFacultyDepts = function() {
+        filterDeptsByCollege(facultyCollegeSel, facultyDeptSel);
+    };
+})();
+</script>
+{% endblock %}

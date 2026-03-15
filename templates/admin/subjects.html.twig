@@ -1,0 +1,697 @@
+{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Subjects | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{% set isReadOnly = readOnly|default(false) %}
+{% set baseRoute = isReadOnly ? 'faculty_department_subjects' : (prefix ~ '_subjects') %}
+{# ═══════════════════════════════════════
+   COMPUTE STATS
+   ═══════════════════════════════════════ #}
+{% set totalSubjects = subjects|length %}
+{% set totalUnits = 0 %}
+{% set deptSet = [] %}
+{% for s in subjects %}
+    {% set totalUnits = totalUnits + (s.units ?? 0) %}
+    {% if s.department and s.department.departmentName not in deptSet %}
+        {% set deptSet = deptSet|merge([s.department.departmentName]) %}
+    {% endif %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="sb-header">
+    <div class="sb-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sb-header-icon">
+                    <i class="bi bi-book-half"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject Management</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalFiltered }} Record{{ totalFiltered != 1 ? 's' : '' }}</span>
+                        {% if filterDept or filterSemester or filterCollege %}
+                            <span class="sb-meta-pill sb-meta-filter"><i class="bi bi-funnel-fill me-1"></i>Filtered</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if not isReadOnly %}
+            <div class="d-flex gap-2 mt-1">
+                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="bi bi-plus-lg me-1"></i>Add Subject
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="sb-stats-row">
+            <div class="sb-stat">
+                <span class="sb-stat-val">{{ totalSubjects }}</span>
+                <span class="sb-stat-lbl">Total Subjects</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
+                <span class="sb-stat-val">{{ totalUnits }}</span>
+                <span class="sb-stat-lbl">Total Units</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
+                <span class="sb-stat-val">{{ deptSet|length }}</span>
+                <span class="sb-stat-lbl">Departments</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   FILTER / SEARCH BAR
+   ═══════════════════════════════════════ #}
+<div class="sb-toolbar">
+    <div class="sb-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="sb-search" id="sbSearchInput" placeholder="Search by code or name..." oninput="sbFilterTable()">
+    </div>
+    <form method="get" action="{{ path(baseRoute) }}" class="sb-filter-form" id="sbFilterForm">
+        <div class="sb-filter-group">
+            <i class="bi bi-mortarboard-fill sb-filter-icon"></i>
+            <select name="college" class="sb-filter-select" onchange="this.form.submit()" style="min-width:200px;">
+                <option value="">All Colleges</option>
+                {% for c in colleges %}
+                    <option value="{{ c }}" {{ filterCollege == c ? 'selected' }}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sb-filter-group">
+            <i class="bi bi-building sb-filter-icon"></i>
+            <select name="department" class="sb-filter-select" onchange="this.form.submit()" style="min-width:180px;">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {{ filterDept is not null and filterDept == dept.id ? 'selected' }}>{{ dept.departmentName }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sb-filter-group">
+            <i class="bi bi-calendar-event sb-filter-icon"></i>
+            <select name="semester" class="sb-filter-select" onchange="this.form.submit()" style="min-width:150px;">
+                <option value="">All Semesters</option>
+                <option value="1st Semester" {{ filterSemester == '1st Semester' ? 'selected' }}>1st Semester</option>
+                <option value="2nd Semester" {{ filterSemester == '2nd Semester' ? 'selected' }}>2nd Semester</option>
+                <option value="Summer" {{ filterSemester == 'Summer' ? 'selected' }}>Summer</option>
+            </select>
+        </div>
+        {% if filterDept or filterSemester or filterCollege %}
+            <a href="{{ path(baseRoute) }}" class="sb-clear-btn" title="Clear all filters">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        {% endif %}
+    </form>
+    <div class="sb-toolbar-info">
+        <span class="sb-result-count" id="sbResultCount">{{ totalFiltered }} result{{ totalFiltered != 1 ? 's' : '' }}</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SUBJECTS TABLE
+   ═══════════════════════════════════════ #}
+<div class="sb-table-wrap">
+    <table class="sb-table" id="sbTable">
+        <thead>
+            <tr>
+                <th class="sb-th-code" onclick="sbSort('code')">
+                    <span class="sb-sort-label">Code <i class="bi bi-arrow-down-up sb-sort-icon" data-col="code"></i></span>
+                </th>
+                <th class="sb-th-name" onclick="sbSort('name')">
+                    <span class="sb-sort-label">Subject Name <i class="bi bi-arrow-down-up sb-sort-icon" data-col="name"></i></span>
+                </th>
+                <th class="sb-th-sem" onclick="sbSort('semester')">
+                    <span class="sb-sort-label">Semester <i class="bi bi-arrow-down-up sb-sort-icon" data-col="semester"></i></span>
+                </th>
+                <th class="sb-th-units" onclick="sbSort('units')">
+                    <span class="sb-sort-label">Units <i class="bi bi-arrow-down-up sb-sort-icon" data-col="units"></i></span>
+                </th>
+                <th class="sb-th-dept">Department</th>
+                {% if not isReadOnly %}
+                <th class="sb-th-actions">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody id="sbTableBody">
+            {% for subject in subjects %}
+            <tr class="sb-row" data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }} {{ subject.department ? subject.department.departmentName|lower : '' }}" data-sort-code="{{ subject.subjectCode|lower }}" data-sort-name="{{ subject.subjectName|lower }}" data-sort-semester="{{ subject.semester|default('')|lower }}" data-sort-units="{{ subject.units ?? 0 }}" data-sort-term="{{ subject.term|default('')|lower }}" data-sort-schoolyear="{{ subject.schoolYear|default('')|lower }}"
+                data-view-code="{{ subject.subjectCode }}"
+                data-view-name="{{ subject.subjectName }}"
+                data-view-semester="{{ subject.semester ?? '—' }}"
+                data-view-schoolyear="{{ subject.schoolYear ?? '—' }}"
+                data-view-units="{{ subject.units ?? '—' }}"
+                data-view-yearlevel="{{ subject.yearLevel ?? '—' }}"
+                data-view-term="{{ subject.term ?? '—' }}"
+                data-view-enrolled="{{ subject.enrollments|length }}"
+                data-view-department="{{ subject.department ? subject.department.departmentName : '—' }}"
+                data-view-faculty="{{ subject.faculty ? subject.faculty.firstName ~ ' ' ~ subject.faculty.lastName : 'Unassigned' }}"
+                data-view-section="{{ subject.section ?? '—' }}"
+                data-view-room="{{ subject.room ?? '—' }}"
+                data-view-schedule="{{ subject.schedule ?? '—' }}"
+                data-view-id="{{ subject.id }}">
+                <td class="sb-td-code">
+                    <div class="sb-code-cell">
+                        <span class="sb-code-avatar">{{ subject.subjectCode|slice(0,2)|upper }}</span>
+                        <code class="sb-code-text">{{ subject.subjectCode }}</code>
+                    </div>
+                </td>
+                <td class="sb-td-name">
+                    <span class="sb-subject-name">{{ subject.subjectName }}</span>
+                </td>
+                <td class="sb-td-sem">
+                    {% if subject.semester %}
+                        <span class="sb-pill sb-pill-sem">{{ subject.semester }}</span>
+                    {% else %}
+                        <span class="sb-empty">—</span>
+                    {% endif %}
+                </td>
+                <td class="sb-td-units">
+                    <span class="sb-units-badge">{{ subject.units ?? '—' }}</span>
+                </td>
+                <td class="sb-td-dept">
+                    {% if subject.department %}
+                        <span class="sb-dept-tag">{{ subject.department.departmentName }}</span>
+                    {% else %}
+                        <span class="sb-empty">—</span>
+                    {% endif %}
+                </td>
+                {% if not isReadOnly %}
+                <td class="sb-td-actions">
+                    <div class="sb-actions">
+                        <button type="button" class="sb-action-btn sb-action-view" title="View Details" onclick="sbViewDetail(this)">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <button type="button" class="sb-action-btn sb-action-assign" title="Assign Faculty" data-bs-toggle="modal" data-bs-target="#assignModal{{ subject.id }}">
+                            <i class="bi bi-person-check-fill"></i>
+                        </button>
+                        <form method="post" action="{{ path(prefix ~ '_subject_delete', {id: subject.id}) }}" class="d-inline" onsubmit="return confirm('Delete this subject?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_sub' ~ subject.id) }}">
+                            <button type="submit" class="sb-action-btn sb-action-delete" title="Delete">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{{ isReadOnly ? 3 : 6 }}" class="text-center py-5">
+                    <div class="sb-empty-state">
+                        <div class="sb-empty-icon"><i class="bi bi-journal-x"></i></div>
+                        <h6 class="fw-bold text-muted">No subjects found</h6>
+                        <p class="text-muted small mb-3">{% if isReadOnly %}No subjects in your department yet.{% else %}Get started by creating your first subject.{% endif %}</p>
+                        {% if not isReadOnly %}
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                            <i class="bi bi-plus-lg me-1"></i>Add Subject
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="sbNoResults" class="sb-no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        <span>No subjects match your search.</span>
+    </div>
+</div>
+
+{# ── Pagination ── #}
+{% if totalPages > 1 %}
+<nav class="sb-pagination">
+    <div class="sb-page-info">
+        {% set showEnd = currentPage * limit %}
+        {% if showEnd > totalFiltered %}{% set showEnd = totalFiltered %}{% endif %}
+        Showing {{ ((currentPage - 1) * limit) + 1 }}–{{ showEnd }} of {{ totalFiltered }} subjects
+    </div>
+    <ul class="sb-page-list">
+        {# Previous #}
+        <li class="sb-page-item {{ currentPage <= 1 ? 'disabled' }}">
+            <a class="sb-page-link" href="{{ path(baseRoute, app.request.query.all|merge({page: currentPage - 1})) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+
+        {# Page numbers #}
+        {% set startPage = max(1, currentPage - 2) %}
+        {% set endPage = min(totalPages, currentPage + 2) %}
+
+        {% if startPage > 1 %}
+            <li class="sb-page-item">
+                <a class="sb-page-link" href="{{ path(baseRoute, app.request.query.all|merge({page: 1})) }}">1</a>
+            </li>
+            {% if startPage > 2 %}
+                <li class="sb-page-item disabled"><span class="sb-page-link">…</span></li>
+            {% endif %}
+        {% endif %}
+
+        {% for p in startPage..endPage %}
+            <li class="sb-page-item {{ p == currentPage ? 'active' }}">
+                <a class="sb-page-link" href="{{ path(baseRoute, app.request.query.all|merge({page: p})) }}">{{ p }}</a>
+            </li>
+        {% endfor %}
+
+        {% if endPage < totalPages %}
+            {% if endPage < totalPages - 1 %}
+                <li class="sb-page-item disabled"><span class="sb-page-link">…</span></li>
+            {% endif %}
+            <li class="sb-page-item">
+                <a class="sb-page-link" href="{{ path(baseRoute, app.request.query.all|merge({page: totalPages})) }}">{{ totalPages }}</a>
+            </li>
+        {% endif %}
+
+        {# Next #}
+        <li class="sb-page-item {{ currentPage >= totalPages ? 'disabled' }}">
+            <a class="sb-page-link" href="{{ path(baseRoute, app.request.query.all|merge({page: currentPage + 1})) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{# ═══════════════════════════════════════
+   ASSIGN FACULTY MODALS (per subject)
+   ═══════════════════════════════════════ #}
+{% for subject in subjects %}
+<div class="modal fade" id="assignModal{{ subject.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content sb-modal-content">
+            <form method="post" action="{{ path(prefix ~ '_subject_assign_faculty', {id: subject.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('assign' ~ subject.id) }}">
+                <div class="sb-modal-header-mini">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="sb-modal-icon-sm bg-primary bg-opacity-10 text-primary"><i class="bi bi-person-check-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-0" style="font-size:.9rem;">Assign Faculty</h6>
+                            <span class="text-muted" style="font-size:.72rem;">{{ subject.subjectCode }} — {{ subject.subjectName }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" style="font-size:.65rem;" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-3 py-3">
+                    <label class="form-label fw-semibold small">Select Faculty</label>
+                    <select name="faculty" class="form-select form-select-sm">
+                        <option value="">— Unassign —</option>
+                        {% for f in faculty %}
+                            <option value="{{ f.id }}" {{ subject.faculty and subject.faculty.id == f.id ? 'selected' }}>{{ f.fullName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer border-top px-3 py-2" style="background:#f8fafc;">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg me-1"></i>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   VIEW SUBJECT DETAIL MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="sbViewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sb-modal-content" style="border-radius:16px;overflow:hidden;">
+            {# Gradient header #}
+            <div class="sb-view-header">
+                <div class="sb-view-header-decor"></div>
+                <div class="d-flex align-items-center gap-3 position-relative">
+                    <div class="sb-view-avatar" id="sbViewAvatar"></div>
+                    <div>
+                        <div class="mb-1"><code class="sb-view-code" id="sbViewCode"></code></div>
+                        <h5 class="fw-bold mb-0 text-white" style="font-size:1.05rem;" id="sbViewName"></h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white position-absolute" style="top:16px;right:16px;" data-bs-dismiss="modal"></button>
+            </div>
+            {# Stats strip #}
+            <div class="sb-view-stats" style="grid-template-columns:repeat(2,1fr);">
+                <div class="sb-view-stat">
+                    <div class="sb-view-stat-val" style="color:#d97706;" id="sbViewUnits">—</div>
+                    <div class="sb-view-stat-lbl">Units</div>
+                </div>
+                <div class="sb-view-stat">
+                    <div class="sb-view-stat-val" style="color:#0284c7;font-size:.82rem;" id="sbViewYearLevel">—</div>
+                    <div class="sb-view-stat-lbl">Year Level</div>
+                </div>
+            </div>
+            {# Detail grid #}
+            <div class="sb-view-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="sb-detail-label">Semester</div>
+                        <div class="sb-detail-value" id="sbViewSemester">—</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="sb-detail-label">Department</div>
+                        <div class="sb-detail-value" id="sbViewDept">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top px-4 py-2" style="background:#f8fafc;">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   ADD SUBJECT MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sb-modal-content" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_subject_create') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_subject') }}">
+                {# Modal gradient header #}
+                <div class="sb-modal-header-gradient">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;"><i class="bi bi-journal-plus"></i></div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-white" style="font-size:1.05rem;">New Subject</h5>
+                            <span style="font-size:.72rem;color:rgba(255,255,255,.65);">Fill in the details below</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" style="font-size:.7rem;" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectCode" class="form-control form-control-sm" required placeholder="e.g. IT101">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label sb-form-label">Subject Name <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectName" class="form-control form-control-sm" required placeholder="e.g. Introduction to Computing">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label sb-form-label">Semester</label>
+                            <select name="semester" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option value="1st Semester">1st Semester</option>
+                                <option value="2nd Semester">2nd Semester</option>
+                                <option value="Summer">Summer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label sb-form-label">School Year</label>
+                            <input type="text" name="schoolYear" class="form-control form-control-sm" placeholder="e.g. 2024-2025">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Term</label>
+                            <select name="term" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option value="Prelim">Prelim</option>
+                                <option value="Midterm">Midterm</option>
+                                <option value="Semi-Final">Semi-Final</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Units</label>
+                            <input type="number" name="units" class="form-control form-control-sm" placeholder="3" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Year Level</label>
+                            <select name="yearLevel" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option value="First Year">First Year</option>
+                                <option value="Second Year">Second Year</option>
+                                <option value="Third Year">Third Year</option>
+                                <option value="Fourth Year">Fourth Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label sb-form-label">Faculty</label>
+                            <select name="faculty" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                {% for f in faculty %}
+                                    <option value="{{ f.id }}">{{ f.fullName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label sb-form-label">Department</label>
+                            <select name="department" class="form-select form-select-sm">
+                                <option value="">— None —</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Section</label>
+                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. BSIT-3A">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Room</label>
+                            <input type="text" name="room" class="form-control form-control-sm" placeholder="e.g. Room 201">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label sb-form-label">Schedule / Time</label>
+                            <input type="text" name="schedule" class="form-control form-control-sm" placeholder="e.g. MWF 9:00-10:00 AM">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3" style="background:#f8fafc;">
+                    <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-check-circle me-1"></i>Create Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ─── Header ─── */
+.sb-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.sb-header-inner{padding:22px 26px 18px;}
+.sb-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.sb-meta-filter{background:rgba(251,191,36,.2);color:#fbbf24;}
+.sb-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.sb-stat{flex:1;text-align:center;}
+.sb-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.sb-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.sb-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.sb-val-success{color:#34d399!important;}
+.sb-val-warn{color:#fbbf24!important;}
+
+/* ─── Toolbar ─── */
+.sb-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.sb-search-wrap{position:relative;flex:1;min-width:200px;max-width:360px;}
+.sb-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.sb-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.sb-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.sb-filter-form{display:flex;align-items:center;gap:6px;}
+.sb-filter-group{position:relative;display:flex;align-items:center;}
+.sb-filter-icon{position:absolute;left:10px;color:#6b7280;font-size:.8rem;pointer-events:none;z-index:1;}
+.sb-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;min-width:200px;cursor:pointer;transition:border-color .15s;}
+.sb-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
+.sb-clear-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:.75rem;text-decoration:none;transition:all .15s;}
+.sb-clear-btn:hover{background:#fee2e2;color:#dc2626;}
+.sb-toolbar-info{margin-left:auto;}
+.sb-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
+
+/* ─── Table ─── */
+.sb-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.sb-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.sb-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.sb-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.sb-table thead th .sb-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.sb-table thead th .sb-sort-label:hover{color:#1a56db;}
+.sb-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
+.sb-table thead th .sb-sort-label:hover .sb-sort-icon{opacity:.7;}
+.sb-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.sb-table tbody tr:last-child{border-bottom:none;}
+.sb-table tbody tr:hover{background:#f8faff;}
+.sb-table tbody td{padding:10px 14px;vertical-align:middle;}
+
+/* Code cell */
+.sb-code-cell{display:flex;align-items:center;gap:10px;}
+.sb-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+
+/* Name */
+.sb-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
+
+/* Pills */
+.sb-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.sb-pill-sem{background:#ecfdf5;color:#059669;}
+.sb-pill-term{background:#fef3c7;color:#b45309;}
+.sb-pill-section{background:#f0fdf4;color:#166534;}
+.sb-pill-room{background:#fdf4ff;color:#86198f;}
+.sb-pill-sched{background:#fff7ed;color:#c2410c;}
+
+/* Text helpers */
+.sb-text-muted{color:#64748b;font-size:.78rem;}
+.sb-empty{color:#cbd5e1;font-size:.78rem;}
+
+/* Units badge */
+.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
+
+/* Faculty cell */
+.sb-faculty-cell{display:flex;align-items:center;gap:8px;}
+.sb-faculty-avatar{width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;}
+.sb-faculty-name{font-weight:500;font-size:.78rem;color:#334155;}
+.sb-unassigned{display:inline-flex;align-items:center;font-size:.72rem;color:#94a3b8;font-weight:500;background:#f8fafc;padding:3px 10px;border-radius:6px;border:1px dashed #e2e8f0;}
+
+/* Department tag */
+.sb-dept-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#6366f1;background:#eef2ff;padding:3px 10px;border-radius:6px;}
+
+/* Actions */
+.sb-actions{display:flex;align-items:center;gap:4px;justify-content:center;}
+.sb-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
+.sb-action-view{color:#059669;}
+.sb-action-view:hover{background:#ecfdf5;color:#047857;transform:scale(1.1);}
+.sb-action-assign{color:#3b82f6;}
+.sb-action-assign:hover{background:#eff6ff;color:#1d4ed8;transform:scale(1.1);}
+.sb-action-delete{color:#ef4444;}
+.sb-action-delete:hover{background:#fef2f2;color:#dc2626;transform:scale(1.1);}
+
+/* Empty state */
+.sb-empty-state{padding:20px 0;}
+.sb-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+
+/* No results */
+.sb-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #f1f5f9;}
+.sb-no-results i{font-size:1rem;opacity:.5;}
+
+/* ─── Modals ─── */
+.sb-modal-content{border:none;box-shadow:0 24px 48px rgba(0,0,0,.12);}
+.sb-modal-header-mini{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f1f5f9;}
+.sb-modal-icon-sm{width:34px;height:34px;min-width:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.85rem;}
+.sb-modal-header-gradient{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg,#0f172a 0%,#1a56db 60%,#3b82f6 100%);color:#fff;}
+.sb-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
+
+/* View modal */
+.sb-view-header{position:relative;padding:22px 26px;background:linear-gradient(135deg,#0f172a 0%,var(--norsu-blue,#1a56db) 50%,#3b82f6 100%);color:#fff;}
+.sb-view-header-decor{position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;}
+.sb-view-avatar{width:48px;height:48px;min-width:48px;border-radius:13px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:.92rem;font-weight:800;color:#fff;}
+.sb-view-code{font-size:.76rem;font-weight:700;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:3px 12px;border-radius:6px;}
+.sb-view-stats{display:grid;grid-template-columns:repeat(2,1fr);border-bottom:1px solid #f1f5f9;}
+.sb-view-stat{text-align:center;padding:14px 8px;border-right:1px solid #f1f5f9;}
+.sb-view-stat:last-child{border-right:0;}
+.sb-view-stat-val{font-size:1.2rem;font-weight:800;line-height:1.2;}
+.sb-view-stat-lbl{font-size:.58rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
+.sb-view-body{padding:20px 24px;}
+.sb-detail-label{font-size:.6rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
+.sb-detail-value{font-size:.85rem;font-weight:600;color:#1e293b;}
+
+/* ─── Responsive ─── */
+@media(max-width:768px){
+    .sb-stats-row{flex-wrap:wrap;gap:8px;}
+    .sb-stat{min-width:45%;}
+    .sb-stat-divider{display:none;}
+    .sb-toolbar{flex-direction:column;align-items:stretch;}
+    .sb-search-wrap{max-width:100%;}
+    .sb-toolbar-info{margin-left:0;text-align:right;}
+    .sb-table{font-size:.75rem;}
+    .sb-table thead th{padding:8px 10px;font-size:.62rem;}
+    .sb-table tbody td{padding:8px 10px;}
+    .sb-th-sy,.sb-td-sy,.sb-th-dept,.sb-td-dept{display:none;}
+}
+
+/* Animations */
+.sb-header,.sb-toolbar,.sb-table-wrap{animation:sbFadeIn .25s ease;}
+@keyframes sbFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.sb-row{animation:sbRowIn .2s ease backwards;}
+@keyframes sbRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+
+/* Pagination */
+.sb-pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 20px;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.sb-page-info{font-size:.8rem;color:#6b7280;font-weight:500;}
+.sb-page-list{display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0;}
+.sb-page-item{}
+.sb-page-item.disabled .sb-page-link{opacity:.35;pointer-events:none;}
+.sb-page-link{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 8px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .15s ease;cursor:pointer;}
+.sb-page-link:hover{background:#f3f4f6;border-color:#d1d5db;color:var(--norsu-blue,#1a56db);}
+.sb-page-item.active .sb-page-link{background:var(--norsu-blue,#1a56db);border-color:var(--norsu-blue,#1a56db);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,.25);}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+/* ── Client-side search ── */
+function sbFilterTable() {
+    var q = document.getElementById('sbSearchInput').value.toLowerCase();
+    var rows = document.querySelectorAll('#sbTableBody .sb-row');
+    var count = 0;
+    rows.forEach(function(r) {
+        var match = (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+        r.style.display = match ? '' : 'none';
+        if (match) count++;
+    });
+    document.getElementById('sbResultCount').textContent = count + ' result' + (count !== 1 ? 's' : '');
+    document.getElementById('sbNoResults').style.display = count === 0 && q.length > 0 ? '' : 'none';
+}
+
+/* ── Sorting ── */
+var sbSortState = {};
+function sbSort(col) {
+    var tbody = document.getElementById('sbTableBody');
+    var rows = Array.from(tbody.querySelectorAll('.sb-row'));
+    var asc = sbSortState[col] !== 'asc';
+    sbSortState = {};
+    sbSortState[col] = asc ? 'asc' : 'desc';
+
+    // Reset icons
+    document.querySelectorAll('.sb-sort-icon').forEach(function(ic) {
+        ic.className = 'bi bi-arrow-down-up sb-sort-icon';
+        ic.style.opacity = '.35';
+    });
+    var activeIcon = document.querySelector('.sb-sort-icon[data-col="' + col + '"]');
+    if (activeIcon) {
+        activeIcon.className = 'bi sb-sort-icon ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down');
+        activeIcon.style.opacity = '1';
+    }
+
+    rows.sort(function(a, b) {
+        var va = a.getAttribute('data-sort-' + col) || '';
+        var vb = b.getAttribute('data-sort-' + col) || '';
+        if (col === 'units') {
+            va = parseFloat(va) || 0;
+            vb = parseFloat(vb) || 0;
+            return asc ? va - vb : vb - va;
+        }
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+/* ── View Detail ── */
+function sbViewDetail(btn) {
+    var row = btn.closest('.sb-row');
+    if (!row) return;
+    document.getElementById('sbViewAvatar').textContent = row.getAttribute('data-view-code').slice(0,2).toUpperCase();
+    document.getElementById('sbViewCode').textContent = row.getAttribute('data-view-code');
+    document.getElementById('sbViewName').textContent = row.getAttribute('data-view-name');
+    document.getElementById('sbViewUnits').textContent = row.getAttribute('data-view-units');
+    document.getElementById('sbViewYearLevel').textContent = row.getAttribute('data-view-yearlevel');
+    document.getElementById('sbViewSemester').textContent = row.getAttribute('data-view-semester');
+    document.getElementById('sbViewDept').textContent = row.getAttribute('data-view-department');
+    new bootstrap.Modal(document.getElementById('sbViewModal')).show();
+}
+
+/* Stagger row animations */
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sb-row').forEach(function(r, i) {
+        r.style.animationDelay = (i * 0.03) + 's';
+    });
+});
+</script>
+{% endblock %}

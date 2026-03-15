@@ -1,0 +1,458 @@
+﻿{% extends 'base.html.twig' %}
+
+{% block title %}Manage Users | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   MANAGE USERS — ADMIN
+   ═══════════════════════════════════════ #}
+
+{# ── Pre-compute stats ── #}
+{% set totalUsers = users|length %}
+{% set activeCount = 0 %}
+{% set facultyCount = 0 %}
+{% set staffCount = 0 %}
+{% set studentCount = 0 %}
+{% set adminCount = 0 %}
+{% for u in users %}
+    {% if u.accountStatus == 'active' %}{% set activeCount = activeCount + 1 %}{% endif %}
+    {% if 'ROLE_ADMIN' in u.roles %}{% set adminCount = adminCount + 1 %}
+    {% elseif 'ROLE_FACULTY' in u.roles %}{% set facultyCount = facultyCount + 1 %}
+    {% elseif 'ROLE_STAFF' in u.roles %}{% set staffCount = staffCount + 1 %}
+    {% else %}{% set studentCount = studentCount + 1 %}{% endif %}
+{% endfor %}
+
+{# ── Professional Header Card ── #}
+<div class="mu-header">
+    <div class="mu-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="mu-header-icon"><i class="bi bi-people-fill"></i></div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Manage Users</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="mu-meta-pill"><i class="bi bi-person-check me-1"></i>{{ activeCount }} Active</span>
+                        <span class="mu-meta-pill"><i class="bi bi-hourglass-split me-1"></i>{{ pendingUsers|length }} Pending</span>
+                        <span class="mu-meta-pill"><i class="bi bi-database me-1"></i>{{ totalUsers }} Total</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-1">
+                <button type="button" class="btn btn-sm btn-outline-light fw-semibold" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
+                    <i class="bi bi-cloud-arrow-up me-1"></i>Bulk Upload
+                </button>
+                <a href="{{ path('admin_user_create') }}" class="btn btn-sm btn-light fw-semibold shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i>Add User
+                </a>
+            </div>
+        </div>
+        <div class="mu-stats-row">
+            <div class="mu-stat">
+                <span class="mu-stat-val">{{ totalUsers }}</span>
+                <span class="mu-stat-lbl">Total Users</span>
+            </div>
+            <div class="mu-stat-divider"></div>
+            <div class="mu-stat">
+                <span class="mu-stat-val">{{ facultyCount }}</span>
+                <span class="mu-stat-lbl">Faculty</span>
+            </div>
+            <div class="mu-stat-divider"></div>
+            <div class="mu-stat">
+                <span class="mu-stat-val">{{ staffCount }}</span>
+                <span class="mu-stat-lbl">Staff</span>
+            </div>
+            <div class="mu-stat-divider"></div>
+            <div class="mu-stat">
+                <span class="mu-stat-val">{{ studentCount }}</span>
+                <span class="mu-stat-lbl">Students</span>
+            </div>
+            <div class="mu-stat-divider"></div>
+            <div class="mu-stat">
+                <span class="mu-stat-val">{{ adminCount }}</span>
+                <span class="mu-stat-lbl">Admins</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Filter / Search Toolbar ── #}
+<div class="mu-toolbar">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-search me-1"></i>Search Users</label>
+            <input type="text" class="form-control form-control-sm" id="userSearch" placeholder="Type a name or email…" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-shield me-1"></i>Role</label>
+            <select class="form-select form-select-sm" id="roleFilter">
+                <option value="">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="Faculty">Faculty</option>
+                <option value="Staff">Staff</option>
+                <option value="Student">Student</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-circle-half me-1"></i>Status</label>
+            <select class="form-select form-select-sm" id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-sort-down me-1"></i>Sort By</label>
+            <select class="form-select form-select-sm" id="sortFilter">
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="resetFilters">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+        </div>
+    </div>
+    <div class="mt-2"><small class="text-muted" id="resultCount"></small></div>
+</div>
+
+{# ── Pending Approvals Section ── #}
+{% if pendingUsers|length > 0 %}
+<div class="mu-table-card mb-3">
+    <div class="mu-table-header" style="background:linear-gradient(135deg,#b45309,#d97706 60%,#eab308);">
+        <span><i class="bi bi-hourglass-split me-2"></i>Pending Approvals</span>
+        <span class="mu-table-badge">{{ pendingUsers|length }} pending</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr class="small text-muted" style="font-size:.78rem;background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                    <th class="ps-3 fw-semibold">Name</th>
+                    <th class="fw-semibold">Email</th>
+                    <th class="fw-semibold">Role</th>
+                    <th class="fw-semibold">Registered</th>
+                    <th class="fw-semibold text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in pendingUsers %}
+                <tr>
+                    <td class="ps-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="mu-avatar">{{ u.firstName|first|upper }}{{ u.lastName|first|upper }}</div>
+                            <div class="fw-semibold small">{{ u.fullName }}</div>
+                        </div>
+                    </td>
+                    <td><span class="small text-muted">{{ u.email }}</span></td>
+                    <td>
+                        {% if 'ROLE_FACULTY' in u.roles %}
+                            <span class="mu-role-badge role-faculty"><i class="bi bi-mortarboard-fill me-1"></i>Faculty</span>
+                        {% elseif 'ROLE_STAFF' in u.roles %}
+                            <span class="mu-role-badge role-staff"><i class="bi bi-clipboard-data me-1"></i>Staff</span>
+                        {% else %}
+                            <span class="mu-role-badge role-student"><i class="bi bi-backpack-fill me-1"></i>Student</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="small text-muted">{{ u.createdAt|date('M d, Y h:i A') }}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <form method="post" action="{{ path('admin_user_approve', {id: u.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ u.id) }}">
+                                <button class="btn btn-sm btn-outline-success mu-action-btn" title="Approve"><i class="bi bi-check-lg"></i></button>
+                            </form>
+                            <form method="post" action="{{ path('admin_user_reject', {id: u.id}) }}" class="d-inline" onsubmit="return confirm('Reject and remove this user?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('reject' ~ u.id) }}">
+                                <button class="btn btn-sm btn-outline-danger mu-action-btn" title="Reject"><i class="bi bi-x-lg"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── All Users Table ── #}
+<div class="mu-table-card">
+    <div class="mu-table-header">
+        <span><i class="bi bi-people me-2"></i>All Users</span>
+        <span class="mu-table-badge">{{ users|length }} user{{ users|length != 1 ? 's' : '' }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="usersTable">
+            <thead>
+                <tr class="small text-muted" style="font-size:.78rem;background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                    <th class="ps-3 fw-semibold" style="width:50px">#</th>
+                    <th class="fw-semibold">Name</th>
+                    <th class="fw-semibold">Email</th>
+                    <th class="fw-semibold text-center">Role</th>
+                    <th class="fw-semibold">Department</th>
+                    <th class="fw-semibold text-center">Status</th>
+                    <th class="fw-semibold">Registered</th>
+                    <th class="fw-semibold text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="user-row"
+                    data-name="{{ user.fullName|lower }}"
+                    data-email="{{ user.email|lower }}"
+                    data-role="{% if 'ROLE_ADMIN' in user.roles %}Admin{% elseif 'ROLE_FACULTY' in user.roles %}Faculty{% elseif 'ROLE_STAFF' in user.roles %}Staff{% else %}Student{% endif %}"
+                    data-status="{% if user.accountStatus == 'active' %}Active{% elseif user.accountStatus == 'pending' %}Pending{% else %}Inactive{% endif %}"
+                    data-date="{{ user.createdAt|date('Y-m-d') }}">
+                    <td class="ps-3">
+                        <span class="fw-bold text-muted user-num">{{ loop.index }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="mu-avatar">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</div>
+                            <div>
+                                <div class="fw-semibold small">{{ user.fullName }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="small text-muted">{{ user.email }}</span></td>
+                    <td class="text-center">
+                        {% if 'ROLE_ADMIN' in user.roles %}
+                            <span class="mu-role-badge role-admin"><i class="bi bi-shield-fill me-1"></i>Admin</span>
+                        {% elseif 'ROLE_FACULTY' in user.roles %}
+                            <span class="mu-role-badge role-faculty"><i class="bi bi-mortarboard-fill me-1"></i>Faculty</span>
+                        {% elseif 'ROLE_STAFF' in user.roles %}
+                            <span class="mu-role-badge role-staff"><i class="bi bi-clipboard-data me-1"></i>Staff</span>
+                        {% else %}
+                            <span class="mu-role-badge role-student"><i class="bi bi-backpack-fill me-1"></i>Student</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="small">{{ user.department ? user.department.departmentName : '—' }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if user.accountStatus == 'active' %}
+                            <span class="mu-status-badge status-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
+                        {% elseif user.accountStatus == 'pending' %}
+                            <span class="mu-status-badge status-pending"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                        {% else %}
+                            <span class="mu-status-badge status-inactive"><i class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="small text-muted">{{ user.createdAt|date('M d, Y') }}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary mu-action-btn" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                            <form method="post" action="{{ path('admin_user_toggle_status', {id: user.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                                <button class="btn btn-sm btn-outline-{{ user.accountStatus == 'active' ? 'secondary' : 'success' }} mu-action-btn" title="{{ user.accountStatus == 'active' ? 'Deactivate' : 'Activate' }}">
+                                    <i class="bi {{ user.accountStatus == 'active' ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-warning mu-action-btn" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetModal{{ user.id }}">
+                                <i class="bi bi-key"></i>
+                            </button>
+                            {% if user != app.user %}
+                            <form method="post" action="{{ path('admin_user_delete', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Delete this user permanently?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                <button class="btn btn-sm btn-outline-danger mu-action-btn" title="Delete"><i class="bi bi-trash3"></i></button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-5">
+                    <i class="bi bi-people display-4 text-muted d-block mb-2"></i>
+                    <span class="text-muted">No users found.</span>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ── Reset Password Modals ── #}
+{% for user in users %}
+<div class="modal fade" id="resetModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content border-0 shadow">
+            <form method="post" action="{{ path('admin_user_reset_password', {id: user.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('reset' ~ user.id) }}">
+                <div class="modal-header mu-modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="mu-modal-icon"><i class="bi bi-key-fill"></i></div>
+                        <h6 class="modal-title text-white fw-bold mb-0">Reset Password</h6>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">Reset password for <strong>{{ user.fullName }}</strong></p>
+                    <label class="form-label fw-semibold small">New Password</label>
+                    <input type="password" name="newPassword" class="form-control form-control-sm" placeholder="New password" value="password123" required>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-warning"><i class="bi bi-key me-1"></i>Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Bulk Upload Modal ── #}
+<div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form method="post" action="{{ path('admin_users_bulk_upload') }}" enctype="multipart/form-data">
+                <div class="modal-header mu-modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="mu-modal-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                        <h5 class="modal-title text-white fw-bold mb-0">Bulk Upload Users</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Upload a CSV file with columns: <code>firstName, lastName, email, role, department</code></p>
+                    <p class="small text-muted mb-3">Role values: <code>admin</code>, <code>faculty</code>, <code>staff</code>, <code>student</code></p>
+                    <input type="file" name="csv_file" class="form-control form-control-sm" accept=".csv" required>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-norsu"><i class="bi bi-cloud-arrow-up me-1"></i>Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ── Header Card ── */
+.mu-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 10px 40px rgba(30,58,138,.18);margin-bottom:1.5rem;position:relative;}
+.mu-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;pointer-events:none;}
+.mu-header-inner{position:relative;z-index:1;padding:1.5rem 1.75rem 1.25rem;}
+.mu-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(4px);flex-shrink:0;}
+.mu-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.9);padding:2px 10px;border-radius:20px;font-size:.75rem;backdrop-filter:blur(4px);}
+.mu-stats-row{display:flex;gap:.5rem;margin-top:1.1rem;padding-top:.9rem;border-top:1px solid rgba(255,255,255,.13);flex-wrap:wrap;}
+.mu-stat{text-align:center;flex:1;min-width:70px;}
+.mu-stat-val{display:block;font-size:1.3rem;font-weight:700;color:#fff;line-height:1.2;}
+.mu-stat-lbl{display:block;font-size:.65rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.mu-stat-divider{width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:0 .25rem;}
+
+/* ── Modal Header ── */
+.mu-modal-header{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);border-bottom:none;padding:1rem 1.25rem;}
+.mu-modal-icon{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;backdrop-filter:blur(4px);}
+
+/* ── Toolbar ── */
+.mu-toolbar{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+
+/* ── Table Card ── */
+.mu-table-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.5rem;}
+.mu-table-header{background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);color:#fff;padding:.65rem 1.1rem;font-size:.85rem;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.mu-table-badge{background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:20px;font-size:.72rem;}
+
+/* ── Avatar ── */
+.mu-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(30,58,138,.1),rgba(5,150,105,.1));color:#1e3a8a;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+
+/* ── Role Badges ── */
+.mu-role-badge{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;}
+.role-admin{background:#fce7f3;color:#be185d;}
+.role-faculty{background:#dbeafe;color:#1d4ed8;}
+.role-staff{background:#dcfce7;color:#15803d;}
+.role-student{background:#f3e8ff;color:#7c3aed;}
+
+/* ── Status Badges ── */
+.mu-status-badge{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;}
+.status-active{background:#dcfce7;color:#15803d;}
+.status-pending{background:#fef3c7;color:#b45309;}
+.status-inactive{background:#f1f5f9;color:#64748b;}
+
+/* ── Action Buttons ── */
+.mu-action-btn{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:.8rem;}
+
+/* ── Print ── */
+@media print{.mu-header,.mu-toolbar,.no-print{display:none!important;}.mu-table-card{border:none;box-shadow:none;}.mu-table-header{background:#1e3a8a!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+
+/* ── Animation ── */
+@keyframes muFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.mu-table-card,.mu-toolbar{animation:muFadeIn .25s ease;}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT — FILTER / SORT
+   ═══════════════════════════════════════ #}
+<script>
+(function(){
+    var search  = document.getElementById('userSearch');
+    var role    = document.getElementById('roleFilter');
+    var status  = document.getElementById('statusFilter');
+    var sort    = document.getElementById('sortFilter');
+    var reset   = document.getElementById('resetFilters');
+    var countEl = document.getElementById('resultCount');
+    if(!search) return;
+
+    function applyFilters(){
+        var q  = search.value.trim().toLowerCase();
+        var rv = role.value;
+        var sv = status.value;
+        var rows = document.querySelectorAll('.user-row');
+        var vis = 0;
+        rows.forEach(function(r){
+            var show = true;
+            if(q){
+                var name = r.getAttribute('data-name');
+                var email = r.getAttribute('data-email');
+                if(name.indexOf(q)===-1 && email.indexOf(q)===-1) show=false;
+            }
+            if(rv && r.getAttribute('data-role')!==rv) show=false;
+            if(sv && r.getAttribute('data-status')!==sv) show=false;
+            r.style.display = show ? '' : 'none';
+            if(show) vis++;
+        });
+        if(countEl) countEl.textContent = 'Showing ' + vis + ' of ' + rows.length + ' users';
+        applySort();
+    }
+
+    function applySort(){
+        var val = sort.value;
+        var tb  = document.querySelector('#usersTable tbody');
+        if(!tb) return;
+        var rows = Array.from(tb.querySelectorAll('.user-row'));
+        rows.sort(function(a,b){
+            switch(val){
+                case 'name-asc':  return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                case 'name-desc': return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                case 'date-desc': return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
+                case 'date-asc':  return a.getAttribute('data-date').localeCompare(b.getAttribute('data-date'));
+                default: return 0;
+            }
+        });
+        rows.forEach(function(r){ tb.appendChild(r); });
+
+        // Re-number
+        var num = 0;
+        rows.forEach(function(r){
+            if(r.style.display==='none') return;
+            num++;
+            var cell = r.querySelector('.user-num');
+            if(cell) cell.textContent = num;
+        });
+    }
+
+    search.addEventListener('input', applyFilters);
+    role.addEventListener('change', applyFilters);
+    status.addEventListener('change', applyFilters);
+    sort.addEventListener('change', function(){ applySort(); });
+    reset.addEventListener('click', function(){
+        search.value=''; role.value=''; status.value=''; sort.value='name-asc';
+        applyFilters();
+    });
+    applyFilters();
+})();
+</script>
+{% endblock %}

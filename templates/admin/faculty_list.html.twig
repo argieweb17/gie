@@ -1,0 +1,197 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Manage Faculty | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{% set totalFaculty = users|length %}
+{% set activeCount = 0 %}
+{% set pendingCount = 0 %}
+{% for u in users %}
+    {% if u.accountStatus == 'active' %}{% set activeCount = activeCount + 1 %}{% endif %}
+    {% if u.accountStatus == 'pending' %}{% set pendingCount = pendingCount + 1 %}{% endif %}
+{% endfor %}
+
+{# ── Header ── #}
+<div class="rl-header">
+    <div class="rl-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rl-header-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Manage Faculty</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="rl-meta-pill"><i class="bi bi-person-check me-1"></i>{{ activeCount }} Active</span>
+                        <span class="rl-meta-pill"><i class="bi bi-hourglass-split me-1"></i>{{ pendingCount }} Pending</span>
+                        <span class="rl-meta-pill"><i class="bi bi-database me-1"></i>{{ totalFaculty }} Total</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-1">
+                <a href="{{ path('admin_users') }}" class="btn btn-sm btn-outline-light fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i>All Users
+                </a>
+                <a href="{{ path('admin_user_create') }}" class="btn btn-sm btn-light fw-semibold shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i>Add Faculty
+                </a>
+            </div>
+        </div>
+        <div class="rl-stats-row">
+            <div class="rl-stat">
+                <span class="rl-stat-val">{{ totalFaculty }}</span>
+                <span class="rl-stat-lbl">Total Faculty</span>
+            </div>
+            <div class="rl-stat-divider"></div>
+            <div class="rl-stat">
+                <span class="rl-stat-val">{{ activeCount }}</span>
+                <span class="rl-stat-lbl">Active</span>
+            </div>
+            <div class="rl-stat-divider"></div>
+            <div class="rl-stat">
+                <span class="rl-stat-val">{{ pendingCount }}</span>
+                <span class="rl-stat-lbl">Pending</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Filter Toolbar ── #}
+<div class="rl-toolbar">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-search me-1"></i>Search</label>
+            <input type="text" class="form-control form-control-sm" id="rlSearch" placeholder="Name or email…" autocomplete="off">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-building me-1"></i>Department</label>
+            <select class="form-select form-select-sm" id="rlDept">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.departmentName|lower }}">{{ dept.departmentName }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-sort-down me-1"></i>Sort By</label>
+            <select class="form-select form-select-sm" id="rlSort">
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="rlReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+        </div>
+    </div>
+    <div class="mt-2"><small class="text-muted" id="rlCount"></small></div>
+</div>
+
+{# ── Faculty Table ── #}
+<div class="rl-table-card">
+    <div class="rl-table-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6 60%,#60a5fa);">
+        <span><i class="bi bi-mortarboard-fill me-2"></i>Faculty</span>
+        <span class="rl-table-badge">{{ totalFaculty }} member{{ totalFaculty != 1 ? 's' : '' }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="rlTable">
+            <thead>
+                <tr class="small text-muted" style="font-size:.78rem;background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                    <th class="ps-3 fw-semibold" style="width:50px">#</th>
+                    <th class="fw-semibold">Name</th>
+                    <th class="fw-semibold">Email</th>
+                    <th class="fw-semibold">Employment</th>
+                    <th class="fw-semibold">Department</th>
+                    <th class="fw-semibold text-center">Status</th>
+                    <th class="fw-semibold">Registered</th>
+                    <th class="fw-semibold text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="rl-row"
+                    data-name="{{ user.fullName|lower }}"
+                    data-email="{{ user.email|lower }}"
+                    data-dept="{{ user.department ? user.department.departmentName|lower : '' }}"
+                    data-status="{% if user.accountStatus == 'active' %}Active{% elseif user.accountStatus == 'pending' %}Pending{% else %}Inactive{% endif %}"
+                    data-date="{{ user.createdAt|date('Y-m-d') }}">
+                    <td class="ps-3"><span class="fw-bold text-muted rl-num">{{ loop.index }}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rl-avatar" style="background:linear-gradient(135deg,rgba(29,78,216,.12),rgba(96,165,250,.12));color:#1d4ed8;">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</div>
+                            <div class="fw-semibold small">{{ user.fullName }}</div>
+                        </div>
+                    </td>
+                    <td><span class="small text-muted">{{ user.email }}</span></td>
+                    <td><span class="small">{{ user.employmentStatus ?? '—' }}</span></td>
+                    <td><span class="small">{{ user.department ? user.department.departmentName : '—' }}</span></td>
+                    <td class="text-center">
+                        {% if user.accountStatus == 'active' %}
+                            <span class="rl-status-badge status-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
+                        {% elseif user.accountStatus == 'pending' %}
+                            <span class="rl-status-badge status-pending"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                        {% else %}
+                            <span class="rl-status-badge status-inactive"><i class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="small text-muted">{{ user.createdAt|date('M d, Y') }}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary rl-action-btn" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                            <form method="post" action="{{ path('admin_user_toggle_status', {id: user.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                                <button class="btn btn-sm btn-outline-{{ user.accountStatus == 'active' ? 'secondary' : 'success' }} rl-action-btn" title="{{ user.accountStatus == 'active' ? 'Deactivate' : 'Activate' }}">
+                                    <i class="bi {{ user.accountStatus == 'active' ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
+                                </button>
+                            </form>
+                            <form method="post" action="{{ path('admin_user_delete', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Delete this faculty member permanently?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                <button class="btn btn-sm btn-outline-danger rl-action-btn" title="Delete"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-5">
+                    <i class="bi bi-mortarboard display-4 text-muted d-block mb-2"></i>
+                    <span class="text-muted">No faculty members found.</span>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include 'admin/_role_list_styles.html.twig' %}
+
+<script>
+(function(){
+    var search=document.getElementById('rlSearch'),dept=document.getElementById('rlDept'),sort=document.getElementById('rlSort'),reset=document.getElementById('rlReset'),countEl=document.getElementById('rlCount');
+    if(!search)return;
+    function applyFilters(){
+        var q=search.value.trim().toLowerCase(),dv=dept.value,rows=document.querySelectorAll('.rl-row'),vis=0;
+        rows.forEach(function(r){var show=true;
+            if(q){var n=r.getAttribute('data-name'),e=r.getAttribute('data-email');if(n.indexOf(q)===-1&&e.indexOf(q)===-1)show=false;}
+            if(dv&&r.getAttribute('data-dept')!==dv)show=false;
+            r.style.display=show?'':'none';if(show)vis++;
+        });
+        if(countEl)countEl.textContent='Showing '+vis+' of '+rows.length+' faculty';
+        applySort();
+    }
+    function applySort(){
+        var val=sort.value,tb=document.querySelector('#rlTable tbody');if(!tb)return;
+        var rows=Array.from(tb.querySelectorAll('.rl-row'));
+        rows.sort(function(a,b){switch(val){
+            case'name-asc':return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+            case'name-desc':return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+            case'date-desc':return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
+            case'date-asc':return a.getAttribute('data-date').localeCompare(b.getAttribute('data-date'));
+            default:return 0;}});
+        rows.forEach(function(r){tb.appendChild(r);});
+        var num=0;rows.forEach(function(r){if(r.style.display==='none')return;num++;var c=r.querySelector('.rl-num');if(c)c.textContent=num;});
+    }
+    search.addEventListener('input',applyFilters);dept.addEventListener('change',applyFilters);sort.addEventListener('change',function(){applySort();});
+    reset.addEventListener('click',function(){search.value='';dept.value='';sort.value='name-asc';applyFilters();});
+    applyFilters();
+})();
+</script>
+{% endblock %}

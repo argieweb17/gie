@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}SET-SEF Evaluation System{% endblock %}</title>
+        <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body class="{% block body_class %}{% endblock %}">
+        {# ── TOP NAVBAR ── #}
+        {% if app.user %}
+        {# Mobile-only slim navbar for sidebar toggle #}
+        <nav class="navbar navbar-dark navbar-norsu navbar-mobile-only fixed-top d-lg-none">
+            <div class="container-fluid px-3">
+                <button class="btn btn-link text-white me-2 p-0" id="sidebarToggle" type="button" aria-label="Toggle sidebar">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
+                <div class="d-flex align-items-center ms-auto">
+                    <span class="user-initials-sm">{{ app.user.firstName|first }}{{ app.user.lastName|first }}</span>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        {% if not app.user %}
+        <nav class="navbar navbar-dark navbar-norsu fixed-top navbar-expand-lg">
+            <div class="container-fluid px-3">
+                    <a class="navbar-brand" href="{{ path('app_home') }}">
+                        <span class="brand-icon"><img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC Logo" class="brand-logo-img"></span>
+                        <span>
+                            SET-SEF Evaluation
+                            <span class="brand-text-sub">Negros Oriental State University</span>
+                        </span>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_login') }}"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-norsu-gold btn-sm ms-2 mt-1" href="{{ path('app_register') }}">Register</a>
+                            </li>
+                        </ul>
+                    </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        {% if app.user %}
+        {# ── SIDEBAR ── #}
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            {# ── Sidebar Brand ── #}
+            <a href="{{ path('app_dashboard') }}" class="sidebar-brand">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC Logo" class="sidebar-brand-logo">
+                <div class="sidebar-brand-text">
+                    <span class="sidebar-brand-title">SET-SEF Evaluation</span>
+                    <span class="sidebar-brand-sub">Negros Oriental State University</span>
+                </div>
+            </a>
+
+            {% set sc = sidebar_counts() %}
+            <div class="sidebar-header">Main Menu</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}"
+                   href="{{ path('app_dashboard') }}">
+                    <i class="bi bi-speedometer2 sidebar-icon"></i> Dashboard
+                </a>
+
+                {# ── Student: SET Evaluation ── #}
+                {% if not is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                    <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('evaluation_history') }}">
+                        <i class="bi bi-clock-history sidebar-icon"></i> Evaluation History
+                    </a>
+
+                {% endif %}
+
+                {# ── Superior: Evaluation ── #}
+                {% if is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                    <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('superior_evaluate_index') }}">
+                        <i class="bi bi-pencil-square sidebar-icon"></i> Evaluate Personnel
+                    </a>
+                    <a class="nav-link {% if 'superior_results' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('superior_results') }}">
+                        <i class="bi bi-bar-chart-line sidebar-icon"></i> Results
+                    </a>
+                {% endif %}
+
+                {# ── Faculty: Management ── #}
+                {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                    <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
+                       href="{{ path('faculty_subjects') }}">
+                        <i class="bi bi-book-fill sidebar-icon"></i> Subject Load
+                        <span class="sidebar-count">{{ sc.subjects }}</span>
+                    </a>
+                    <a class="nav-link {% if 'faculty_department_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('faculty_department_subjects') }}">
+                        <i class="bi bi-building sidebar-icon"></i> Department
+                    </a>
+                    <a class="nav-link {% if 'faculty_loaded_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('faculty_loaded_subjects') }}">
+                        <i class="bi bi-journal-bookmark-fill sidebar-icon"></i> Class Schedule
+                    </a>
+
+                    <a class="nav-link {% if 'faculty_academic_years' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('faculty_academic_years') }}">
+                        <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
+                        <span class="sidebar-count">{{ sc.academic_years }}</span>
+                    </a>
+                {% endif %}
+
+                {# ── Staff: Results moved to Evaluation section ── #}
+            </nav>
+
+            {# ── Faculty: Evaluation ── #}
+            {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+            <div class="sidebar-header">Evaluation</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_request') }}">
+                    <i class="bi bi-send sidebar-icon"></i> Request
+                </a>
+                <a class="nav-link {% if 'faculty_eval_results' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_results') }}">
+                    <i class="bi bi-clipboard-data sidebar-icon"></i> Result
+                </a>
+                <a class="nav-link {% if 'faculty_eval_summary' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_summary') }}">
+                    <i class="bi bi-file-earmark-bar-graph sidebar-icon"></i> Summary
+                </a>
+                <a class="nav-link {% if 'faculty_eval_analytics' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_analytics') }}">
+                    <i class="bi bi-graph-up-arrow sidebar-icon"></i> Analytics
+                </a>
+                <a class="nav-link {% if 'faculty_eval_download' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_download') }}">
+                    <i class="bi bi-download sidebar-icon"></i> Download
+                </a>
+            </nav>
+            {% endif %}
+
+            {# ── Staff: Management ── #}
+            {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+            <div class="sidebar-header">Management</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'staff_department' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_departments') }}">
+                    <i class="bi bi-building sidebar-icon"></i> Departments
+                </a>
+                <a class="nav-link {% if 'staff_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_curricula') }}">
+                    <i class="bi bi-file-earmark-text sidebar-icon"></i> Curriculum
+                    <span class="sidebar-count">{{ sc.curricula }}</span>
+                </a>
+                <a class="nav-link {% if 'staff_subject' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_subjects') }}">
+                    <i class="bi bi-book-fill sidebar-icon"></i> Subjects
+                    <span class="sidebar-count">{{ sc.subjects }}</span>
+                </a>
+                <a class="nav-link {% if 'staff_academic_year' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_academic_years') }}">
+                    <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
+                    <span class="sidebar-count">{{ sc.academic_years }}</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-header">Evaluation</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'staff_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_evaluations') }}">
+                    <i class="bi bi-calendar-event sidebar-icon"></i> Evaluation Periods
+                    <span class="sidebar-count">{{ sc.eval_periods }}</span>
+                </a>
+                <a class="nav-link {% if 'staff_question' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_questions') }}">
+                    <i class="bi bi-list-check sidebar-icon"></i> Questionnaire
+                    <span class="sidebar-count">{{ sc.questions }}</span>
+                </a>
+                <a class="nav-link {% if 'staff_results' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_results') }}">
+                    <i class="bi bi-clipboard-data sidebar-icon"></i> Results
+                </a>
+                <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_faculty_messages') }}">
+                    <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
+                    {% if sc.faculty_messages > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.faculty_messages }}</span>{% endif %}
+                </a>
+            </nav>
+            {% endif %}
+
+            {# ── Admin: Management ── #}
+            {% if is_granted('ROLE_ADMIN') %}
+            <div class="sidebar-header">Management</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'admin_users' in app.request.attributes.get('_route')|default('') or 'admin_user_' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_users') }}">
+                    <i class="bi bi-people-fill sidebar-icon"></i> Users
+                    <span class="sidebar-count">{{ sc.users }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_students' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_students') }}">
+                    <i class="bi bi-backpack-fill sidebar-icon"></i> Students
+                    <span class="sidebar-count">{{ sc.students }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_faculty_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_faculty_list') }}">
+                    <i class="bi bi-mortarboard-fill sidebar-icon"></i> Faculty
+                    <span class="sidebar-count">{{ sc.faculty }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_staff_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_staff_list') }}">
+                    <i class="bi bi-clipboard-data sidebar-icon"></i> Staff
+                    <span class="sidebar-count">{{ sc.staff }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_superior_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_superior_list') }}">
+                    <i class="bi bi-star-fill sidebar-icon"></i> Superiors
+                    <span class="sidebar-count">{{ sc.superiors }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_admin_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_admin_list') }}">
+                    <i class="bi bi-shield-fill sidebar-icon"></i> Admins
+                    <span class="sidebar-count">{{ sc.admins }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_curricula') }}">
+                    <i class="bi bi-file-earmark-text sidebar-icon"></i> Curriculum
+                    <span class="sidebar-count">{{ sc.curricula }}</span>
+                </a>
+
+                <a class="nav-link {% if 'admin_subject' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_subjects') }}">
+                    <i class="bi bi-book-fill sidebar-icon"></i> Subjects
+                    <span class="sidebar-count">{{ sc.subjects }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_academic_year' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_academic_years') }}">
+                    <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
+                    <span class="sidebar-count">{{ sc.academic_years }}</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-header">Data</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'admin_migration' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_migration') }}">
+                    <i class="bi bi-database-fill-gear sidebar-icon"></i> Migration
+                </a>
+            </nav>
+
+            <div class="sidebar-header">Evaluation</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'admin_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_evaluations') }}">
+                    <i class="bi bi-calendar-event sidebar-icon"></i> Evaluation Periods
+                    <span class="sidebar-count">{{ sc.eval_periods }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_question' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_questions') }}">
+                    <i class="bi bi-list-check sidebar-icon"></i> Questionnaire
+                    <span class="sidebar-count">{{ sc.questions }}</span>
+                </a>
+                <div class="sidebar-dropdown {% if app.request.attributes.get('_route')|default('') in ['admin_results','admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}open{% endif %}">
+                    <a class="nav-link sidebar-dropdown-toggle {% if app.request.attributes.get('_route')|default('') in ['admin_results','admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}active{% endif %}" href="#">
+                        <i class="bi bi-clipboard-data sidebar-icon"></i> Results
+                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                    </a>
+                    <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
+                        <a class="sidebar-sub-link {% if app.request.attributes.get('_route')|default('') == 'admin_results' %}active{% endif %}"
+                           href="{{ path('admin_results') }}">
+                            <i class="bi bi-mortarboard me-1"></i> SET Results
+                        </a>
+                        <a class="sidebar-sub-link {% if app.request.attributes.get('_route')|default('') in ['admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}active{% endif %}"
+                           href="{{ path('admin_results_superior') }}">
+                            <i class="bi bi-person-badge me-1"></i> SEF Results
+                        </a>
+                    </div>
+                </div>
+                <a class="nav-link {% if 'admin_audit_log' == app.request.attributes.get('_route') %}active{% endif %}"
+                   href="{{ path('admin_audit_log') }}">
+                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                    <span class="sidebar-count">{{ sc.audit_logs }}</span>
+                </a>
+                <a class="nav-link {% if 'admin_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_faculty_messages') }}">
+                    <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
+                    {% if sc.faculty_messages > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.faculty_messages }}</span>{% endif %}
+                </a>
+            </nav>
+            {% endif %}
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-header">Account</div>
+                <div class="sidebar-user-card">
+                    <div class="sidebar-user-initials">{{ app.user.firstName|first }}{{ app.user.lastName|first }}</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                        <span class="sidebar-user-role">
+                            {% if is_granted('ROLE_ADMIN') %}Administrator
+                            {% elseif is_granted('ROLE_SUPERIOR') %}Superior
+                            {% elseif is_granted('ROLE_STAFF') %}Staff
+                            {% elseif is_granted('ROLE_FACULTY') %}Faculty
+                            {% else %}Student{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <nav class="nav flex-column mb-3">
+                    <a class="nav-link {% if 'app_profile' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('app_profile') }}">
+                        <i class="bi bi-person-gear sidebar-icon"></i> My Profile
+                    </a>
+                    <a class="nav-link text-danger" href="{{ path('app_logout') }}">
+                        <i class="bi bi-box-arrow-left sidebar-icon"></i> Logout
+                    </a>
+                </nav>
+            </div>
+        </aside>
+        {% endif %}
+
+        {# ── TOP HEADER BAR (logged-in, desktop) ── #}
+        {% if app.user %}
+        <header class="topbar d-none d-lg-flex">
+            <div class="topbar-left">
+                <div class="topbar-search-wrap" id="topbarSearchWrap">
+                    <button class="topbar-btn topbar-search-trigger" id="topbarSearchBtn" type="button" title="Search">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <div class="topbar-search-expand">
+                        <input type="text" class="topbar-search-input" id="topbarSearchInput" placeholder="Search..." autocomplete="off">
+                        <button class="topbar-search-close" id="topbarSearchClose" type="button" title="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <button class="topbar-btn" id="topbarFullscreen" type="button" title="Toggle Fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+            </div>
+            {% set cay_topbar = current_academic_year() %}
+            {% if cay_topbar %}
+            <div class="topbar-center">
+                <span class="topbar-ay-label"><i class="bi bi-mortarboard-fill me-1"></i>{{ cay_topbar.label }}</span>
+            </div>
+            {% endif %}
+            <div class="topbar-right">
+                <div class="topbar-profile">
+                    <div class="topbar-profile-avatar">
+                        {% if app.user.profilePicture %}
+                            <img src="{{ asset('images/profiles/' ~ app.user.profilePicture) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        {% else %}
+                            {{ app.user.firstName|first }}{{ app.user.lastName|first }}
+                        {% endif %}
+                    </div>
+                    <div class="topbar-profile-info">
+                        <span class="topbar-profile-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                        <span class="topbar-profile-role">
+                            {% if is_granted('ROLE_ADMIN') %}Administrator
+                            {% elseif is_granted('ROLE_STAFF') %}Staff
+                            {% elseif is_granted('ROLE_FACULTY') %}Faculty
+                            {% else %}Student{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <script>
+        document.addEventListener('DOMContentLoaded',function(){
+            // Fullscreen toggle
+            var btn=document.getElementById('topbarFullscreen');
+            if(btn){
+                btn.addEventListener('click',function(){
+                    if(!document.fullscreenElement){
+                        document.documentElement.requestFullscreen().catch(function(){});
+                    }else{
+                        document.exitFullscreen();
+                    }
+                });
+                document.addEventListener('fullscreenchange',function(){
+                    var icon=btn.querySelector('i');
+                    if(document.fullscreenElement){
+                        icon.className='bi bi-fullscreen-exit';
+                    }else{
+                        icon.className='bi bi-arrows-fullscreen';
+                    }
+                });
+            }
+
+            // Search expand/collapse
+            var wrap=document.getElementById('topbarSearchWrap');
+            var searchBtn=document.getElementById('topbarSearchBtn');
+            var searchInput=document.getElementById('topbarSearchInput');
+            var searchClose=document.getElementById('topbarSearchClose');
+            if(wrap&&searchBtn&&searchInput&&searchClose){
+                searchBtn.addEventListener('click',function(){
+                    wrap.classList.add('open');
+                    setTimeout(function(){ searchInput.focus(); },300);
+                });
+                searchClose.addEventListener('click',function(){
+                    wrap.classList.remove('open');
+                    searchInput.value='';
+                });
+                document.addEventListener('click',function(e){
+                    if(!wrap.contains(e.target)){
+                        wrap.classList.remove('open');
+                    }
+                });
+                searchInput.addEventListener('keydown',function(e){
+                    if(e.key==='Escape'){
+                        wrap.classList.remove('open');
+                        searchInput.value='';
+                    }
+                });
+            }
+
+            initSidebarDropdowns();
+        });
+        document.addEventListener('turbo:load', initSidebarDropdowns);
+
+        function initSidebarDropdowns(){
+            // Sidebar dropdown toggle with animation
+            document.querySelectorAll('.sidebar-dropdown-toggle').forEach(function(toggle){
+                if(toggle._dropdownBound) return;
+                toggle._dropdownBound=true;
+                toggle.addEventListener('click',function(e){
+                    var dd=this.closest('.sidebar-dropdown');
+                    var menu=dd.querySelector('.sidebar-dropdown-menu');
+                    // Trigger arrow pulse
+                    dd.classList.add('animating');
+                    setTimeout(function(){ dd.classList.remove('animating'); },400);
+                    if(dd.classList.contains('open')){
+                        // Closing
+                        dd.classList.remove('open');
+                        menu.style.maxHeight='0';
+                        menu.style.overflow='hidden';
+                    }else{
+                        // Opening: measure height then animate
+                        menu.style.maxHeight='none';
+                        menu.style.overflow='visible';
+                        var h=menu.scrollHeight;
+                        menu.style.maxHeight='0';
+                        menu.style.overflow='hidden';
+                        menu.offsetHeight; // force reflow
+                        dd.classList.add('open');
+                        menu.style.maxHeight=h+'px';
+                    }
+                    e.preventDefault();
+                });
+            });
+            // Auto-expand open dropdowns on load
+            document.querySelectorAll('.sidebar-dropdown.open .sidebar-dropdown-menu').forEach(function(m){
+                m.style.maxHeight=m.scrollHeight+'px';
+                m.querySelectorAll('.sidebar-sub-link').forEach(function(link){
+                    link.style.opacity='1';
+                    link.style.transform='translateX(0)';
+                });
+            });
+        }
+        </script>
+        {% endif %}
+
+        {# ── MAIN CONTENT ── #}
+        <div class="{% if app.user %}main-content{% else %}main-content-full{% endif %}"{% if not app.user %} style="padding-top: 56px;"{% endif %}>            {# Non-success flash messages (error, warning, info) #}
+            {% for label, messages in app.flashes(['error', 'warning', 'info', 'danger']) %}
+                {% for message in messages %}
+                    <div class="{% if app.user %}px-0{% else %}container{% endif %} mt-3">
+                        <div class="alert alert-{{ label }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% block body %}{% endblock %}
+        </div>
+
+        {# ── Welcome Modal (shows once per session) ── #}
+        {% if app.user %}
+        {% set _roles = app.user.roles %}
+        {% if 'ROLE_ADMIN' in _roles %}
+            {% set _welcomeRole = 'Administrator' %}
+            {% set _welcomeIcon = 'bi-shield-lock-fill' %}
+            {% set _welcomeColor = '#6366F1' %}
+            {% set _welcomeMsg = 'You have full access to manage users, evaluation periods, questions, and system settings.' %}
+        {% elseif 'ROLE_STAFF' in _roles %}
+            {% set _welcomeRole = 'Staff' %}
+            {% set _welcomeIcon = 'bi-person-gear' %}
+            {% set _welcomeColor = '#0EA5E9' %}
+            {% set _welcomeMsg = 'You can manage evaluation schedules, monitor faculty evaluations, and generate reports.' %}
+        {% elseif 'ROLE_SUPERIOR' in _roles %}
+            {% set _welcomeRole = 'Superior' %}
+            {% set _welcomeIcon = 'bi-award-fill' %}
+            {% set _welcomeColor = '#D97706' %}
+            {% set _welcomeMsg = 'You can evaluate deans and department heads, and review performance results.' %}
+        {% elseif 'ROLE_FACULTY' in _roles %}
+            {% set _welcomeRole = 'Faculty' %}
+            {% set _welcomeIcon = 'bi-mortarboard-fill' %}
+            {% set _welcomeColor = '#16A34A' %}
+            {% set _welcomeMsg = 'You can view your assigned subjects, check evaluation results, and access analytics.' %}
+        {% else %}
+            {% set _welcomeRole = 'Student' %}
+            {% set _welcomeIcon = 'bi-person-fill' %}
+            {% set _welcomeColor = '#2563EB' %}
+            {% set _welcomeMsg = 'You can evaluate your teachers and track your evaluation progress across all subjects.' %}
+        {% endif %}
+        <div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+                <div class="modal-content border-0 shadow-lg" style="border-radius:1.25rem;overflow:hidden;">
+                    <div class="modal-body text-center px-4 pt-4 pb-4 position-relative">
+                        {# Decorative top accent #}
+                        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,{{ _welcomeColor }},#F59E0B,#10B981);"></div>
+
+                        {# Logo #}
+                        <div class="mb-3 mt-2">
+                            <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC Logo" style="width:72px;height:72px;object-fit:contain;">
+                        </div>
+
+                        {# Greeting #}
+                        <h4 class="fw-bold mb-1" style="color:#1E293B;">
+                            Welcome back, {{ app.user.firstName }}!
+                        </h4>
+                        <span class="badge rounded-pill mb-3" style="background:{{ _welcomeColor }};font-size:0.8rem;padding:0.35em 0.9em;">
+                            <i class="bi {{ _welcomeIcon }} me-1"></i>{{ _welcomeRole }}
+                        </span>
+
+                        <p class="text-muted mb-3" style="font-size:0.92rem;line-height:1.5;">
+                            {{ _welcomeMsg }}
+                        </p>
+
+                        {# Quick info chips #}
+                        <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                            {% set cay = current_academic_year() %}
+                            {% if cay %}
+                            <span class="badge bg-light text-dark border" style="font-size:0.78rem;">
+                                <i class="bi bi-calendar3 me-1"></i>{{ cay.label }}
+                            </span>
+                            {% endif %}
+                            <span class="badge bg-light text-dark border" style="font-size:0.78rem;">
+                                <i class="bi bi-clock me-1"></i>{{ 'now'|date('l, F d, Y') }}
+                            </span>
+                        </div>
+
+                        {# Action button #}
+                        <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal"
+                                style="background:{{ _welcomeColor }};color:#fff;border-radius:0.75rem;font-weight:600;">
+                            <i class="bi bi-arrow-right-circle me-1"></i>Go to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+        (function(){
+            var key = 'welcomeModalShown_{{ app.user.id }}';
+            function showWelcome() {
+                if (sessionStorage.getItem(key)) return;
+                var el = document.getElementById('welcomeModal');
+                if (!el) return;
+                var modal = bootstrap.Modal.getOrCreateInstance(el);
+                el.addEventListener('hidden.bs.modal', function(){
+                    modal.dispose();
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    document.querySelectorAll('.modal-backdrop').forEach(function(b){ b.remove(); });
+                }, {once:true});
+                sessionStorage.setItem(key, '1');
+                modal.show();
+            }
+            document.addEventListener('DOMContentLoaded', showWelcome);
+            document.addEventListener('turbo:load', showWelcome);
+        })();
+        </script>
+        {% endif %}
+
+        {# ── Global Success Modal ── #}
+        {% set successMessages = app.flashes('success') %}
+        {% if successMessages|length > 0 %}
+        <div class="modal fade" id="globalSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+                <div class="modal-content border-0 shadow-lg" style="border-radius:1.25rem;overflow:hidden;">
+                    <div class="modal-body text-center px-4 py-5 position-relative">
+                        {# Confetti decoration #}
+                        <div class="success-confetti">
+                            <span class="confetti-piece" style="--x:-60px;--y:-40px;--r:45deg;--c:#3B82F6;--d:0.1s"></span>
+                            <span class="confetti-piece" style="--x:70px;--y:-50px;--r:-30deg;--c:#10B981;--d:0.2s"></span>
+                            <span class="confetti-piece" style="--x:-80px;--y:20px;--r:60deg;--c:#F59E0B;--d:0.15s"></span>
+                            <span class="confetti-piece" style="--x:90px;--y:10px;--r:-45deg;--c:#8B5CF6;--d:0.25s"></span>
+                            <span class="confetti-piece" style="--x:-40px;--y:-70px;--r:20deg;--c:#EC4899;--d:0.05s"></span>
+                            <span class="confetti-piece" style="--x:50px;--y:-65px;--r:-60deg;--c:#06B6D4;--d:0.3s"></span>
+                            <span class="confetti-piece" style="--x:-95px;--y:-15px;--r:75deg;--c:#F97316;--d:0.12s"></span>
+                            <span class="confetti-piece" style="--x:85px;--y:-25px;--r:-15deg;--c:#14B8A6;--d:0.22s"></span>
+                            <span class="confetti-piece confetti-rect" style="--x:60px;--y:40px;--r:30deg;--c:#6366F1;--d:0.18s"></span>
+                            <span class="confetti-piece confetti-rect" style="--x:-70px;--y:50px;--r:-50deg;--c:#EF4444;--d:0.08s"></span>
+                        </div>
+
+                        {# Animated checkmark circle #}
+                        <div class="success-check-wrap mb-3">
+                            <svg class="success-check-svg" viewBox="0 0 100 100">
+                                <circle class="success-circle" cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="3"/>
+                                <polyline class="success-tick" points="30,52 45,65 70,38" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+
+                        <h4 class="fw-bold mb-2" style="color:#1E293B;">Success</h4>
+                        {% for message in successMessages %}
+                        <p class="text-muted mb-0" style="font-size:0.95rem;">{{ message }}</p>
+                        {% endfor %}
+
+                        <div class="mt-4">
+                            <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">
+                                <i class="bi bi-check2 me-1"></i>OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+        (function() {
+            function showSuccessModal() {
+                var m = document.getElementById('globalSuccessModal');
+                if (!m) return;
+                var modal = bootstrap.Modal.getOrCreateInstance(m);
+                m.addEventListener('hidden.bs.modal', function() {
+                    // Full cleanup: remove backdrop, body class, and modal element
+                    modal.dispose();
+                    m.remove();
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    document.querySelectorAll('.modal-backdrop').forEach(function(b) { b.remove(); });
+                }, { once: true });
+                modal.show();
+            }
+            document.addEventListener('DOMContentLoaded', showSuccessModal);
+            document.addEventListener('turbo:load', showSuccessModal);
+        })();
+        </script>
+        {% endif %}
+    </body>
+</html>

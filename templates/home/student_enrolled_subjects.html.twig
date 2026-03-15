@@ -1,0 +1,796 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Enrolled Subjects | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<style>
+/* ── Page Layout ── */
+.ses-page { max-width: 1140px; margin: 0 auto; }
+
+/* ── Breadcrumb ── */
+.ses-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .8rem;
+    color: #94a3b8;
+    margin-bottom: 1.25rem;
+}
+.ses-breadcrumb a { color: #64748b; text-decoration: none; }
+.ses-breadcrumb a:hover { color: #2563eb; }
+.ses-breadcrumb .sep { color: #cbd5e1; }
+.ses-breadcrumb .current { color: #1e293b; font-weight: 600; }
+
+/* ── Header ── */
+.ses-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+.ses-header-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -.02em;
+    margin: 0;
+    line-height: 1.2;
+}
+.ses-header-sub {
+    font-size: .85rem;
+    color: #64748b;
+    margin-top: .25rem;
+}
+.ses-header-actions { display: flex; gap: .5rem; align-items: center; }
+
+/* ── Stats Chips ── */
+.ses-chips {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+.ses-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 50px;
+    padding: .45rem 1rem .45rem .6rem;
+    font-size: .82rem;
+    color: #334155;
+    font-weight: 500;
+    transition: all .15s;
+}
+.ses-chip:hover { border-color: #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+.ses-chip-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.ses-chip-val { font-weight: 700; }
+
+/* ── Card Panel ── */
+.ses-panel {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    overflow: hidden;
+}
+.ses-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ses-panel-title {
+    font-size: .88rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+}
+.ses-panel-title i { color: #2563eb; font-size: 1rem; }
+.ses-panel-tools { display: flex; align-items: center; gap: .5rem; }
+
+/* ── Search Input ── */
+.ses-search-wrap {
+    position: relative;
+}
+.ses-search-wrap i {
+    position: absolute;
+    left: .7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .8rem;
+    color: #94a3b8;
+    pointer-events: none;
+}
+.ses-search-wrap input {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .4rem .75rem .4rem 2rem;
+    font-size: .8rem;
+    width: 200px;
+    transition: border-color .15s, box-shadow .15s;
+    background: #f8fafc;
+}
+.ses-search-wrap input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+    background: #fff;
+}
+
+/* ── Primary Button ── */
+.ses-btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: .45rem 1rem;
+    font-size: .82rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    transition: all .15s;
+    text-decoration: none;
+    cursor: pointer;
+}
+.ses-btn-primary:hover { background: #1d4ed8; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.25); }
+
+/* ── Table ── */
+.ses-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.ses-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    padding: .65rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+.ses-table tbody td {
+    padding: .7rem 1rem;
+    font-size: .84rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.ses-table tbody tr { transition: background .1s; }
+.ses-table tbody tr:hover { background: #f8fafc; }
+.ses-table tbody tr:last-child td { border-bottom: none; }
+.ses-code { font-weight: 700; color: #1e40af; white-space: nowrap; font-size: .82rem; }
+.ses-desc { color: #475569; max-width: 260px; }
+.ses-muted { color: #cbd5e1; }
+
+/* ── Status Badges ── */
+.ses-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .65rem;
+    border-radius: 50px;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .2px;
+}
+.ses-badge-pending { background: #fef9c3; color: #854d0e; }
+.ses-badge-approved { background: #dcfce7; color: #166534; }
+.ses-badge-rejected { background: #fee2e2; color: #991b1b; }
+
+/* ── Remove Button ── */
+.ses-btn-remove {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1.5px solid #fecaca;
+    color: #ef4444;
+    border-radius: 8px;
+    font-size: .78rem;
+    transition: all .15s;
+    cursor: pointer;
+}
+.ses-btn-remove:hover { background: #fef2f2; border-color: #f87171; color: #dc2626; }
+
+/* ── Empty State ── */
+.ses-empty-state {
+    text-align: center;
+    padding: 4rem 2rem 3.5rem;
+}
+.ses-empty-illustration {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.ses-empty-illustration::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px dashed #d1d5db;
+    animation: ses-spin 20s linear infinite;
+}
+@keyframes ses-spin { to { transform: rotate(360deg); } }
+.ses-empty-illustration i { font-size: 3.5rem; color: #2563eb; opacity: .6; }
+.ses-empty-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
+.ses-empty-desc { font-size: .84rem; color: #64748b; max-width: 340px; margin: 0 auto .35rem; line-height: 1.5; }
+.ses-empty-hint { font-size: .75rem; color: #94a3b8; margin-bottom: 1.25rem; }
+.ses-empty-actions { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+.ses-btn-outline {
+    background: #fff;
+    color: #2563eb;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    padding: .45rem 1rem;
+    font-size: .82rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    transition: all .15s;
+    cursor: pointer;
+    text-decoration: none;
+}
+.ses-btn-outline:hover { background: #eff6ff; border-color: #93bbfd; color: #1d4ed8; }
+
+/* ── Quick Tip ── */
+.ses-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: .75rem 1rem;
+    margin-top: 1.25rem;
+    font-size: .78rem;
+    color: #92400e;
+}
+.ses-tip i { font-size: 1rem; margin-top: .1rem; flex-shrink: 0; color: #f59e0b; }
+
+/* ── Add Subject Modal ── */
+.ses-modal .modal-content { border: none; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,.15); }
+.ses-modal .modal-header {
+    border: none;
+    padding: 1.25rem 1.5rem;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ses-modal .modal-header .modal-title { color: #0f172a; }
+.ses-modal .modal-header .modal-subtitle { font-size: .78rem; color: #64748b; margin-top: .15rem; }
+.ses-modal .modal-body { padding: 1.25rem 1.5rem; }
+.ses-modal .modal-footer { border-top: 1px solid #f1f5f9; padding: .75rem 1.5rem; background: #f8fafc; }
+
+/* ── Available Subject Cards ── */
+.ses-avail-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: .5rem;
+    transition: all .15s;
+    background: #fff;
+}
+.ses-avail-card:hover { border-color: #93bbfd; background: #f8faff; box-shadow: 0 2px 8px rgba(37,99,235,.06); }
+.ses-avail-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #dbeafe, #ede9fe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ses-avail-icon i { font-size: .9rem; color: #4f46e5; }
+.ses-avail-info { flex: 1; min-width: 0; }
+.ses-avail-code { font-weight: 700; color: #1e40af; font-size: .82rem; }
+.ses-avail-name { font-size: .78rem; color: #475569; margin-top: .1rem; }
+.ses-avail-meta {
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+    font-size: .7rem;
+    color: #94a3b8;
+    margin-top: .3rem;
+}
+.ses-avail-meta span { display: inline-flex; align-items: center; gap: .2rem; }
+.ses-avail-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: .35rem .75rem;
+    font-size: .76rem;
+    font-weight: 600;
+    transition: all .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ses-avail-btn:hover { background: #1d4ed8; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.2); }
+
+.ses-avail-empty { text-align: center; padding: 2rem 1rem; color: #94a3b8; font-size: .84rem; }
+
+/* ── Filter Bar ── */
+.ses-filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ses-filter-bar select, .ses-filter-bar input {
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    padding: .4rem .75rem;
+    font-size: .8rem;
+    transition: border-color .15s;
+    background: #f8fafc;
+}
+.ses-filter-bar select:focus, .ses-filter-bar input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+    background: #fff;
+}
+
+.ses-subj-list { max-height: 420px; overflow-y: auto; padding-right: .25rem; }
+.ses-subj-list::-webkit-scrollbar { width: 5px; }
+.ses-subj-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.ses-subj-list::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Subject cards (enrolled view) ── */
+.ses-subject-cards { display: flex; flex-direction: column; gap: .5rem; padding: .75rem 1.25rem 1.25rem; }
+.ses-subject-card {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all .15s;
+    background: #fff;
+}
+.ses-subject-card:hover { border-color: #bfdbfe; background: #f8faff; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.ses-subject-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: .72rem;
+    font-weight: 800;
+    color: #fff;
+}
+.ses-subject-card-body { flex: 1; min-width: 0; }
+.ses-subject-card-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ses-subject-card-code { font-weight: 700; font-size: .82rem; color: #1e40af; }
+.ses-subject-card-name { font-size: .78rem; color: #475569; margin-top: .1rem; }
+.ses-subject-card-meta {
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+    font-size: .7rem;
+    color: #94a3b8;
+    margin-top: .25rem;
+}
+.ses-subject-card-meta span { display: inline-flex; align-items: center; gap: .2rem; }
+.ses-subject-card-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+    .ses-header-title { font-size: 1.25rem; }
+    .ses-chips { gap: .5rem; }
+    .ses-chip { padding: .35rem .75rem .35rem .45rem; font-size: .76rem; }
+    .ses-chip-icon { width: 24px; height: 24px; font-size: .65rem; }
+    .ses-panel-head { padding: .75rem 1rem; }
+    .ses-search-wrap input { width: 150px; }
+    .ses-subject-cards { padding: .5rem .75rem .75rem; }
+    .ses-empty-state { padding: 2.5rem 1rem 2rem; }
+    .ses-empty-illustration { width: 110px; height: 110px; }
+    .ses-empty-illustration i { font-size: 2.75rem; }
+}
+
+/* ── View Toggle ── */
+.ses-view-toggle {
+    display: inline-flex;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.ses-view-btn {
+    background: none;
+    border: none;
+    padding: .3rem .55rem;
+    font-size: .82rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all .12s;
+}
+.ses-view-btn.active { background: #2563eb; color: #fff; }
+.ses-view-btn:not(.active):hover { background: #f1f5f9; color: #475569; }
+</style>
+
+{% set totalUnits = 0 %}
+{% set pendingCount = 0 %}
+{% set approvedCount = 0 %}
+{% for e in enrollments %}
+    {% set totalUnits = totalUnits + (e.subject.units ?: 0) %}
+    {% if e.status == 'pending' %}{% set pendingCount = pendingCount + 1 %}{% endif %}
+    {% if e.status == 'approved' %}{% set approvedCount = approvedCount + 1 %}{% endif %}
+{% endfor %}
+
+<div class="ses-page">
+
+{# ── Breadcrumb ── #}
+<div class="ses-breadcrumb">
+    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <span class="sep">/</span>
+    <span class="current">Enrolled Subjects</span>
+</div>
+
+{# ── Header ── #}
+<div class="ses-header">
+    <div>
+        <h1 class="ses-header-title">My Enrolled Subjects</h1>
+        <div class="ses-header-sub">
+            Manage your enrolled subjects{% if currentAY and currentAY.semester %} &middot; <strong>{{ currentAY.semester }}</strong>{% endif %}
+        </div>
+    </div>
+    <div class="ses-header-actions">
+        <button type="button" class="ses-btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+            <i class="bi bi-plus-lg"></i> Add Subject
+        </button>
+    </div>
+</div>
+
+{# ── Stats Chips ── #}
+<div class="ses-chips">
+    <div class="ses-chip">
+        <span class="ses-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">
+            <i class="bi bi-book"></i>
+        </span>
+        <span><span class="ses-chip-val">{{ enrollments|length }}</span> Enrolled</span>
+    </div>
+    <div class="ses-chip">
+        <span class="ses-chip-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+            <i class="bi bi-mortarboard"></i>
+        </span>
+        <span><span class="ses-chip-val">{{ totalUnits }}</span> Units</span>
+    </div>
+    <div class="ses-chip">
+        <span class="ses-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
+            <i class="bi bi-check-circle"></i>
+        </span>
+        <span><span class="ses-chip-val">{{ approvedCount }}</span> Approved</span>
+    </div>
+    {% if pendingCount > 0 %}
+    <div class="ses-chip">
+        <span class="ses-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+            <i class="bi bi-clock"></i>
+        </span>
+        <span><span class="ses-chip-val">{{ pendingCount }}</span> Pending</span>
+    </div>
+    {% endif %}
+</div>
+
+{# ── Main Panel ── #}
+<div class="ses-panel mb-4">
+    <div class="ses-panel-head">
+        <div class="ses-panel-title">
+            <i class="bi bi-bookmark-check-fill"></i>
+            Subjects
+            {% if enrollments|length > 0 %}
+                <span style="font-weight:400;color:#94a3b8;font-size:.78rem;margin-left:.15rem;">({{ enrollments|length }})</span>
+            {% endif %}
+        </div>
+        <div class="ses-panel-tools">
+            {% if enrollments|length > 0 %}
+            <div class="ses-search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="search" id="enrolledSubjectSearch" placeholder="Search...">
+            </div>
+            <div class="ses-view-toggle">
+                <button type="button" class="ses-view-btn active" data-view="table" title="Table view"><i class="bi bi-list"></i></button>
+                <button type="button" class="ses-view-btn" data-view="cards" title="Card view"><i class="bi bi-grid-3x3-gap"></i></button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if enrollments|length > 0 %}
+        {# ── Table View ── #}
+        <div class="table-responsive" id="enrolledTableView">
+            <table class="table ses-table mb-0" id="enrolledSubjectsTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Section</th>
+                        <th>Schedule</th>
+                        <th class="text-center">Units</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                        {% set subject = enrollment.subject %}
+                        <tr data-search="{{ subject.subjectCode }} {{ subject.subjectName }} {{ enrollment.section ?: subject.section ?: '' }} {{ enrollment.schedule ?: subject.schedule ?: '' }} {{ subject.units ?: '' }} {{ enrollment.status }}">
+                            <td class="ses-code">{{ subject.subjectCode }}</td>
+                            <td class="ses-desc">{{ subject.subjectName }}</td>
+                            <td>{% if enrollment.section ?: subject.section %}<span class="badge bg-light text-dark border" style="font-size:.72rem;">{{ enrollment.section ?: subject.section }}</span>{% else %}<span class="ses-muted">&mdash;</span>{% endif %}</td>
+                            <td>{% if enrollment.schedule ?: subject.schedule %}<span class="small">{{ enrollment.schedule ?: subject.schedule }}</span>{% else %}<span class="ses-muted">&mdash;</span>{% endif %}</td>
+                            <td class="text-center fw-semibold">{{ subject.units ?: '&mdash;' }}</td>
+                            <td>
+                                {% if enrollment.status == 'approved' %}
+                                    <span class="ses-badge ses-badge-approved"><i class="bi bi-check-circle-fill"></i> Approved</span>
+                                {% elseif enrollment.status == 'rejected' %}
+                                    <span class="ses-badge ses-badge-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>
+                                {% else %}
+                                    <span class="ses-badge ses-badge-pending"><i class="bi bi-clock-fill"></i> Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="{{ path('student_enrolled_subject_remove', {id: enrollment.id}) }}" class="d-inline" onsubmit="return confirm('Remove {{ subject.subjectCode }} from your enrolled subjects?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('student_remove_subject_' ~ enrollment.id) }}">
+                                    <button type="submit" class="ses-btn-remove" title="Remove">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# ── Card View ── #}
+        <div class="ses-subject-cards d-none" id="enrolledCardView">
+            {% set colors = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
+            {% for enrollment in enrollments %}
+                {% set subject = enrollment.subject %}
+                {% set colorIdx = loop.index0 % colors|length %}
+                <div class="ses-subject-card" data-search="{{ subject.subjectCode }} {{ subject.subjectName }} {{ enrollment.section ?: subject.section ?: '' }} {{ enrollment.schedule ?: subject.schedule ?: '' }} {{ subject.units ?: '' }} {{ enrollment.status }}">
+                    <div class="ses-subject-card-icon" style="background:{{ colors[colorIdx] }};">
+                        {{ subject.subjectCode[:2]|upper }}
+                    </div>
+                    <div class="ses-subject-card-body">
+                        <div class="ses-subject-card-top">
+                            <span class="ses-subject-card-code">{{ subject.subjectCode }}</span>
+                            {% if enrollment.status == 'approved' %}
+                                <span class="ses-badge ses-badge-approved"><i class="bi bi-check-circle-fill"></i> Approved</span>
+                            {% elseif enrollment.status == 'rejected' %}
+                                <span class="ses-badge ses-badge-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>
+                            {% else %}
+                                <span class="ses-badge ses-badge-pending"><i class="bi bi-clock-fill"></i> Pending</span>
+                            {% endif %}
+                        </div>
+                        <div class="ses-subject-card-name">{{ subject.subjectName }}</div>
+                        <div class="ses-subject-card-meta">
+                            {% if subject.units %}<span><i class="bi bi-bookmark"></i> {{ subject.units }} units</span>{% endif %}
+                            {% if enrollment.section ?: subject.section %}<span><i class="bi bi-grid-3x3-gap"></i> Sec {{ enrollment.section ?: subject.section }}</span>{% endif %}
+                            {% if enrollment.schedule ?: subject.schedule %}<span><i class="bi bi-clock"></i> {{ enrollment.schedule ?: subject.schedule }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="ses-subject-card-actions">
+                        <form method="post" action="{{ path('student_enrolled_subject_remove', {id: enrollment.id}) }}" class="d-inline" onsubmit="return confirm('Remove {{ subject.subjectCode }} from your enrolled subjects?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('student_remove_subject_' ~ enrollment.id) }}">
+                            <button type="submit" class="ses-btn-remove" title="Remove">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {# ── Empty State ── #}
+        <div class="ses-empty-state">
+            <div class="ses-empty-illustration">
+                <i class="bi bi-journal-bookmark"></i>
+            </div>
+            <div class="ses-empty-title">No subjects enrolled yet</div>
+            <div class="ses-empty-desc">Start building your schedule by adding subjects from the available catalog for this semester.</div>
+            <div class="ses-empty-hint">You can enroll subjects one by one or import them all at once.</div>
+            <div class="ses-empty-actions">
+                <button type="button" class="ses-btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="bi bi-plus-lg"></i> Browse Subjects
+                </button>
+                {% if availableSubjects|length > 0 %}
+                <form method="post" action="{{ path('student_enrolled_subject_import') }}" class="d-inline" onsubmit="return confirm('Enroll in all {{ availableSubjects|length }} available subject(s)?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('student_import_subjects') }}">
+                    <button type="submit" class="ses-btn-outline">
+                        <i class="bi bi-download"></i> Enroll All ({{ availableSubjects|length }})
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="padding: 0 1.25rem 1.25rem;">
+            <div class="ses-tip">
+                <i class="bi bi-lightbulb-fill"></i>
+                <div>
+                    <strong>Quick Tip:</strong> Use the <strong>Enroll All</strong> option to quickly add all available subjects for your program, then remove any you don't need.
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+</div>{# /ses-page #}
+
+{# ════════════════════════ ADD SUBJECT MODAL ════════════════════════ #}
+<div class="modal fade ses-modal" id="addSubjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2" style="color:#2563eb;"></i>Add Subject</h5>
+                    <div class="modal-subtitle">Browse and enroll in available subjects</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if availableSubjects|length > 0 %}
+                    <div class="ses-filter-bar">
+                        <input type="text" id="addSubjSearch" placeholder="Search by code or name..." style="flex:1;min-width:180px;">
+                        {% if yearLevels|length > 0 %}
+                            <select id="addSubjYear">
+                                <option value="">All Year Levels</option>
+                                {% for yl in yearLevels %}
+                                    <option value="{{ yl }}">{{ yl }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                        {% if faculties|length > 0 %}
+                            <select id="addSubjFaculty">
+                                <option value="">All Faculty</option>
+                                {% for fid, fname in faculties %}
+                                    <option value="{{ fid }}">{{ fname }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                    <div class="ses-subj-list" id="addSubjList">
+                        {% for subject in availableSubjects %}
+                            <div class="ses-avail-card" data-code="{{ subject.subjectCode|lower }}" data-name="{{ subject.subjectName|lower }}" data-year="{{ subject.yearLevel ?: '' }}" data-faculty="{{ subject.faculty ? subject.faculty.id : '' }}">
+                                <div class="ses-avail-icon">
+                                    <i class="bi bi-book"></i>
+                                </div>
+                                <div class="ses-avail-info">
+                                    <div class="ses-avail-code">{{ subject.subjectCode }}</div>
+                                    <div class="ses-avail-name">{{ subject.subjectName }}</div>
+                                    <div class="ses-avail-meta">
+                                        {% if subject.units %}<span><i class="bi bi-bookmark"></i> {{ subject.units }} units</span>{% endif %}
+                                        {% if subject.section %}<span><i class="bi bi-grid-3x3-gap"></i> Sec {{ subject.section }}</span>{% endif %}
+                                        {% if subject.schedule %}<span><i class="bi bi-clock"></i> {{ subject.schedule }}</span>{% endif %}
+                                        {% if subject.faculty %}<span><i class="bi bi-person"></i> {{ subject.faculty.fullName }}</span>{% endif %}
+                                        {% if subject.yearLevel %}<span><i class="bi bi-mortarboard"></i> {{ subject.yearLevel }}</span>{% endif %}
+                                    </div>
+                                </div>
+                                <form method="post" action="{{ path('student_enrolled_subject_add') }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('student_add_subject') }}">
+                                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                                    <button type="submit" class="ses-avail-btn"><i class="bi bi-plus-lg me-1"></i>Enroll</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="ses-avail-empty d-none" id="addSubjEmpty">
+                        <i class="bi bi-search" style="font-size:1.5rem;opacity:.4;"></i>
+                        <div class="mt-1">No subjects match your filters.</div>
+                    </div>
+                {% else %}
+                    <div class="ses-avail-empty">
+                        <i class="bi bi-inbox" style="font-size:2rem;opacity:.4;"></i>
+                        <div class="fw-semibold text-dark mt-2">No available subjects</div>
+                        <div class="small text-muted mt-1">All subjects for your department have already been enrolled, or none are loaded yet.</div>
+                    </div>
+                {% endif %}
+            </div>
+            {% if availableSubjects|length > 0 %}
+                <div class="modal-footer justify-content-between">
+                    <form method="post" action="{{ path('student_enrolled_subject_import') }}" onsubmit="return confirm('Enroll in all {{ availableSubjects|length }} available subject(s)?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('student_import_subjects') }}">
+                        <button type="submit" class="ses-btn-outline">
+                            <i class="bi bi-download"></i> Enroll All ({{ availableSubjects|length }})
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-light btn-sm fw-bold" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    /* ── Search enrolled subjects (both views) ── */
+    const searchInput = document.getElementById('enrolledSubjectSearch');
+    const tableView = document.getElementById('enrolledTableView');
+    const cardView = document.getElementById('enrolledCardView');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const term = searchInput.value.trim().toLowerCase();
+            // Filter table rows
+            if (tableView) {
+                tableView.querySelectorAll('tbody tr').forEach(row => {
+                    row.style.display = !term || (row.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
+                });
+            }
+            // Filter cards
+            if (cardView) {
+                cardView.querySelectorAll('.ses-subject-card').forEach(card => {
+                    card.style.display = !term || (card.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
+                });
+            }
+        });
+    }
+
+    /* ── View Toggle (table / cards) ── */
+    document.querySelectorAll('.ses-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ses-view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const view = btn.dataset.view;
+            if (tableView) tableView.classList.toggle('d-none', view !== 'table');
+            if (cardView) cardView.classList.toggle('d-none', view !== 'cards');
+        });
+    });
+
+    /* ── Add Subject modal filters ── */
+    const addSearch = document.getElementById('addSubjSearch');
+    const addYear = document.getElementById('addSubjYear');
+    const addFaculty = document.getElementById('addSubjFaculty');
+    const addList = document.getElementById('addSubjList');
+    const addEmpty = document.getElementById('addSubjEmpty');
+    function filterSubjects() {
+        if (!addList) return;
+        const q = (addSearch ? addSearch.value : '').toLowerCase().trim();
+        const y = addYear ? addYear.value : '';
+        const f = addFaculty ? addFaculty.value : '';
+        let visible = 0;
+        addList.querySelectorAll('.ses-avail-card').forEach(row => {
+            const matchQ = !q || row.dataset.code.includes(q) || row.dataset.name.includes(q);
+            const matchY = !y || row.dataset.year === y;
+            const matchF = !f || row.dataset.faculty === f;
+            const show = matchQ && matchY && matchF;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        if (addEmpty) addEmpty.classList.toggle('d-none', visible > 0);
+    }
+    if (addSearch) addSearch.addEventListener('input', filterSubjects);
+    if (addYear) addYear.addEventListener('change', filterSubjects);
+    if (addFaculty) addFaculty.addEventListener('change', filterSubjects);
+});
+</script>
+{% endblock %}

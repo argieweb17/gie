@@ -1,0 +1,737 @@
+﻿{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Evaluation Results | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   EVALUATION RESULTS — ADMIN
+   ═══════════════════════════════════════ #}
+
+{# ── Pre-compute stats ── #}
+{% set totalFaculty = facultyResults|length %}
+{% set totalEvaluators = 0 %}
+{% set sumAvg = 0 %}
+{% set alwaysCount = 0 %}
+{% for r in facultyResults %}
+    {% set totalEvaluators = totalEvaluators + r.evaluators %}
+    {% set sumAvg = sumAvg + r.average %}
+    {% if r.level == 'Always manifested' %}{% set alwaysCount = alwaysCount + 1 %}{% endif %}
+{% endfor %}
+{% set overallAvg = totalFaculty > 0 ? (sumAvg / totalFaculty) : 0 %}
+
+{# ── Header ── #}
+<div class="rs-header no-print">
+    <div class="rs-header-bg"></div>
+    <div class="rs-header-inner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rs-header-icon">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                </div>
+                <div>
+                    <h4 class="rs-title">Evaluation Results</h4>
+                    <div class="rs-meta">
+                        <span class="rs-meta-tag"><i class="bi bi-calendar-event"></i> {{ evaluations|length }} Periods</span>
+                        <span class="rs-meta-tag"><i class="bi bi-buildings"></i> {{ departments|length }} Departments</span>
+                        {% if selectedEvaluation %}
+                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} Faculty</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if selectedEvaluation %}
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print
+                </button>
+                <a href="{{ path(prefix ~ '_results_export', {evaluation: selectedEvaluation, department: selectedDepartment}) }}" class="btn btn-sm rs-btn-white">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>Export CSV
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Stats Row ── #}
+{% if totalFaculty > 0 %}
+<div class="rs-stats no-print">
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-blue"><i class="bi bi-people-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ totalFaculty }}</div>
+            <div class="rs-stat-label">Faculty Evaluated</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-purple"><i class="bi bi-person-check-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ totalEvaluators }}</div>
+            <div class="rs-stat-label">Total Evaluators</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-green"><i class="bi bi-graph-up-arrow"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ overallAvg|number_format(2) }}</div>
+            <div class="rs-stat-label">Overall Average</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-amber"><i class="bi bi-trophy-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ alwaysCount }}</div>
+            <div class="rs-stat-label">Always Manifested</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Filter Toolbar ── #}
+<div class="rs-toolbar no-print">
+    <div class="rs-toolbar-row">
+        <select class="rs-filter-select" id="rsFilterCollege" onchange="filterDeptsByCollege(); applyFilters()">
+            <option value="">All Colleges</option>
+            {% for col in colleges %}
+                <option value="{{ col }}">{{ col }}</option>
+            {% endfor %}
+        </select>
+        <form method="get" action="{{ path(prefix ~ '_results') }}" class="rs-toolbar-row" style="flex:1;">
+            {% if selectedEvaluation %}
+                <input type="hidden" name="evaluation" value="{{ selectedEvaluation }}">
+            {% endif %}
+            <select name="department" id="rsDeptSelect" class="rs-filter-select" onchange="this.form.submit()">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" data-college="{{ dept.collegeName ?? '' }}" {{ selectedDepartment == dept.id ? 'selected' }}>{{ dept.departmentName }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="rs-search-box">
+            <i class="bi bi-search rs-search-icon"></i>
+            <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
+        </div>
+        <button type="button" class="rs-reset-btn" id="resetFilters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+        </button>
+    </div>
+    <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
+</div>
+
+{# ── Results Table ── #}
+<div class="rs-table-wrap">
+    <div class="rs-table-bar">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-trophy"></i>
+            <span>Faculty Rankings</span>
+        </div>
+        <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 rs-table">
+            <thead>
+                <tr>
+                    <th style="width:55px" class="ps-3">Rank</th>
+                    <th>Faculty Name</th>
+                    <th>Department</th>
+                    <th class="text-center">Rating</th>
+                    <th class="text-center" style="width:100px">Progress</th>
+                    <th class="text-center">Evaluators</th>
+                    <th class="text-center">Performance</th>
+                    <th class="text-center" style="width:60px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in facultyResults %}
+                <tr class="result-row"
+                    data-name="{{ r.faculty.fullName|lower }}"
+                    data-college="{{ r.faculty.department ? (r.faculty.department.collegeName ?? '') : '' }}"
+                    data-level="{{ r.level }}"
+                    data-average="{{ r.average|number_format(2) }}"
+                    data-evaluators="{{ r.evaluators }}">
+                    <td class="ps-3">
+                        {% if loop.index <= 3 %}
+                            <div class="rs-rank rank-{{ loop.index }}">{{ loop.index }}</div>
+                        {% else %}
+                            <span class="rs-rank-text result-rank">{{ loop.index }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rs-avatar">
+                                {% if r.faculty.profilePicture %}
+                                    <img src="{{ asset('images/profiles/' ~ r.faculty.profilePicture) }}" alt="" class="rs-avatar-img">
+                                {% else %}
+                                    {{ r.faculty.firstName|first|upper }}{{ r.faculty.lastName|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="rs-faculty-name">{{ r.faculty.fullName }}</div>
+                                <div class="rs-faculty-email">{{ r.faculty.email ?? '' }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="rs-dept-tag">
+                            <i class="bi bi-building"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="rs-rating-num">{{ r.average|number_format(2) }}</span>
+                        <span class="rs-rating-of">/ 5</span>
+                    </td>
+                    <td class="text-center">
+                        {% set pct = (r.average / 5 * 100)|round(0) %}
+                        <div class="rs-bar">
+                            <div class="rs-bar-fill {% if r.average >= 4.5 %}bar-green{% elseif r.average >= 3.5 %}bar-blue{% elseif r.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center"><span class="rs-evaluator-num">{{ r.evaluators }}</span></td>
+                    <td class="text-center">
+                        {% if r.level == 'Always manifested' %}
+                            <span class="rs-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Often manifested' %}
+                            <span class="rs-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Sometimes manifested' %}
+                            <span class="rs-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Seldom manifested' %}
+                            <span class="rs-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> {{ r.level }}</span>
+                        {% else %}
+                            <span class="rs-perf-badge perf-poor"><i class="bi bi-x-circle-fill"></i> {{ r.level }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ path(prefix ~ '_results_faculty_evaluations', {faculty: r.faculty.id}) }}" class="rs-view-btn" title="View Evaluations">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-5">
+                        <div class="rs-empty-icon mx-auto mb-2"><i class="bi bi-inbox"></i></div>
+                        <span class="text-muted">No results found for this evaluation period.</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ── Header ── */
+.rs-header {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    background: #1e3a5f;
+}
+.rs-header-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 35%, #1e40af 60%, #059669 100%);
+    opacity: .95;
+}
+.rs-header-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(59,130,246,.15) 0%, transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(16,185,129,.15) 0%, transparent 50%);
+}
+.rs-header-inner {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 2rem;
+}
+.rs-header-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.12);
+    border: 2px solid rgba(255,255,255,.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.rs-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px;
+    letter-spacing: -.01em;
+}
+.rs-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.rs-meta-tag {
+    font-size: .72rem;
+    color: rgba(255,255,255,.75);
+    background: rgba(255,255,255,.08);
+    padding: 2px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.rs-btn-ghost {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    transition: all .2s;
+}
+.rs-btn-ghost:hover { background: rgba(255,255,255,.2); color: #fff; }
+.rs-btn-white {
+    background: #fff;
+    color: #1e3a5f;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .78rem;
+    padding: 6px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    transition: all .2s;
+}
+.rs-btn-white:hover { background: #f0f4ff; color: #1e3a5f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+/* ── Stats ── */
+.rs-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.rs-stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.rs-stat-card:hover { border-color: #c7d2fe; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.rs-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.si-blue   { background: #eff6ff; color: #2563eb; }
+.si-green  { background: #f0fdf4; color: #16a34a; }
+.si-purple { background: #faf5ff; color: #7c3aed; }
+.si-amber  { background: #fffbeb; color: #d97706; }
+.rs-stat-num {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.rs-stat-label {
+    font-size: .7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 500;
+}
+
+/* ── Toolbar ── */
+.rs-toolbar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: .75rem 1rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.rs-toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+.rs-filter-select {
+    font-size: .8rem;
+    padding: 7px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    min-width: 200px;
+    transition: border-color .2s, box-shadow .2s;
+}
+.rs-filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.rs-search-box {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+.rs-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: .8rem;
+}
+.rs-search-input {
+    width: 100%;
+    padding: 7px 12px 7px 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: .8rem;
+    background: #f8fafc;
+    transition: border-color .2s, box-shadow .2s;
+}
+.rs-search-input:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.rs-reset-btn {
+    background: #fff;
+    color: #64748b;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .8rem;
+    padding: 7px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+}
+.rs-reset-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #334155; }
+.rs-result-count {
+    font-size: .75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ── Table ── */
+.rs-table-wrap {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    margin-bottom: 1.5rem;
+}
+.rs-table-bar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 35%, #1e40af 60%, #059669 100%);
+    color: #fff;
+    padding: .7rem 1.25rem;
+    font-size: .85rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.rs-table-count {
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+}
+.rs-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+.rs-table thead th {
+    font-size: .73rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    padding: 10px 12px;
+    white-space: nowrap;
+}
+.rs-table tbody tr {
+    transition: background .15s;
+    border-bottom: 1px solid #f1f5f9;
+}
+.rs-table tbody tr:hover {
+    background: #f8fafc;
+}
+.rs-table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+/* ── Avatar ── */
+.rs-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    color: #1e3a8a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.rs-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.rs-faculty-name {
+    font-size: .85rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+.rs-faculty-email {
+    font-size: .68rem;
+    color: #94a3b8;
+}
+
+/* ── Dept Tag ── */
+.rs-dept-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .72rem;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* ── Cell Subtext ── */
+.rs-cell-sub {
+    font-size: .78rem;
+    color: #64748b;
+}
+
+/* ── Rank ── */
+.rs-rank {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #fff;
+}
+.rank-1 { background: linear-gradient(135deg, #f59e0b, #eab308); box-shadow: 0 2px 8px rgba(245,158,11,.3); }
+.rank-2 { background: linear-gradient(135deg, #94a3b8, #64748b); box-shadow: 0 2px 8px rgba(100,116,139,.3); }
+.rank-3 { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px rgba(180,83,9,.3); }
+.rs-rank-text {
+    font-weight: 700;
+    font-size: .82rem;
+    color: #94a3b8;
+}
+
+/* ── Rating ── */
+.rs-rating-num {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.rs-rating-of {
+    font-size: .68rem;
+    color: #94a3b8;
+}
+.rs-bar {
+    width: 70px;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+}
+.rs-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease;
+}
+.bar-green  { background: linear-gradient(90deg, #16a34a, #4ade80); }
+.bar-blue   { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.bar-yellow { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.bar-red    { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+/* ── Evaluator ── */
+.rs-evaluator-num {
+    font-weight: 700;
+    font-size: .85rem;
+    color: #334155;
+}
+
+/* ── Performance Badges ── */
+.rs-perf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.perf-excellent { background: #dcfce7; color: #15803d; }
+.perf-verygood  { background: #dbeafe; color: #1d4ed8; }
+.perf-good      { background: #ccfbf1; color: #0f766e; }
+.perf-fair      { background: #fef3c7; color: #b45309; }
+.perf-poor      { background: #fee2e2; color: #dc2626; }
+
+/* ── View Button ── */
+.rs-view-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: .85rem;
+    color: #3b82f6;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    text-decoration: none;
+    transition: all .2s;
+}
+.rs-view-btn:hover {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+}
+
+/* ── Empty ── */
+.rs-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: #94a3b8;
+}
+
+/* ── Print ── */
+@media print {
+    .rs-header, .rs-stats, .rs-toolbar, .no-print { display: none !important; }
+    .rs-table-wrap { border: none; box-shadow: none; }
+    .rs-table-bar { background: #1e3a8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── Animation ── */
+@keyframes rsSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.rs-stat-card, .rs-toolbar, .rs-table-wrap {
+    animation: rsSlideIn .3s ease forwards;
+    opacity: 0;
+}
+.rs-stat-card:nth-child(1) { animation-delay: .05s; }
+.rs-stat-card:nth-child(2) { animation-delay: .1s; }
+.rs-stat-card:nth-child(3) { animation-delay: .15s; }
+.rs-stat-card:nth-child(4) { animation-delay: .2s; }
+.rs-toolbar { animation-delay: .15s; }
+.rs-table-wrap { animation-delay: .25s; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .rs-stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT — SEARCH FILTER
+   ═══════════════════════════════════════ #}
+<script>
+function filterDeptsByCollege() {
+    var college = document.getElementById('rsFilterCollege').value;
+    var deptSelect = document.getElementById('rsDeptSelect');
+    var opts = deptSelect.querySelectorAll('option[data-college]');
+    opts.forEach(function(opt) {
+        opt.style.display = (!college || opt.getAttribute('data-college') === college) ? '' : 'none';
+    });
+    // Reset department selection if current is hidden
+    var current = deptSelect.options[deptSelect.selectedIndex];
+    if (current && current.style.display === 'none') {
+        deptSelect.value = '';
+    }
+}
+
+(function() {
+    var searchInput = document.getElementById('facultySearch');
+    var collegeSelect = document.getElementById('rsFilterCollege');
+    var resetBtn    = document.getElementById('resetFilters');
+    var countEl     = document.getElementById('resultCount');
+    var tbody       = document.querySelector('.result-row')?.parentElement;
+
+    if (!tbody) return;
+
+    var rows = Array.from(tbody.querySelectorAll('.result-row'));
+    var totalRows = rows.length;
+
+    function applyFilters() {
+        var search = searchInput.value.toLowerCase().trim();
+        var college = collegeSelect.value;
+        var visible = 0;
+
+        rows.forEach(function(row) {
+            var name = row.getAttribute('data-name');
+            var rowCollege = row.getAttribute('data-college');
+            var show = true;
+            if (search && name.indexOf(search) === -1) show = false;
+            if (college && rowCollege !== college) show = false;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        countEl.textContent = 'Showing ' + visible + ' of ' + totalRows + ' result(s)';
+
+        var rank = 1;
+        rows.forEach(function(row) {
+            if (row.style.display !== 'none') {
+                var rankCell = row.querySelector('.result-rank');
+                if (rankCell) rankCell.textContent = rank;
+                rank++;
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    collegeSelect.addEventListener('change', applyFilters);
+    resetBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        collegeSelect.value = '';
+        filterDeptsByCollege();
+        applyFilters();
+    });
+    applyFilters();
+})();
+</script>
+
+{% endblock %}

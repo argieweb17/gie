@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Profile | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Profile</h4>
+    <div class="page-header-actions">
+        <a href="{{ path('app_profile') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <form method="post" action="{{ path('app_profile_edit') }}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold"><i class="bi bi-person me-1"></i> Personal Information</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+                            <input type="text" name="firstName" class="form-control" value="{{ user.firstName }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" name="lastName" class="form-control" value="{{ user.lastName }}" required>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>Your email address can only be changed by an administrator.</div>
+
+                    {% if user.isStudent %}
+                    <hr class="my-3">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-mortarboard me-1"></i> Student Information</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Student ID</label>
+                            <input type="text" name="schoolId" class="form-control" value="{{ user.schoolId }}" placeholder="e.g. 2024-00123">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Year Level</label>
+                            <select name="yearLevel" class="form-select">
+                                <option value="">— Select —</option>
+                                {% for yr in ['1st Year','2nd Year','3rd Year','4th Year','5th Year'] %}
+                                    <option value="{{ yr }}" {{ user.yearLevel == yr ? 'selected' : '' }}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Campus</label>
+                            <select name="campus" class="form-select">
+                                <option value="">— Select —</option>
+                                {% for c in ['Main Campus I','Main Campus II','Bais Campus I','Bais Campus II','Bayawan-Sta. Catalina Campus','Guihulngan Campus','Mabinay Campus','Siaton Campus'] %}
+                                    <option value="{{ c }}" {{ user.campus == c ? 'selected' : '' }}>{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-norsu"><i class="bi bi-check-circle me-1"></i>Save Changes</button>
+                <a href="{{ path('app_profile') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body py-4">
+                {% if user.profilePicture %}
+                    <img src="{{ asset('images/profiles/' ~ user.profilePicture) }}"
+                         alt="{{ user.fullName }}" class="rounded-circle mb-3"
+                         style="width:80px;height:80px;object-fit:cover">
+                {% else %}
+                    <div class="mx-auto mb-3" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--norsu-blue),var(--norsu-green));display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff">
+                        {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
+                    </div>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ user.fullName }}</h5>
+                <p class="text-muted small mb-2">{{ user.email }}</p>
+                {% if 'ROLE_ADMIN' in user.roles %}
+                    <span class="badge bg-danger">Admin</span>
+                {% elseif 'ROLE_FACULTY' in user.roles %}
+                    <span class="badge bg-warning text-dark">Faculty</span>
+                {% elseif 'ROLE_STAFF' in user.roles %}
+                    <span class="badge bg-info">Staff</span>
+                {% else %}
+                    <span class="badge bg-primary">Student</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-3"><i class="bi bi-lightbulb me-1"></i> Tips</h6>
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-1"></i> Keep your name accurate</li>
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-1"></i> Never share your login credentials</li>
+                    <li class="mb-2"><i class="bi bi-check2 text-success me-1"></i> <a href="{{ path('app_profile_change_password') }}">Change your password</a> regularly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

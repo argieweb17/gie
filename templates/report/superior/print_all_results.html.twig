@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All SEF Evaluations — {{ faculty.fullName }}</title>
+    <style>
+        /* ══════════════════════════════════════════════
+           PRINT ALL — CONSOLIDATED SEF LAYOUT
+           Matches Official NORSU QUAMC format.
+           ══════════════════════════════════════════════ */
+
+        @page {
+            size: A4 landscape;
+            margin: 8mm 10mm 8mm 10mm;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 12px 20px;
+            color: #000;
+            font-size: 9px;
+            line-height: 1.3;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── Header Row: letterhead left + office info right ── */
+        .header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .header-left {
+            flex-shrink: 0;
+            margin-left: 0;
+        }
+        .header-left img {
+            max-height: 90px;
+            width: auto;
+        }
+        .header-right {
+            text-align: right;
+            padding-top: 4px;
+            margin-right: 10px;
+        }
+        .header-right .office-title {
+            font-size: 14px;
+            font-weight: 700;
+            font-style: italic;
+            margin-bottom: 4px;
+        }
+        .doc-info-table {
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-left: auto;
+        }
+        .doc-info-table td {
+            border: 1px solid #000;
+            padding: 1px 8px;
+        }
+        .doc-info-table .di-lbl {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .doc-info-table .di-val {
+            min-width: 60px;
+        }
+        .doc-info-table .di-page {
+            text-align: center;
+            font-weight: 400;
+            vertical-align: middle;
+            padding: 1px 12px;
+            letter-spacing: 2px;
+            font-size: 10px;
+        }
+
+        /* ── Title Block ── */
+        .title-block {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .title-block h2 {
+            font-size: 13px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        /* ── Faculty Info Table ── */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+        .info-table td {
+            padding: 4px 6px;
+            border: none;
+            vertical-align: bottom;
+        }
+        .info-table .lbl {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .info-table .val {
+            font-weight: 700;
+            border-bottom: 1px solid #000;
+            padding-left: 8px;
+        }
+
+        /* ── Main Content Area ── */
+        .content-area {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        .table-area {
+            flex: 1;
+            min-width: 0;
+        }
+        .side-area {
+            flex-shrink: 0;
+            width: 140px;
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+        }
+        .results-table th,
+        .results-table td {
+            border: 0.5px solid #000;
+            padding: 2px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .results-table th {
+            font-weight: 700;
+            font-size: 8px;
+            background: #fff;
+        }
+        .results-table .item-cell {
+            text-align: left;
+            font-weight: 700;
+            padding-left: 4px;
+            white-space: nowrap;
+            font-size: 7.5px;
+        }
+        .results-table .total-row td {
+            font-weight: 700;
+        }
+        .results-table .verbal-row td {
+            font-weight: 700;
+            font-size: 8px;
+        }
+        .results-table .course-header {
+            font-size: 7.5px;
+            font-weight: 700;
+        }
+
+        /* ── Rating Scale Box ── */
+        .rating-scale-box {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            margin-bottom: 8px;
+            font-size: 8px;
+        }
+        .rating-scale-box .rs-title {
+            font-weight: 700;
+            font-size: 8px;
+            margin-bottom: 3px;
+            text-align: center;
+        }
+        .rating-scale-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .rating-scale-box td {
+            padding: 1px 3px;
+            font-size: 7.5px;
+        }
+        .rating-scale-box .rs-range {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .rating-scale-box .rs-label {
+            font-weight: 700;
+        }
+
+        /* ── Composite Rating Box ── */
+        .composite-box {
+            border: 1px solid #000;
+            font-size: 8px;
+        }
+        .composite-box .cb-title {
+            font-weight: 700;
+            font-size: 8px;
+            text-align: center;
+            padding: 3px;
+            border-bottom: 1px solid #000;
+        }
+        .composite-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .composite-box th,
+        .composite-box td {
+            border: 0.5px solid #000;
+            padding: 2px 4px;
+            text-align: center;
+            font-size: 7.5px;
+            font-weight: normal;
+        }
+        .composite-box th {
+            font-weight: 700;
+            font-size: 7px;
+        }
+        .composite-box .cb-total td {
+            font-weight: 700;
+            font-size: 9px;
+            border-top: 0.5px solid #000;
+        }
+        .composite-box .cb-verbal td {
+            font-weight: 700;
+            font-size: 9px;
+        }
+
+        /* ── Purpose ── */
+        .purpose {
+            margin: 8px 0;
+            font-size: 9px;
+            font-style: italic;
+        }
+        .purpose strong { font-style: normal; }
+
+        /* ── Signatures ── */
+        .signature-section {
+            margin-top: 60px;
+            font-size: 10px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 100px;
+        }
+        .sig-block {
+            text-align: left;
+        }
+        .sig-label {
+            margin-bottom: 30px;
+        }
+        .sig-name {
+            font-weight: 700;
+            font-size: 10px;
+        }
+        .sig-title {
+            font-size: 9px;
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            margin-top: 24px;
+            font-size: 9px;
+            line-height: 1.3;
+        }
+        .disclaimer strong { font-style: normal; }
+
+        /* ── Print-specific ── */
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    {# ═══════════════════════════════════════════
+       HEADER: Letterhead (left) + Office Info (right)
+       ═══════════════════════════════════════════ #}
+    <div class="header-row">
+        <div class="header-left">
+            <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        </div>
+        <div class="header-right">
+            <div class="office-title">Office of the Director, Quality Assurance Management Center</div>
+            <table class="doc-info-table">
+                <tr>
+                    <td class="di-lbl">Document ID</td>
+                    <td class="di-val"></td>
+                    <td class="di-lbl">Issue Status</td>
+                    <td class="di-val"></td>
+                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong></td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Issue Date</td>
+                    <td class="di-val">{{ "now"|date("m-d-Y") }}</td>
+                    <td class="di-lbl">Approved by</td>
+                    <td class="di-val">ODQA</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Reviewed &amp; Authorized by</td>
+                    <td class="di-val">ODQA</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       TITLE
+       ═══════════════════════════════════════════ #}
+    <div class="title-block">
+        <h2>RESULT OF SUPERIOR EVALUATION FOR FACULTY</h2>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       FACULTY INFO
+       ═══════════════════════════════════════════ #}
+    <table class="info-table">
+        <tr>
+            <td class="lbl">Name of Faculty:</td>
+            <td class="val">{{ faculty.lastName|upper }}, {{ faculty.firstName|upper }}</td>
+            <td class="lbl">Campus:</td>
+            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
+            <td class="lbl">College/Department:</td>
+            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
+            <td class="lbl">Sem/SY:</td>
+            <td class="val">{{ allEvaluations[0].evaluation.semester ?? current_academic_year().semester ?? '' }} {{ allEvaluations[0].evaluation.schoolYear ?? '' }}</td>
+            <td class="lbl" style="text-align:right;">Employment<br>Status:</td>
+            <td class="val">{{ faculty.employmentStatus ?? 'N/A' }}</td>
+        </tr>
+    </table>
+
+    {# ═══════════════════════════════════════════
+       MAIN CONTENT: TABLE + RATING/COMPOSITE
+       ═══════════════════════════════════════════ #}
+    <div class="content-area">
+        {# ── Main Results Table ── #}
+        <div class="table-area">
+            <table class="results-table">
+                {# ═══════════════════════════════════════════
+                   SUPERIOR EVALUATION — Evaluation 1 to 7
+                   ═══════════════════════════════════════════ #}
+                <thead>
+                    <tr>
+                        <th rowspan="3" style="width:auto;min-width:90px;">Areas of Evaluation</th>
+                        <th colspan="21">Superior Evaluation</th>
+                    </tr>
+                    <tr>
+                        {% for i in 1..7 %}
+                        <th colspan="3" class="course-header"
+                            {% if baccEvaluations[i-1].evaluation is not null %}
+                            title="{{ baccEvaluations[i-1].evaluation.position ?? 'N/A' }}"
+                            {% endif %}>
+                            SEF {{ i }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for i in 1..7 %}
+                        <th style="font-size:7px;">Wx</th>
+                        <th style="font-size:7px;">W%</th>
+                        <th style="font-size:7px;">Rating</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for catName in categoryNames %}
+                    <tr>
+                        <td class="item-cell">{{ catName }}</td>
+                        {% for item in baccEvaluations %}
+                            {% set found = false %}
+                            {% for cat in item.categorySummary %}
+                                {% if cat.name == catName and not found %}
+                                    <td>{{ cat.mean|number_format(2) }}</td>
+                                    <td>{{ cat.weightPct }}%</td>
+                                    <td>{{ cat.weightedRating|number_format(2) }}</td>
+                                    {% set found = true %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not found %}
+                                <td>0.00</td>
+                                <td>0%</td>
+                                <td>0.00</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+
+                    <tr class="total-row">
+                        <td class="item-cell"></td>
+                        {% for item in baccEvaluations %}
+                        <td></td>
+                        <td>100%</td>
+                        <td>{{ item.compositeTotal|number_format(2) }}</td>
+                        {% endfor %}
+                    </tr>
+
+                    <tr class="verbal-row">
+                        <td class="item-cell"></td>
+                        {% for item in baccEvaluations %}
+                        <td colspan="3">{{ item.level }}</td>
+                        {% endfor %}
+                    </tr>
+
+                    {# ═══════════════════════════════════════════
+                       SUPERIOR EVALUATION — Evaluation 8 to 14
+                       ═══════════════════════════════════════════ #}
+                    <tr>
+                        <th rowspan="3" style="width:auto;min-width:90px;border-top:2px solid #000;"></th>
+                        <th colspan="21" style="border-top:2px solid #000;">Superior Evaluation (cont.)</th>
+                    </tr>
+                    <tr>
+                        {% for i in 8..14 %}
+                        <th colspan="3" class="course-header"
+                            {% if gradEvaluations[i-8].evaluation is not null %}
+                            title="{{ gradEvaluations[i-8].evaluation.position ?? 'N/A' }}"
+                            {% endif %}>
+                            SEF {{ i }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for i in 8..14 %}
+                        <th style="font-size:7px;">Wx</th>
+                        <th style="font-size:7px;">W%</th>
+                        <th style="font-size:7px;">Rating</th>
+                        {% endfor %}
+                    </tr>
+
+                    {% for catName in categoryNames %}
+                    <tr>
+                        <td class="item-cell">{{ catName }}</td>
+                        {% for item in gradEvaluations %}
+                            {% set found = false %}
+                            {% for cat in item.categorySummary %}
+                                {% if cat.name == catName and not found %}
+                                    <td>{{ cat.mean|number_format(2) }}</td>
+                                    <td>{{ cat.weightPct }}%</td>
+                                    <td>{{ cat.weightedRating|number_format(2) }}</td>
+                                    {% set found = true %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not found %}
+                                <td>0.00</td>
+                                <td>0%</td>
+                                <td>0.00</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+
+                    <tr class="total-row">
+                        <td class="item-cell"></td>
+                        {% for item in gradEvaluations %}
+                        <td></td>
+                        <td>100%</td>
+                        <td>{{ item.compositeTotal|number_format(2) }}</td>
+                        {% endfor %}
+                    </tr>
+
+                    <tr class="verbal-row">
+                        <td class="item-cell"></td>
+                        {% for item in gradEvaluations %}
+                        <td colspan="3">{{ item.level }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {# ── Side Area: Rating Scale + Composite ── #}
+        <div class="side-area">
+            {# Rating Scale Interpretation #}
+            <div class="rating-scale-box">
+                <div class="rs-title">Rating Scale<br>Interpretation</div>
+                <table>
+                    <tr><td class="rs-range">5.00–4.50</td><td class="rs-label">Always manifested</td></tr>
+                    <tr><td class="rs-range">4.49–3.50</td><td class="rs-label">Often manifested</td></tr>
+                    <tr><td class="rs-range">3.49–2.50</td><td class="rs-label">Sometimes manifested</td></tr>
+                    <tr><td class="rs-range">2.49–1.50</td><td class="rs-label">Seldom manifested</td></tr>
+                    <tr><td class="rs-range">1.49–1.00</td><td class="rs-label">Never/Rarely manifested</td></tr>
+                </table>
+            </div>
+
+            {# Composite Rating #}
+            <div class="composite-box">
+                <div class="cb-title">Composite<br>Rating</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Weighted<br>Mean</th>
+                            <th>Weighted<br>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cc in compositeCategories %}
+                        <tr>
+                            <td>{{ cc.weightedMean|number_format(2) }}</td>
+                            <td>{{ cc.weightedRating|number_format(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="cb-total">
+                            <td colspan="2">{{ compositeGrandTotal|number_format(2) }}</td>
+                        </tr>
+                        <tr class="cb-verbal">
+                            <td colspan="2">{{ compositeLevel }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       PURPOSE
+       ═══════════════════════════════════════════ #}
+    <div class="purpose">
+        <strong>Purpose:</strong> For IPCR purpose only.
+    </div>
+
+    {# ═══════════════════════════════════════════
+       SIGNATURES
+       ═══════════════════════════════════════════ #}
+    <div class="signature-section">
+        <div class="sig-block">
+            <div class="sig-label">Prepared by:</div>
+            <div class="sig-name">ARGIE PAIR PAGBUNOCAN</div>
+            <div class="sig-title">QUAMC Staff</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-label">Noted by:</div>
+            <div class="sig-name">CESAR P. ESTROPE, Ed.D.</div>
+            <div class="sig-title">Director, Quality Assurance Management Center</div>
+        </div>
+    </div>
+
+    {# ═══════════════════════════════════════════
+       DISCLAIMER
+       ═══════════════════════════════════════════ #}
+    <div class="disclaimer">
+        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the sender. Thank you</em>
+    </div>
+
+    {# Auto-trigger print dialog #}
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() { window.print(); }, 400);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+{# ── Page Header ── #}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;background:linear-gradient(135deg,{% block header_color %}var(--norsu-blue-dark),var(--norsu-blue){% endblock %});color:#fff;">
+            <i class="bi bi-{% block header_icon %}folder{% endblock %} fs-4"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold">{% block page_title %}Faculty{% endblock %}</h4>
+            <small class="text-muted">{% block page_subtitle %}Faculty Management{% endblock %}</small>
+        </div>
+    </div>
+    <a href="{{ path('app_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+{% block page_content %}{% endblock %}
+{% endblock %}

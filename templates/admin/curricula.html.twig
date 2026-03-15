@@ -1,0 +1,1231 @@
+﻿{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Curriculum Management | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════════════
+   CURRICULA MANAGEMENT — DEPARTMENT DRILL-DOWN
+   ═══════════════════════════════════════════════ #}
+
+{# ═══════════════════════════════════════
+   VIEW 1 — DEPARTMENTS OVERVIEW
+   ═══════════════════════════════════════ #}
+<div id="view-main">
+    {# ── Professional Header Card ── #}
+    <div class="cm-header">
+        <div class="cm-header-inner">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="cm-header-icon">
+                        <i class="bi bi-journal-richtext"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Curricula Management</h4>
+                        <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                            <span class="cm-meta-pill"><i class="bi bi-stack me-1"></i>{{ curricula|length }} Curricula</span>
+                            <span class="cm-meta-pill"><i class="bi bi-buildings me-1"></i>{{ departments|length }} Departments</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-1">
+                    <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+                        <i class="bi bi-plus-lg me-1"></i>Add Department
+                    </button>
+                </div>
+            </div>
+            <div class="cm-stats-row">
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ curricula|length }}</span>
+                    <span class="cm-stat-lbl">Total Curricula</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ curricula|length }}</span>
+                    <span class="cm-stat-lbl">Active</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ subjects|length }}</span>
+                    <span class="cm-stat-lbl">Total Subjects</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ departments|length }}</span>
+                    <span class="cm-stat-lbl">Departments</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ colleges|length }}</span>
+                    <span class="cm-stat-lbl">Colleges</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Colleges & Departments Table ── #}
+    <div class="cm-cd-toolbar">
+        <div class="cm-cd-toolbar-left">
+            <h5 class="fw-bold mb-0" style="font-size:1rem;">Colleges & Departments</h5>
+            <span class="text-muted" style="font-size:.75rem;">Select a department to view and manage its curricula</span>
+        </div>
+        <div class="cm-cd-toolbar-right">
+            <div class="cm-cd-search-box">
+                <i class="bi bi-search cm-cd-search-icon"></i>
+                <input type="text" class="cm-cd-search-input" id="cmCdSearch" placeholder="Search colleges or departments..." oninput="filterCdTable()">
+            </div>
+        </div>
+    </div>
+
+    {# ── Group departments by college ── #}
+    {% set collegeGroups = {} %}
+    {% for dept in departments %}
+        {% set cKey = dept.collegeName ? dept.collegeName : 'Unassigned' %}
+        {% if cKey not in collegeGroups|keys %}
+            {% set collegeGroups = collegeGroups|merge({(cKey): []}) %}
+        {% endif %}
+        {% set collegeGroups = collegeGroups|merge({(cKey): collegeGroups[cKey]|merge([dept])}) %}
+    {% endfor %}
+
+    <div class="cm-cd-table-wrap">
+        <table class="cm-cd-table" id="cmCdTable">
+            <thead>
+                <tr>
+                    <th class="cm-cd-th" style="width:36px;">#</th>
+                    <th class="cm-cd-th" style="min-width:250px;">Department</th>
+                    <th class="cm-cd-th text-center" style="width:100px;">Curricula</th>
+                    <th class="cm-cd-th text-center" style="width:100px;">Subjects</th>
+                    <th class="cm-cd-th text-center" style="width:130px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set globalIdx = 0 %}
+                {% for collegeName, collegeDepts in collegeGroups %}
+                    {# ── College group header row ── #}
+                    {% set totalCollegeCurr = 0 %}
+                    {% set totalCollegeSubj = 0 %}
+                    {% for dept in collegeDepts %}
+                        {% for c in curricula %}
+                            {% if c.department and c.department.id == dept.id %}
+                                {% set totalCollegeCurr = totalCollegeCurr + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {% set totalCollegeSubj = totalCollegeSubj + dept.subjects|length %}
+                    {% endfor %}
+                    <tr class="cm-cd-college-row collapsed" data-college="{{ collegeName|lower }}" onclick="toggleCollegeDepts(this)">
+                        <td class="cm-cd-td" colspan="1">
+                            <i class="bi bi-chevron-down cm-cd-toggle-icon"></i>
+                        </td>
+                        <td class="cm-cd-td" colspan="1">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="cm-cd-college-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                                <div>
+                                    <span class="fw-bold" style="font-size:.85rem;">{{ collegeName }}</span>
+                                    <span class="cm-cd-dept-count">{{ collegeDepts|length }} dept{{ collegeDepts|length != 1 ? 's' : '' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="cm-cd-td text-center">
+                            <span class="cm-cd-count-badge cm-cd-count-primary">{{ totalCollegeCurr }}</span>
+                        </td>
+                        <td class="cm-cd-td text-center">
+                            <span class="cm-cd-count-badge cm-cd-count-secondary">{{ totalCollegeSubj }}</span>
+                        </td>
+                        <td class="cm-cd-td"></td>
+                    </tr>
+                    {# ── Department rows inside this college ── #}
+                    {% for dept in collegeDepts %}
+                        {% set deptCurrCount = 0 %}
+                        {% for c in curricula %}
+                            {% if c.department and c.department.id == dept.id %}
+                                {% set deptCurrCount = deptCurrCount + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {% set globalIdx = globalIdx + 1 %}
+                        <tr class="cm-cd-row cm-cd-dept-row cm-cd-hidden" data-search="{{ collegeName|lower }} {{ dept.departmentName|lower }}" data-college="{{ collegeName|lower }}">
+                            <td class="cm-cd-td text-muted" style="font-size:.75rem;">{{ globalIdx }}</td>
+                            <td class="cm-cd-td">
+                                <div class="d-flex align-items-center gap-2" style="padding-left:18px;">
+                                    <div class="cm-cd-dept-icon"><i class="bi bi-bank2"></i></div>
+                                    <span style="font-size:.82rem;">{{ dept.departmentName }}</span>
+                                </div>
+                            </td>
+                            <td class="cm-cd-td text-center">
+                                <span class="cm-cd-count-badge cm-cd-count-primary">{{ deptCurrCount }}</span>
+                            </td>
+                            <td class="cm-cd-td text-center">
+                                <span class="cm-cd-count-badge cm-cd-count-secondary">{{ dept.subjects|length }}</span>
+                            </td>
+                            <td class="cm-cd-td text-center">
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <button type="button" class="cm-cd-action-btn cm-cd-action-view" title="View Curricula" onclick="event.stopPropagation(); showDepartment({{ dept.id }})">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                    <button type="button" class="cm-cd-action-btn cm-cd-action-edit" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ dept.id }}" title="Edit" onclick="event.stopPropagation()">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <form method="post" action="{{ path(prefix ~ '_department_delete', {id: dept.id}) }}" class="d-inline" onsubmit="return confirm('Delete this department?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_dept' ~ dept.id) }}">
+                                        <button type="submit" class="cm-cd-action-btn cm-cd-action-delete" title="Delete" onclick="event.stopPropagation()">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-buildings fs-1 d-block mb-2 opacity-25"></i>
+                            No departments found. Add departments first to manage curricula.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+{# ═══════════════════════════════════════
+   VIEW 2 — DEPARTMENT DETAIL (per dept)
+   ═══════════════════════════════════════ #}
+{% for dept in departments %}
+    {% set deptCurricula = [] %}
+    {% for c in curricula %}
+        {% if c.department and c.department.id == dept.id %}
+            {% set deptCurricula = deptCurricula|merge([c]) %}
+        {% endif %}
+    {% endfor %}
+
+<div id="view-dept-{{ dept.id }}" class="cm-view" style="display:none;">
+    <div class="cm-header">
+        <div class="cm-header-inner">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="cm-header-icon">
+                        <i class="bi bi-bank2"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">{{ dept.departmentName }}</h4>
+                        <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                            {% if dept.collegeName %}<span class="cm-meta-pill"><i class="bi bi-mortarboard me-1"></i>{{ dept.collegeName }}</span>{% endif %}
+                            <span class="cm-meta-pill"><i class="bi bi-stack me-1"></i>{{ deptCurricula|length }} Curricula</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-1">
+                    <button class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addProgramModal" onclick="document.getElementById('createDept').value='{{ dept.id }}'; document.getElementById('createDeptSelect').value='{{ dept.id }}'">
+                        <i class="bi bi-plus-lg me-1"></i>Add Curriculum
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="showMain()">
+                        <i class="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                </div>
+            </div>
+            <div class="cm-stats-row">
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ deptCurricula|length }}</span>
+                    <span class="cm-stat-lbl">Total Curricula</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ deptCurricula|length }}</span>
+                    <span class="cm-stat-lbl">Active</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ dept.subjects|length }}</span>
+                    <span class="cm-stat-lbl">Subjects</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cm-toolbar">
+        <div class="cm-search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" class="cm-search" placeholder="Search curricula..." data-dept="{{ dept.id }}" onkeyup="filterCurricula(this, {{ dept.id }})">
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm cm-toolbar-btn">
+                <i class="bi bi-send-fill me-1"></i>Publish
+            </button>
+            <button class="btn btn-warning btn-sm text-white cm-toolbar-btn">
+                <i class="bi bi-box-arrow-in-down me-1"></i>Import
+            </button>
+            <button class="btn btn-secondary btn-sm cm-toolbar-btn" onclick="window.print()">
+                <i class="bi bi-printer-fill me-1"></i>Print
+            </button>
+        </div>
+    </div>
+
+    <div id="curricula-list-{{ dept.id }}">
+        {% for c in deptCurricula %}
+        <div class="card border-0 shadow-sm mb-3 cm-curriculum-item" data-name="{{ c.curriculumName|lower }}">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center">
+                    <div class="cm-cur-icon bg-primary bg-opacity-10 text-primary me-3">
+                        <i class="bi bi-journal-bookmark"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                            <h6 class="fw-bold mb-0">{{ c.curriculumName }}</h6>
+                            <span class="badge bg-success bg-opacity-10 text-success border-0 small">Active</span>
+                        </div>
+                        <div class="text-muted small">
+                            {% if c.curriculumYear %}Version: {{ c.curriculumYear }}{% endif %}
+                            {% if c.course %} &bull; {{ c.course.courseName }}{% endif %}
+                            {% if c.department %} &bull; {{ c.department.departmentName }}{% endif %}
+                            &bull; {{ c.subjects|length }} subject{{ c.subjects|length != 1 ? 's' : '' }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1 ms-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary cm-action-btn" title="View Subjects" onclick="showCurriculum({{ c.id }}, {{ dept.id }})">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary cm-action-btn" title="Edit" data-bs-toggle="modal" data-bs-target="#editProgramModal{{ c.id }}">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        <form method="post" action="{{ path(prefix ~ '_curriculum_delete', {id: c.id}) }}" class="d-inline" onsubmit="return confirm('Delete this curriculum?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_curriculum' ~ c.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger cm-action-btn" title="Delete">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-journal-bookmark fs-1 d-block mb-2 opacity-25"></i>
+            No curricula in this department yet. Click "Add Curriculum" to create one.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+
+{# ═══════════════════════════════════════
+   VIEW 3 — CURRICULUM SUBJECTS (per curriculum)
+   ═══════════════════════════════════════ #}
+{% for c in curricula %}
+    {% set yearLevelOrder = {'First Year': 1, 'Second Year': 2, 'Third Year': 3, 'Fourth Year': 4, 'Unassigned': 5} %}
+    {% set yearSemGroups = {} %}
+    {% for s in c.subjects %}
+        {% set yl = s.yearLevel ?? 'Unassigned' %}
+        {% set sem = s.semester ?? 'Unassigned' %}
+        {% if yl not in yearSemGroups|keys %}
+            {% set yearSemGroups = yearSemGroups|merge({(yl): {}}) %}
+        {% endif %}
+        {% if sem not in yearSemGroups[yl]|keys %}
+            {% set yearSemGroups = yearSemGroups|merge({(yl): yearSemGroups[yl]|merge({(sem): []})}) %}
+        {% endif %}
+        {% set yearSemGroups = yearSemGroups|merge({(yl): yearSemGroups[yl]|merge({(sem): yearSemGroups[yl][sem]|merge([s])})}) %}
+    {% endfor %}
+    {% set sortedYears = [] %}
+    {% for yl in ['First Year', 'Second Year', 'Third Year', 'Fourth Year', 'Unassigned'] %}
+        {% if yl in yearSemGroups|keys %}
+            {% set sortedYears = sortedYears|merge([yl]) %}
+        {% endif %}
+    {% endfor %}
+    {% for yl, sems in yearSemGroups %}
+        {% if yl not in sortedYears %}
+            {% set sortedYears = sortedYears|merge([yl]) %}
+        {% endif %}
+    {% endfor %}
+
+<div id="view-cur-{{ c.id }}" class="cm-view" style="display:none;">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small mb-0" style="font-size:.78rem;">
+            <li class="breadcrumb-item"><a href="#" onclick="showMain(); return false;" class="text-decoration-none text-muted">Departments</a></li>
+            <li class="breadcrumb-item"><a href="#" onclick="showDepartment({{ c.department ? c.department.id : 0 }}); return false;" class="text-decoration-none text-muted">{{ c.department ? c.department.departmentName : 'Unknown' }}</a></li>
+            <li class="breadcrumb-item active text-dark" aria-current="page">{{ c.curriculumName }}</li>
+        </ol>
+    </nav>
+
+    <div class="cm-header mb-4">
+        <div class="cm-header-inner">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="cm-header-icon">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-white">{{ c.curriculumName }}</h4>
+                        <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.8rem;">
+                            {% if c.curriculumYear %}<span class="cm-meta-pill"><i class="bi bi-calendar3 me-1"></i>{{ c.curriculumYear }}</span>{% endif %}
+                            {% if c.course %}<span class="cm-meta-pill"><i class="bi bi-mortarboard me-1"></i>{{ c.course.courseName }}</span>{% endif %}
+                            {% if c.department %}<span class="cm-meta-pill"><i class="bi bi-bank me-1"></i>{{ c.department.departmentName }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-1">
+                    <button type="button" class="btn btn-sm btn-light fw-semibold" data-bs-toggle="modal" data-bs-target="#addSubjectModal{{ c.id }}">
+                        <i class="bi bi-plus-lg me-1"></i>Add Subject
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#editProgramModal{{ c.id }}">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="showDepartment({{ c.department ? c.department.id : 0 }})">
+                        <i class="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                </div>
+            </div>
+            <div class="cm-stats-row">
+                {% set totalUnitsAll = 0 %}
+                {% for s in c.subjects %}{% set totalUnitsAll = totalUnitsAll + (s.units ?? 0) %}{% endfor %}
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ c.subjects|length }}</span>
+                    <span class="cm-stat-lbl">Subjects</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ totalUnitsAll }}</span>
+                    <span class="cm-stat-lbl">Total Units</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    <span class="cm-stat-val">{{ sortedYears|length }}</span>
+                    <span class="cm-stat-lbl">Year Levels</span>
+                </div>
+                <div class="cm-stat-divider"></div>
+                <div class="cm-stat">
+                    {% set totalSems = 0 %}
+                    {% for yl in sortedYears %}{% for sem in yearSemGroups[yl]|keys %}{% set totalSems = totalSems + 1 %}{% endfor %}{% endfor %}
+                    <span class="cm-stat-val">{{ totalSems }}</span>
+                    <span class="cm-stat-lbl">Semesters</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% set ylColors = {'First Year': 'primary', 'Second Year': 'success', 'Third Year': 'warning', 'Fourth Year': 'info', 'Unassigned': 'secondary'} %}
+    {% set ylIcons  = {'First Year': 'bi-1-circle-fill', 'Second Year': 'bi-2-circle-fill', 'Third Year': 'bi-3-circle-fill', 'Fourth Year': 'bi-4-circle-fill', 'Unassigned': 'bi-question-circle-fill'} %}
+
+    {% if c.subjects|length > 0 %}
+        <div id="subjects-container-{{ c.id }}">
+        <div class="cm-nav mb-4">
+            <div class="cm-nav-tabs">
+                {% for yearLevel in sortedYears %}
+                    {% set ylColor = ylColors[yearLevel] ?? 'secondary' %}
+                    {% set ylIcon  = ylIcons[yearLevel]  ?? 'bi-circle' %}
+                    {% set ylCount = 0 %}
+                    {% for sem, sList in yearSemGroups[yearLevel] %}{% set ylCount = ylCount + sList|length %}{% endfor %}
+                    <button type="button"
+                        class="cm-tab{% if loop.first %} active{% endif %}"
+                        data-cur="{{ c.id }}" data-yl="{{ yearLevel|lower|replace({' ': '-'}) }}"
+                        onclick="switchYearLevel(this)">
+                        <i class="bi {{ ylIcon }}"></i>
+                        <span class="cm-tab-label">{{ yearLevel }}</span>
+                        <span class="cm-tab-badge">{{ ylCount }}</span>
+                    </button>
+                {% endfor %}
+            </div>
+            <div class="cm-search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" class="cm-search" placeholder="Search subjects..." oninput="filterSubjects(this, {{ c.id }})">
+            </div>
+        </div>
+
+        {% for yearLevel in sortedYears %}
+        {% set ylColor = ylColors[yearLevel] ?? 'secondary' %}
+        {% set ylIcon  = ylIcons[yearLevel]  ?? 'bi-circle' %}
+        {% set ylTotalSubjects = 0 %}
+        {% set ylTotalUnits = 0 %}
+        {% set ylSemCount = 0 %}
+        {% for sem, sList in yearSemGroups[yearLevel] %}
+            {% set ylSemCount = ylSemCount + 1 %}
+            {% set ylTotalSubjects = ylTotalSubjects + sList|length %}
+            {% for s in sList %}{% set ylTotalUnits = ylTotalUnits + (s.units ?? 0) %}{% endfor %}
+        {% endfor %}
+
+        <div class="cm-yl-panel cm-semester-group{% if loop.first %} active{% endif %}"
+             data-cur="{{ c.id }}" data-yl="{{ yearLevel|lower|replace({' ': '-'}) }}"
+             {% if not loop.first %}style="display:none;"{% endif %}>
+
+            <div class="cm-yl-bar mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="cm-yl-dot bg-{{ ylColor }}"></span>
+                    <h6 class="fw-bold mb-0" style="font-size:.95rem;">{{ yearLevel }}</h6>
+                    <span class="text-muted" style="font-size:.78rem;">—</span>
+                    <span class="text-muted" style="font-size:.78rem;">{{ ylTotalSubjects }} subject{{ ylTotalSubjects != 1 ? 's' : '' }}, {{ ylTotalUnits }} unit{{ ylTotalUnits != 1 ? 's' : '' }}, {{ ylSemCount }} semester{{ ylSemCount != 1 ? 's' : '' }}</span>
+                </div>
+            </div>
+
+            {% for semester, subjectList in yearSemGroups[yearLevel] %}
+            {% set semUnits = 0 %}{% for s in subjectList %}{% set semUnits = semUnits + (s.units ?? 0) %}{% endfor %}
+            <div class="cm-sem-block mb-4 cm-sem-card">
+                <div class="cm-sem-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="cm-sem-indicator bg-{{ ylColor }}"></span>
+                        <span class="fw-semibold" style="font-size:.85rem;">{{ yearLevel }}</span>
+                        <span class="text-muted" style="font-size:.75rem;">|</span>
+                        <span class="fw-semibold" style="font-size:.85rem;">{{ semester }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3" style="font-size:.75rem;">
+                        <span class="text-muted"><i class="bi bi-journal-text me-1"></i>{{ subjectList|length }} subject{{ subjectList|length != 1 ? 's' : '' }}</span>
+                        <span class="text-muted"><i class="bi bi-layers me-1"></i>{{ semUnits }} unit{{ semUnits != 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+                <div class="cm-sem-table">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm align-middle mb-0" style="font-size:.82rem;">
+                            <thead>
+                                <tr class="bg-light">
+                                    <th style="width:3%;" class="text-center text-muted">#</th>
+                                    <th style="width:12%;" class="text-muted">Subject</th>
+                                    <th class="text-muted">Descriptive Title</th>
+                                    <th style="width:8%;" class="text-center text-muted">Units</th>
+                                    <th style="width:14%;" class="text-end text-muted">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in subjectList %}
+                                <tr class="cm-subject-row" data-name="{{ s.subjectCode|lower }} {{ s.subjectName|lower }}">
+                                    <td class="text-center text-muted">{{ loop.index }}</td>
+                                    <td><code class="fw-semibold text-{{ ylColor }}">{{ s.subjectCode }}</code></td>
+                                    <td>{{ s.subjectName }}</td>
+                                    <td class="text-center fw-semibold">{{ s.units ?? '—' }}</td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" style="font-size:.72rem;" title="View" onclick="viewSubjectDetail({{ s.id }})">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size:.72rem;" title="Edit" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ s.id }}">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+                                            <form method="post" action="{{ path(prefix ~ '_curriculum_remove_subject', {id: c.id, subjectId: s.id}) }}" class="d-inline" onsubmit="return confirm('Remove this subject from the curriculum?')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('remove_subject_curriculum' ~ c.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size:.72rem;" title="Remove">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        </div>
+        <div id="no-results-{{ c.id }}" class="text-center text-muted py-4" style="display:none;">
+            <i class="bi bi-search fs-3 d-block mb-2 opacity-25"></i>
+            No subjects match your search.
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                    <i class="bi bi-journal-plus text-primary" style="font-size:1.8rem;"></i>
+                </div>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">No Subjects Yet</h6>
+            <p class="text-muted small mb-3">Start building this curriculum by adding your first subject.</p>
+            <button type="button" class="btn btn-norsu btn-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal{{ c.id }}">
+                <i class="bi bi-plus-circle-fill me-1"></i>Add First Subject
+            </button>
+        </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+
+{# ═══════════════════════════════════════
+   MODALS — CREATE & EDIT PROGRAMS
+   ═══════════════════════════════════════ #}
+
+<div class="modal fade" id="addProgramModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_curriculum_create') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_curriculum') }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-journal-bookmark"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">New Curriculum</h5>
+                            <small class="text-white-50">Create a new curriculum program</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="department" id="createDept" value="">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Curriculum Name <span class="text-danger">*</span></label>
+                            <input type="text" name="curriculumName" class="form-control" placeholder="e.g. BSIT Curriculum 2024" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Year / Version</label>
+                            <input type="text" name="curriculumYear" class="form-control" placeholder="e.g. 2024">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                            <select name="department" id="createDeptSelect" class="form-select" required>
+                                <option value="">— Select Department —</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Course</label>
+                            <select name="course" class="form-select">
+                                <option value="">— Select Course —</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.courseName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-check-circle me-1"></i>Create Curriculum</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for c in curricula %}
+<div class="modal fade" id="editProgramModal{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_curriculum_edit', {id: c.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('edit_curriculum' ~ c.id) }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-pencil-fill"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">Edit Curriculum</h5>
+                            <small class="text-white-50">{{ c.curriculumName }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Curriculum Name <span class="text-danger">*</span></label>
+                            <input type="text" name="curriculumName" class="form-control" value="{{ c.curriculumName }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Year / Version</label>
+                            <input type="text" name="curriculumYear" class="form-control" value="{{ c.curriculumYear }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                            <select name="department" class="form-select" required>
+                                <option value="">— Select Department —</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {{ c.department and c.department.id == dept.id ? 'selected' : '' }}>{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Course</label>
+                            <select name="course" class="form-select">
+                                <option value="">— Select Course —</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}" {{ c.course and c.course.id == course.id ? 'selected' : '' }}>{{ course.courseName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="2">{{ c.description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-check-circle me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% for c in curricula %}
+<div class="modal fade" id="addSubjectModal{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_curriculum_add_subject', {id: c.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('add_subject_curriculum' ~ c.id) }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">Add Subject</h5>
+                            <small class="text-white-50">{{ c.curriculumName }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="mode" value="new">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectCode" class="form-control" placeholder="e.g. IT 101" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Subject Name <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectName" class="form-control" placeholder="e.g. Introduction to Computing" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Semester</label>
+                            <input type="text" name="semester" class="form-control" placeholder="e.g. 1st Semester">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">School Year</label>
+                            <input type="text" name="schoolYear" class="form-control" placeholder="e.g. 2025-2026">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Units</label>
+                            <input type="number" name="units" class="form-control" min="0" placeholder="e.g. 3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Year Level</label>
+                            <select name="yearLevel" class="form-select">
+                                <option value="">— Select —</option>
+                                <option value="First Year">First Year</option>
+                                <option value="Second Year">Second Year</option>
+                                <option value="Third Year">Third Year</option>
+                                <option value="Fourth Year">Fourth Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Term</label>
+                            <select name="term" class="form-select">
+                                <option value="">— Select —</option>
+                                <option value="Prelim">Prelim</option>
+                                <option value="Midterm">Midterm</option>
+                                <option value="Semi-Final">Semi-Final</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-plus-circle-fill me-1"></i>Add Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% for c in curricula %}
+{% for s in c.subjects %}
+<div class="modal fade" id="editSubjectModal{{ s.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_subject_edit', {id: s.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('edit_subject' ~ s.id) }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-pencil-fill"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">Edit Subject</h5>
+                            <small class="text-white-50">{{ s.subjectCode }} — {{ s.subjectName }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectCode" class="form-control" value="{{ s.subjectCode }}" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Subject Name <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectName" class="form-control" value="{{ s.subjectName }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Semester</label>
+                            <input type="text" name="semester" class="form-control" value="{{ s.semester }}" placeholder="e.g. 1st Semester">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">School Year</label>
+                            <input type="text" name="schoolYear" class="form-control" value="{{ s.schoolYear }}" placeholder="e.g. 2025-2026">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Units</label>
+                            <input type="number" name="units" class="form-control" min="0" value="{{ s.units }}" placeholder="e.g. 3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Year Level</label>
+                            <select name="yearLevel" class="form-select">
+                                <option value="">— Select —</option>
+                                <option value="First Year" {{ s.yearLevel == 'First Year' ? 'selected' : '' }}>First Year</option>
+                                <option value="Second Year" {{ s.yearLevel == 'Second Year' ? 'selected' : '' }}>Second Year</option>
+                                <option value="Third Year" {{ s.yearLevel == 'Third Year' ? 'selected' : '' }}>Third Year</option>
+                                <option value="Fourth Year" {{ s.yearLevel == 'Fourth Year' ? 'selected' : '' }}>Fourth Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Term</label>
+                            <select name="term" class="form-select">
+                                <option value="">— Select —</option>
+                                <option value="Prelim" {{ s.term == 'Prelim' ? 'selected' : '' }}>Prelim</option>
+                                <option value="Midterm" {{ s.term == 'Midterm' ? 'selected' : '' }}>Midterm</option>
+                                <option value="Semi-Final" {{ s.term == 'Semi-Final' ? 'selected' : '' }}>Semi-Final</option>
+                                <option value="Final" {{ s.term == 'Final' ? 'selected' : '' }}>Final</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Section</label>
+                            <input type="text" name="section" class="form-control" value="{{ s.section }}" placeholder="e.g. BSIT-3A">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Room</label>
+                            <input type="text" name="room" class="form-control" value="{{ s.room }}" placeholder="e.g. Room 201">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Schedule / Time</label>
+                            <input type="text" name="schedule" class="form-control" value="{{ s.schedule }}" placeholder="e.g. MWF 9:00-10:00 AM">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-check-circle me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+
+
+{# ═══════════════════════════════════════
+   MODALS — DEPARTMENT MANAGEMENT
+   ═══════════════════════════════════════ #}
+
+<div class="modal fade" id="addDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_department_create') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_dept') }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-building"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">Add Department</h5>
+                            <small class="text-white-50">Create a new department</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">College <span class="text-danger">*</span></label>
+                        <input type="text" name="collegeName" class="form-control" list="collegeList" placeholder="Select or type a college name" required>
+                        <datalist id="collegeList">
+                            {% for c in colleges %}
+                                <option value="{{ c }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" name="departmentName" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-check-circle me-1"></i>Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for dept in departments %}
+<div class="modal fade" id="editDeptModal{{ dept.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_department_edit', {id: dept.id}) }}" onsubmit="return submitEditDept(event, this, {{ dept.id }})">
+                <input type="hidden" name="_token" value="{{ csrf_token('edit_dept' ~ dept.id) }}">
+                <div class="cm-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="cm-modal-icon"><i class="bi bi-pencil-fill"></i></div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">Edit Department</h5>
+                            <small class="text-white-50">{{ dept.departmentName }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">College <span class="text-danger">*</span></label>
+                        <input type="text" name="collegeName" class="form-control" list="collegeListEdit{{ dept.id }}" value="{{ dept.collegeName }}" placeholder="Select or type a college name" required>
+                        <datalist id="collegeListEdit{{ dept.id }}">
+                            {% for c in colleges %}
+                                <option value="{{ c }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" name="departmentName" class="form-control" value="{{ dept.departmentName }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i class="bi bi-check-circle me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="viewSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <div class="cm-modal-header" style="padding:24px 28px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:52px;height:52px;min-width:52px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:#fff;" id="viewSubjAvatar"></div>
+                    <div>
+                        <div class="mb-1"><code style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:3px 12px;border-radius:6px;" id="viewSubjCode"></code></div>
+                        <h5 class="fw-bold mb-0 text-white" style="font-size:1.1rem;" id="viewSubjName"></h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0 text-center" style="border-bottom:1px solid #f1f5f9;">
+                    <div class="col-6 py-3" style="border-right:1px solid #f1f5f9;">
+                        <div class="fw-800" style="font-size:1.3rem;color:#d97706;" id="viewSubjUnits"></div>
+                        <div style="font-size:.6rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Units</div>
+                    </div>
+                    <div class="col-6 py-3">
+                        <div class="fw-800" style="font-size:.85rem;color:#0284c7;" id="viewSubjYearLevel"></div>
+                        <div style="font-size:.6rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Year Level</div>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div style="font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Semester</div>
+                            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;" id="viewSubjSemester"></div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">School Year</div>
+                            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;" id="viewSubjSchoolYear"></div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Term</div>
+                            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;" id="viewSubjTerm"></div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Department</div>
+                            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;" id="viewSubjDept"></div>
+                        </div>
+                        <div class="col-12">
+                            <div style="font-size:.62rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Faculty</div>
+                            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;" id="viewSubjFaculty"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* Header Card (system blue-green gradient) */
+.cm-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.cm-header-inner{padding:22px 26px 18px;}
+.cm-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.cm-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.cm-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
+.cm-stat{flex:1;text-align:center;}
+.cm-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.cm-stat-lbl{display:block;font-size:.62rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.cm-stat-divider{width:1px;background:rgba(255,255,255,.12);margin:0 4px;}
+
+/* Toolbar */
+.cm-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:16px;}
+.cm-toolbar-btn{font-size:.78rem;font-weight:600;}
+
+/* Modal Header */
+.cm-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);}
+.cm-modal-icon{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0;}
+
+/* College & Department Table */
+.cm-cd-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:1rem 0 .75rem;}
+.cm-cd-toolbar-left{display:flex;flex-direction:column;gap:2px;}
+.cm-cd-toolbar-right{display:flex;align-items:center;gap:8px;}
+.cm-cd-search-box{position:relative;min-width:260px;}
+.cm-cd-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
+.cm-cd-search-input{width:100%;padding:7px 12px 7px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
+.cm-cd-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.cm-cd-table-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.cm-cd-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.cm-cd-th{padding:10px 14px;background:#f8fafc;color:#64748b;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e2e8f0;white-space:nowrap;user-select:none;}
+.cm-cd-td{padding:12px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.cm-cd-college-row{background:linear-gradient(135deg,#f8fafc,#f0f4ff);cursor:pointer;transition:background .15s;border-bottom:1px solid #e2e8f0;}
+.cm-cd-college-row:hover{background:linear-gradient(135deg,#eef2ff,#e0e7ff);}
+.cm-cd-toggle-icon{font-size:.75rem;color:#64748b;transition:transform .2s;}
+.cm-cd-college-row.collapsed .cm-cd-toggle-icon{transform:rotate(-90deg);}
+.cm-cd-dept-count{font-size:.7rem;color:#94a3b8;margin-left:8px;font-weight:500;}
+.cm-cd-dept-row{transition:background .15s;}
+.cm-cd-dept-row:hover{background:#f0f4ff;}
+.cm-cd-dept-row.cm-cd-hidden{display:none;}
+.cm-cd-college-icon{width:32px;height:32px;min-width:32px;border-radius:8px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#1a56db;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.cm-cd-dept-icon{width:32px;height:32px;min-width:32px;border-radius:8px;background:#ecfdf5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.cm-cd-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700;}
+.cm-cd-count-primary{background:#eff6ff;color:#1a56db;}
+.cm-cd-count-secondary{background:#f1f5f9;color:#475569;}
+.cm-cd-action-btn{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;font-size:.78rem;cursor:pointer;transition:all .15s;}
+.cm-cd-action-view{background:#eff6ff;color:#1a56db;border-color:#dbeafe;}
+.cm-cd-action-view:hover{background:#1a56db;color:#fff;}
+.cm-cd-action-edit{background:#f8fafc;color:#64748b;border-color:#e2e8f0;}
+.cm-cd-action-edit:hover{background:#475569;color:#fff;}
+.cm-cd-action-delete{background:#fef2f2;color:#dc2626;border-color:#fecaca;}
+.cm-cd-action-delete:hover{background:#dc2626;color:#fff;}
+
+/* Curriculum list items */
+.cm-cur-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.cm-curriculum-item{border-radius:10px;transition:box-shadow .2s ease;}
+.cm-curriculum-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)!important;}
+.cm-action-btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:.85rem;}
+
+/* Navigation Bar (Year Level Tabs) */
+.cm-nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.cm-nav-tabs{display:flex;flex-wrap:wrap;gap:4px;}
+.cm-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:none;background:transparent;color:#6b7280;font-size:.8rem;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s ease;}
+.cm-tab:hover{background:#f3f4f6;color:#374151;}
+.cm-tab.active{background:var(--norsu-blue,#1a56db);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,.25);}
+.cm-tab i{font-size:.9rem;}
+.cm-tab-label{white-space:nowrap;}
+.cm-tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:.65rem;font-weight:700;background:rgba(0,0,0,.06);color:#6b7280;}
+.cm-tab.active .cm-tab-badge{background:rgba(255,255,255,.25);color:#fff;}
+
+/* Search */
+.cm-search-wrap{position:relative;min-width:200px;}
+.cm-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none;}
+.cm-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:6px 12px 6px 30px;font-size:.8rem;outline:none;transition:border-color .15s,box-shadow .15s;}
+.cm-search:focus{border-color:var(--norsu-blue,#1a56db);box-shadow:0 0 0 3px rgba(26,86,219,.08);}
+
+/* Year Level Bar */
+.cm-yl-bar{display:flex;align-items:center;padding:10px 14px;background:#f8fafc;border:1px solid #e8ecf1;border-radius:8px;}
+.cm-yl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* Semester Block */
+.cm-sem-block{border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;background:#fff;transition:box-shadow .2s ease;}
+.cm-sem-block:hover{box-shadow:0 4px 16px rgba(0,0,0,.05);}
+.cm-sem-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e8ecf1;}
+.cm-sem-indicator{width:4px;height:20px;border-radius:2px;flex-shrink:0;}
+.cm-sem-table{padding:12px;max-height:520px;overflow-y:auto;}
+.cm-sem-table::-webkit-scrollbar{width:5px;}
+.cm-sem-table::-webkit-scrollbar-track{background:#f8fafc;border-radius:3px;}
+.cm-sem-table::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px;}
+.cm-sem-table::-webkit-scrollbar-thumb:hover{background:#9ca3af;}
+
+/* Year Level Panel transition */
+.cm-yl-panel{animation:cmFadeIn .2s ease;}
+
+/* View transitions */
+.cm-view{animation:cmFadeIn .2s ease;}
+.cm-header,.cm-toolbar,.cm-nav{animation:cmFadeIn .25s ease;}
+@keyframes cmFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT — VIEW SWITCHING
+   ═══════════════════════════════════════ #}
+<script>
+function viewSubjectDetail(subjectId) {
+    var card = document.querySelector('.cm-subj-card[data-view-id="' + subjectId + '"]');
+    if (!card) return;
+    document.getElementById('viewSubjAvatar').textContent = card.getAttribute('data-view-code').slice(0,2).toUpperCase();
+    document.getElementById('viewSubjCode').textContent = card.getAttribute('data-view-code');
+    document.getElementById('viewSubjName').textContent = card.getAttribute('data-view-name');
+    document.getElementById('viewSubjUnits').textContent = card.getAttribute('data-view-units');
+    document.getElementById('viewSubjYearLevel').textContent = card.getAttribute('data-view-yearlevel');
+    document.getElementById('viewSubjSemester').textContent = card.getAttribute('data-view-semester');
+    document.getElementById('viewSubjSchoolYear').textContent = card.getAttribute('data-view-schoolyear');
+    document.getElementById('viewSubjTerm').textContent = card.getAttribute('data-view-term');
+    document.getElementById('viewSubjDept').textContent = card.getAttribute('data-view-department');
+    document.getElementById('viewSubjFaculty').textContent = card.getAttribute('data-view-faculty');
+    new bootstrap.Modal(document.getElementById('viewSubjectModal')).show();
+}
+
+function hideAllViews() {
+    document.getElementById('view-main').style.display = 'none';
+    document.querySelectorAll('.cm-view').forEach(function(el) { el.style.display = 'none'; });
+}
+
+function showMain() {
+    hideAllViews();
+    document.getElementById('view-main').style.display = '';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ── College/Dept Table Search ── */
+function filterCdTable() {
+    var q = document.getElementById('cmCdSearch').value.toLowerCase().trim();
+    // Filter dept rows
+    document.querySelectorAll('#cmCdTable tbody .cm-cd-dept-row').forEach(function(row) {
+        row.style.display = (!q || row.dataset.search.indexOf(q) !== -1) ? '' : 'none';
+        if (row.style.display === '') row.classList.remove('cm-cd-hidden');
+        else row.classList.add('cm-cd-hidden');
+    });
+    // Show/hide college headers based on visible dept rows
+    document.querySelectorAll('#cmCdTable tbody .cm-cd-college-row').forEach(function(cRow) {
+        var collegeName = cRow.dataset.college;
+        var hasVisible = false;
+        document.querySelectorAll('#cmCdTable tbody .cm-cd-dept-row[data-college="' + collegeName + '"]').forEach(function(dRow) {
+            if (!dRow.classList.contains('cm-cd-hidden')) hasVisible = true;
+        });
+        cRow.style.display = hasVisible ? '' : 'none';
+    });
+    // Renumber visible dept rows
+    var idx = 0;
+    document.querySelectorAll('#cmCdTable tbody .cm-cd-dept-row').forEach(function(row) {
+        if (!row.classList.contains('cm-cd-hidden') && row.style.display !== 'none') {
+            idx++;
+            row.querySelector('td').textContent = idx;
+        }
+    });
+}
+
+/* ── Toggle college expand/collapse ── */
+function toggleCollegeDepts(collegeRow) {
+    var collegeName = collegeRow.dataset.college;
+    var isCollapsed = collegeRow.classList.toggle('collapsed');
+    document.querySelectorAll('#cmCdTable tbody .cm-cd-dept-row[data-college="' + collegeName + '"]').forEach(function(row) {
+        if (isCollapsed) row.classList.add('cm-cd-hidden');
+        else row.classList.remove('cm-cd-hidden');
+    });
+}
+
+function showDepartment(deptId) {
+    hideAllViews();
+    var el = document.getElementById('view-dept-' + deptId);
+    if (el) { el.style.display = ''; }
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function showCurriculum(curId, deptId) {
+    hideAllViews();
+    var el = document.getElementById('view-cur-' + curId);
+    if (el) { el.style.display = ''; }
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function switchYearLevel(btn) {
+    var curId = btn.getAttribute('data-cur');
+    var yl = btn.getAttribute('data-yl');
+    document.querySelectorAll('.cm-tab[data-cur="' + curId + '"]').forEach(function(t) {
+        t.classList.remove('active');
+    });
+    btn.classList.add('active');
+    document.querySelectorAll('.cm-yl-panel[data-cur="' + curId + '"]').forEach(function(p) {
+        p.style.display = 'none';
+        p.classList.remove('active');
+    });
+    var panel = document.querySelector('.cm-yl-panel[data-cur="' + curId + '"][data-yl="' + yl + '"]');
+    if (panel) {
+        panel.style.display = '';
+        panel.classList.add('active');
+    }
+}
+
+function filterSubjects(input, curId) {
+    var query = input.value.toLowerCase();
+    var container = document.getElementById('subjects-container-' + curId);
+    var noResults = document.getElementById('no-results-' + curId);
+    if (!container) return;
+
+    if (query.length > 0) {
+        container.querySelectorAll('.cm-yl-panel').forEach(function(p) { p.style.display = ''; });
+    } else {
+        container.querySelectorAll('.cm-yl-panel').forEach(function(p) {
+            p.style.display = p.classList.contains('active') ? '' : 'none';
+        });
+    }
+
+    var rows = container.querySelectorAll('.cm-subject-row');
+    var totalVisible = 0;
+    rows.forEach(function(row) {
+        var name = row.getAttribute('data-name') || '';
+        var show = name.indexOf(query) !== -1;
+        row.style.display = show ? '' : 'none';
+        if (show) totalVisible++;
+    });
+    container.querySelectorAll('.cm-sem-card').forEach(function(card) {
+        var visibleRows = card.querySelectorAll('.cm-subject-row:not([style*="display: none"])');
+        card.style.display = visibleRows.length > 0 ? '' : 'none';
+    });
+    container.querySelectorAll('.cm-yl-panel').forEach(function(panel) {
+        var visibleCards = panel.querySelectorAll('.cm-sem-card:not([style*="display: none"])');
+        if (query.length > 0) {
+            panel.style.display = visibleCards.length > 0 ? '' : 'none';
+        }
+    });
+    if (noResults) noResults.style.display = totalVisible === 0 ? '' : 'none';
+}
+
+function filterCurricula(input, deptId) {
+    var query = input.value.toLowerCase();
+    var container = document.getElementById('curricula-list-' + deptId);
+    if (!container) return;
+    var items = container.querySelectorAll('.cm-curriculum-item');
+    items.forEach(function(item) {
+        var name = item.getAttribute('data-name') || '';
+        item.style.display = name.indexOf(query) !== -1 ? '' : 'none';
+    });
+}
+
+function submitEditDept(e, form, deptId) {
+    e.preventDefault();
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                document.querySelectorAll('[data-dept-name-' + deptId + ']').forEach(function(el) {
+                    el.textContent = data.name;
+                });
+                var modal = bootstrap.Modal.getInstance(document.getElementById('editDeptModal' + deptId));
+                if (modal) modal.hide();
+                location.reload();
+            }
+        })
+        .catch(function() { form.submit(); });
+    return false;
+}
+</script>
+{% endblock %}

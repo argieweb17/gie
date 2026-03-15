@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Evaluate {{ evaluatee.fullName }} | Superior Evaluation{% endblock %}
+
+{% block body %}
+<div class="mb-3">
+    <a href="{{ path('superior_evaluate_index') }}" class="text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Back to Evaluations
+    </a>
+</div>
+
+<form method="post" id="evalForm">
+<div class="eval-form-paper">
+    <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
+        <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
+    </div>
+    <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
+        <span style="display:inline-block;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:20px;padding:6px 20px;font-size:.85rem;font-weight:600;">
+            Superior Evaluation of {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}
+        </span>
+    </div>
+    <div style="text-align:center;padding:12px 32px 14px;background:#fff;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(Performance Evaluation Instrument for Administrative Leaders)</div>
+        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">Please evaluate the performance of the {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }} honestly based on your observations and interactions. All responses are confidential.</p>
+    </div>
+
+    {# Evaluatee Info #}
+    <div style="padding:12px 24px;background:#fefce8;border-bottom:1px solid #e5e7eb;">
+        <div class="row">
+            <div class="col-md-4">
+                <small class="text-muted fw-semibold">Evaluatee</small><br>
+                <span class="fw-bold">{{ evaluatee.fullName }}</span>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted fw-semibold">Position</small><br>
+                <span>{{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}</span>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted fw-semibold">Department</small><br>
+                <span>{{ evaluatee.department ? evaluatee.department.departmentName : '—' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="eval-form-instructions">
+        <strong>Instructions:</strong> Rate each item using the scale:
+        <strong>5</strong> – Always manifested &nbsp; <strong>4</strong> – Often manifested &nbsp; <strong>3</strong> – Sometimes manifested &nbsp; <strong>2</strong> – Seldom manifested &nbsp; <strong>1</strong> – Never/Rarely manifested
+    </div>
+
+    {% set counter = 1 %}
+
+    {% for category, questions in groupedQuestions %}
+    <div class="eval-form-section">
+        <div class="eval-form-category">
+            <span class="eval-form-category-label">{{ category }}</span>
+        </div>
+        <table class="eval-form-table">
+            <thead>
+                <tr>
+                    <th class="eval-form-num"></th>
+                    <th class="eval-form-question">Question</th>
+                    <th class="eval-form-rating">1<br><small>Never</small></th>
+                    <th class="eval-form-rating">2<br><small>Seldom</small></th>
+                    <th class="eval-form-rating">3<br><small>Sometimes</small></th>
+                    <th class="eval-form-rating">4<br><small>Often</small></th>
+                    <th class="eval-form-rating">5<br><small>Always</small></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in questions %}
+                {% set draftRating = draftMap[q.id] is defined ? draftMap[q.id].rating : 0 %}
+                <tr>
+                    <td class="eval-form-num">{{ counter }}.</td>
+                    <td class="eval-form-question">
+                        {{ q.questionText }}
+                        {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+                    </td>
+                    {% for r in 1..5 %}
+                    <td class="eval-form-rating">
+                        <label class="eval-radio-label">
+                            <input type="radio" name="ratings[{{ q.id }}]" value="{{ r }}"
+                                   {{ draftRating == r ? 'checked' }}
+                                   {{ q.isRequired ? 'required' }}>
+                            <span class="eval-radio-circle {{ draftRating == r ? 'selected' }}"></span>
+                        </label>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% set counter = counter + 1 %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    {# Comment #}
+    <div class="eval-form-section">
+        <div class="eval-form-category">
+            <span class="eval-form-category-label">Additional Comments <span class="text-danger">*</span></span>
+        </div>
+        <div class="p-3">
+            <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" required
+                      placeholder="Share any additional feedback for this {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}..."></textarea>
+        </div>
+    </div>
+</div>
+
+{# Buttons outside paper #}
+<div class="eval-form-actions-bar">
+    <button type="submit" name="_action" value="submit" class="btn btn-norsu"
+            onclick="return confirm('Once submitted, you cannot edit this evaluation. Continue?')">
+        <i class="bi bi-send me-1"></i>Submit Evaluation
+    </button>
+    <button type="submit" name="_action" value="save_draft" class="btn btn-outline-secondary">
+        <i class="bi bi-save me-1"></i>Save as Draft
+    </button>
+    <a href="{{ path('superior_evaluate_index') }}" class="btn btn-light">Cancel</a>
+</div>
+</form>
+{% endblock %}

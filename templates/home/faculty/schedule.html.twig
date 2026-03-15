@@ -1,0 +1,68 @@
+{% extends 'home/faculty/_layout.html.twig' %}
+
+{% block header_color %}var(--norsu-blue-dark),var(--norsu-blue){% endblock %}
+{% block header_icon %}calendar-week{% endblock %}
+{% block page_title %}Class Schedule{% endblock %}
+{% block page_subtitle %}Your weekly timetable{% endblock %}
+
+{% block page_content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if subjects|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="thead-norsu">
+                    <tr>
+                        <th class="ps-3">Code</th>
+                        <th>Subject Name</th>
+                        <th>Semester</th>
+                        <th>Year Level</th>
+                        <th>Units</th>
+                        <th>Section</th>
+                        <th>Room</th>
+                        <th>Schedule / Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">{{ subject.subjectCode }}</td>
+                        <td>{{ subject.subjectName }}</td>
+                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ subject.semester|default('—') }}</span></td>
+                        <td>{{ subject.yearLevel|default('—') }}</td>
+                        <td>{{ subject.units|default('—') }}</td>
+                        <td>
+                            {% if subject.section %}
+                                <span class="badge bg-success bg-opacity-10 text-success">{{ subject.section }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if subject.room %}
+                                <span class="badge bg-info bg-opacity-10 text-info"><i class="bi bi-door-open me-1"></i>{{ subject.room }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if subject.schedule %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock me-1"></i>{{ subject.schedule }}</span>
+                            {% else %}
+                                <span class="text-muted fst-italic">Not yet set</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+            <p>No subjects assigned yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

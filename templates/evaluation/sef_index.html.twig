@@ -1,0 +1,188 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Superior Evaluation | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<style>
+.sf-page { max-width: 1140px; margin: 0 auto; }
+.sf-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
+.sf-breadcrumb a { color: #64748b; text-decoration: none; }
+.sf-breadcrumb a:hover { color: #2563eb; }
+.sf-breadcrumb .sep { color: #cbd5e1; }
+.sf-breadcrumb .current { color: #1e293b; font-weight: 600; }
+.sf-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.sf-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
+.sf-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
+
+.sf-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.sf-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
+.sf-chip-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; color: #fff; flex-shrink: 0; }
+.sf-chip-val { font-weight: 700; }
+
+.sf-panel { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.04); overflow: hidden; }
+.sf-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; }
+.sf-panel-title { font-size: .88rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: .45rem; }
+.sf-panel-title i { color: #7c3aed; font-size: 1rem; }
+.sf-panel-count { font-weight: 400; color: #94a3b8; font-size: .78rem; margin-left: .15rem; }
+
+.sf-list { display: flex; flex-direction: column; }
+.sf-item { display: flex; align-items: center; gap: .85rem; padding: .85rem 1.25rem; border-bottom: 1px solid #f1f5f9; transition: background .1s; }
+.sf-item:last-child { border-bottom: none; }
+.sf-item:hover { background: #f8fafc; }
+
+.sf-item-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: linear-gradient(135deg, #ede9fe, #dbeafe); }
+.sf-item-icon i { font-size: 1.1rem; color: #7c3aed; }
+.sf-item-body { flex: 1; min-width: 0; }
+.sf-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sf-item-label { display: inline-flex; align-items: center; gap: .25rem; background: #faf5ff; color: #7c3aed; padding: .15rem .5rem; border-radius: 6px; font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
+.sf-item-name { font-weight: 600; font-size: .88rem; color: #0f172a; }
+.sf-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
+.sf-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
+
+.sf-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .65rem; border-radius: 50px; font-size: .72rem; font-weight: 600; letter-spacing: .2px; }
+.sf-badge-pending { background: #f1f5f9; color: #64748b; }
+.sf-badge-draft { background: #fef9c3; color: #854d0e; }
+.sf-badge-submitted { background: #dcfce7; color: #166534; }
+
+.sf-action-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .15s; border: none; cursor: pointer; white-space: nowrap; }
+.sf-action-start { background: #7c3aed; color: #fff; }
+.sf-action-start:hover { background: #6d28d9; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,.25); }
+.sf-action-continue { background: #f59e0b; color: #fff; }
+.sf-action-continue:hover { background: #d97706; color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,.25); }
+.sf-action-done { background: #f0fdf4; color: #16a34a; cursor: default; }
+
+.sf-item-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+/* Empty State */
+.sf-empty { text-align: center; padding: 4rem 2rem 3.5rem; }
+.sf-empty-illustration { width: 130px; height: 130px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #faf5ff 0%, #eff6ff 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.sf-empty-illustration::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px dashed #d1d5db; animation: sf-spin 20s linear infinite; }
+@keyframes sf-spin { to { transform: rotate(360deg); } }
+.sf-empty-illustration i { font-size: 3.2rem; color: #7c3aed; opacity: .5; }
+.sf-empty-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
+.sf-empty-desc { font-size: .84rem; color: #64748b; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+@media (max-width: 768px) {
+    .sf-header-title { font-size: 1.25rem; }
+    .sf-item { padding: .75rem 1rem; }
+}
+</style>
+
+{% set submittedCount = 0 %}
+{% set draftCount = 0 %}
+{% set pendingCount = 0 %}
+{% for item in periods %}
+    {% if item.submitted %}{% set submittedCount = submittedCount + 1 %}
+    {% elseif item.hasDraft %}{% set draftCount = draftCount + 1 %}
+    {% else %}{% set pendingCount = pendingCount + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="sf-page">
+
+<div class="sf-breadcrumb">
+    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <span class="sep">/</span>
+    <span class="current">Superior Evaluation (SEF)</span>
+</div>
+
+<div class="sf-header">
+    <div>
+        <h1 class="sf-header-title">Superior Evaluation for Faculty</h1>
+        <div class="sf-header-sub">SEF &middot; Complete your evaluation for the current period</div>
+    </div>
+</div>
+
+{% if periods|length > 0 %}
+<div class="sf-chips">
+    <div class="sf-chip">
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);"><i class="bi bi-journal-text"></i></span>
+        <span><span class="sf-chip-val">{{ periods|length }}</span> Period{{ periods|length > 1 ? 's' : '' }}</span>
+    </div>
+    {% if pendingCount > 0 %}
+    <div class="sf-chip">
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i class="bi bi-clock"></i></span>
+        <span><span class="sf-chip-val">{{ pendingCount }}</span> Pending</span>
+    </div>
+    {% endif %}
+    {% if draftCount > 0 %}
+    <div class="sf-chip">
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i class="bi bi-pencil"></i></span>
+        <span><span class="sf-chip-val">{{ draftCount }}</span> Draft{{ draftCount > 1 ? 's' : '' }}</span>
+    </div>
+    {% endif %}
+    {% if submittedCount > 0 %}
+    <div class="sf-chip">
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-check-circle"></i></span>
+        <span><span class="sf-chip-val">{{ submittedCount }}</span> Submitted</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="sf-panel mb-4">
+    <div class="sf-panel-head">
+        <div class="sf-panel-title">
+            <i class="bi bi-person-check-fill"></i>
+            Evaluation Periods
+            <span class="sf-panel-count">({{ periods|length }})</span>
+        </div>
+    </div>
+    <div class="sf-list">
+        {% for item in periods %}
+            <div class="sf-item">
+                <div class="sf-item-icon">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div class="sf-item-body">
+                    <div class="sf-item-top">
+                        <span class="sf-item-label">SEF</span>
+                        <span class="sf-item-name">Superior Evaluation</span>
+                        {% if item.submitted %}
+                            <span class="sf-badge sf-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                        {% elseif item.hasDraft %}
+                            <span class="sf-badge sf-badge-draft"><i class="bi bi-pencil-fill"></i> Draft</span>
+                        {% else %}
+                            <span class="sf-badge sf-badge-pending"><i class="bi bi-clock"></i> Pending</span>
+                        {% endif %}
+                    </div>
+                    <div class="sf-item-meta">
+                        <span><i class="bi bi-calendar3"></i> {{ item.evaluation.semester ?? '—' }}</span>
+                        <span><i class="bi bi-mortarboard"></i> {{ item.evaluation.schoolYear ?? '—' }}</span>
+                        <span><i class="bi bi-clock"></i> {{ item.evaluation.startDate|date('M d') }} – {{ item.evaluation.endDate|date('M d, Y') }}</span>
+                    </div>
+                </div>
+                <div class="sf-item-actions">
+                    {% if item.submitted %}
+                        <span class="sf-action-btn sf-action-done"><i class="bi bi-check2-all"></i> Done</span>
+                    {% elseif item.hasDraft %}
+                        <a href="{{ path('evaluation_sef_form', {evalId: item.evaluation.id}) }}" class="sf-action-btn sf-action-continue">
+                            <i class="bi bi-pencil-square"></i> Continue
+                        </a>
+                    {% else %}
+                        <a href="{{ path('evaluation_sef_form', {evalId: item.evaluation.id}) }}" class="sf-action-btn sf-action-start">
+                            <i class="bi bi-pencil-square"></i> Start SEF
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% else %}
+<div class="sf-panel mb-4">
+    <div class="sf-panel-head">
+        <div class="sf-panel-title"><i class="bi bi-person-check-fill"></i> Evaluation Periods</div>
+    </div>
+    <div class="sf-empty">
+        <div class="sf-empty-illustration">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="sf-empty-title">No SEF evaluation periods open</div>
+        <div class="sf-empty-desc">Superior evaluation forms will appear here when the administrator opens a SEF period for your department.</div>
+    </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

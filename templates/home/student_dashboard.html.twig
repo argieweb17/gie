@@ -1,0 +1,337 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Student Dashboard | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ── Welcome Banner ── #}
+<div class="welcome-banner">
+    <div class="banner-main d-flex align-items-center gap-3">
+        <div class="user-avatar">
+            {% if app.user.profilePicture %}
+                <img src="{{ asset('images/profiles/' ~ app.user.profilePicture) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+            {% else %}
+                {{ app.user.firstName|first }}{{ app.user.lastName|first }}
+            {% endif %}
+        </div>
+        <div>
+            <h2 class="mb-0">Welcome, {{ app.user.firstName }}!</h2>
+            <p>SET-SEF Evaluation Management System — Student Portal</p>
+        </div>
+    </div>
+    <div class="banner-bottom">
+        {% set cay = current_academic_year() %}
+        {% if cay %}
+        <span><i class="bi bi-mortarboard-fill me-1"></i>{{ cay.label }}</span>
+        {% endif %}
+        <span><i class="bi bi-calendar3 me-1"></i>{{ 'now'|date('l, F d, Y') }}</span>
+        <span><i class="bi bi-mortarboard me-1"></i>{{ app.user.yearLevel ?? 'N/A' }}</span>
+        <span><i class="bi bi-building me-1"></i>{{ app.user.department ? app.user.department.departmentName : 'N/A' }}</span>
+    </div>
+</div>
+
+{# ═══════ STAT CARDS ═══════ #}
+{% set totalEvals = pending|length + completed|length %}
+{% set progress = totalEvals > 0 ? ((completed|length / totalEvals) * 100)|round(0) : 0 %}
+
+<div class="analytics-grid sd-grid mb-4">
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#EFF6FF;color:#2563EB">
+            <i class="bi bi-book-half"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ subjects|length }}</span>
+            <span class="analytics-stat-label">Subjects</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#FEF3C7;color:#D97706">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ pending|length }}</span>
+            <span class="analytics-stat-label">Pending</span>
+        </div>
+        {% if pending|length > 0 %}
+        <span class="analytics-stat-badge badge-warning">action needed</span>
+        {% endif %}
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#F0FDF4;color:#16A34A">
+            <i class="bi bi-check-circle"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ completed|length }}</span>
+            <span class="analytics-stat-label">Completed</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#F5F3FF;color:#7C3AED">
+            <i class="bi bi-speedometer2"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ progress }}%</span>
+            <span class="analytics-stat-label">Progress</span>
+        </div>
+        {% if progress == 100 %}
+        <span class="analytics-stat-badge" style="background:#DCFCE7;color:#166534;">done!</span>
+        {% endif %}
+    </div>
+</div>
+
+{# ═══════ PENDING EVALUATIONS ═══════ #}
+{% if pending|length > 0 %}
+<div class="sd-section-header">
+    <div class="sd-section-title">
+        <span class="sd-section-icon" style="background:#FEF3C7;color:#D97706"><i class="bi bi-pencil-square"></i></span>
+        <h6 class="fw-bold mb-0">Pending Evaluations</h6>
+        <span class="sd-count-badge" style="background:#FEF3C7;color:#92400E">{{ pending|length }}</span>
+    </div>
+</div>
+<div class="ev-table-wrap mb-4">
+    <table class="ev-table" id="sdPendingTable">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Faculty</th>
+                <th>Schedule</th>
+                <th>Section</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th style="text-align:right">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in pending %}
+            <tr class="ev-row">
+                <td class="ev-td-subject">
+                    <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
+                    {{ item.subject.subjectName }}
+                </td>
+                <td class="ev-td-meta">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="sd-faculty-avatar">{{ item.faculty.firstName|first }}{{ item.faculty.lastName|first }}</div>
+                        <span>{{ item.faculty.fullName }}</span>
+                    </div>
+                </td>
+                <td class="ev-td-meta">{{ item.evaluation.time ?? '—' }}</td>
+                <td class="ev-td-meta">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
+                <td class="ev-td-meta">{{ item.evaluation.label }}</td>
+                <td><span class="sd-status-badge sd-status-pending"><i class="bi bi-clock me-1"></i>Pending</span></td>
+                <td style="text-align:right">
+                    <a href="{{ path('evaluation_set_form', {evalId: item.evaluation.id, subjectId: item.subject.id}) }}"
+                       class="sd-eval-btn">
+                        <i class="bi bi-pencil-square me-1"></i>Evaluate
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="sd-empty-state sd-empty-success mb-4">
+    <i class="bi bi-patch-check-fill"></i>
+    <div>
+        <strong>All caught up!</strong>
+        <span>No pending evaluations at this time.</span>
+    </div>
+</div>
+{% endif %}
+
+{# ═══════ COMPLETED EVALUATIONS ═══════ #}
+{% if completed|length > 0 %}
+<div class="sd-section-header">
+    <div class="sd-section-title">
+        <span class="sd-section-icon" style="background:#F0FDF4;color:#16A34A"><i class="bi bi-check-circle"></i></span>
+        <h6 class="fw-bold mb-0">Completed Evaluations</h6>
+        <span class="sd-count-badge" style="background:#DCFCE7;color:#166534">{{ completed|length }}</span>
+    </div>
+</div>
+<div class="ev-table-wrap mb-4">
+    <table class="ev-table" id="sdCompletedTable">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Faculty</th>
+                <th>Schedule</th>
+                <th>Section</th>
+                <th>Period</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in completed %}
+            <tr class="ev-row">
+                <td class="ev-td-subject">
+                    <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
+                    {{ item.subject.subjectName }}
+                </td>
+                <td class="ev-td-meta">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="sd-faculty-avatar">{{ item.faculty.firstName|first }}{{ item.faculty.lastName|first }}</div>
+                        <span>{{ item.faculty.fullName }}</span>
+                    </div>
+                </td>
+                <td class="ev-td-meta">{{ item.evaluation.time ?? '—' }}</td>
+                <td class="ev-td-meta">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
+                <td class="ev-td-meta">{{ item.evaluation.label }}</td>
+                <td><span class="sd-status-badge sd-status-done"><i class="bi bi-check-circle-fill me-1"></i>Submitted</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ═══════ INLINE STYLES ═══════ #}
+<style>
+/* ── ev-table base (not inherited from admin/staff templates) ── */
+.ev-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);margin-bottom:1.5rem;}
+.ev-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.ev-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.ev-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.ev-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.ev-table tbody tr:last-child{border-bottom:none;}
+.ev-table tbody tr:hover{background:#f8faff;}
+.ev-table tbody td{padding:10px 14px;vertical-align:middle;}
+.ev-td-subject{font-weight:600;color:#1e293b;}
+.ev-td-meta{color:#64748b;white-space:nowrap;}
+
+/* Grid override for 4 cards */
+.sd-grid { grid-template-columns: repeat(4, 1fr); }
+
+/* Section headers */
+.sd-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+}
+.sd-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.sd-section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.sd-count-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    letter-spacing: 0.2px;
+}
+
+/* Subject code badge */
+.sd-code-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: #EFF6FF;
+    color: #1E40AF;
+    margin-right: 0.35rem;
+    letter-spacing: 0.3px;
+}
+
+/* Faculty avatar mini */
+.sd-faculty-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1E3A8A, #059669);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.58rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+/* Status badges */
+.sd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+.sd-status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+.sd-status-done {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+/* Evaluate button */
+.sd-eval-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.35rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #059669;
+    background: rgba(5, 150, 105, 0.08);
+    border: 1.5px solid rgba(5, 150, 105, 0.25);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+}
+.sd-eval-btn:hover {
+    background: #059669;
+    color: #fff;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+/* Empty state */
+.sd-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+.sd-empty-state i {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.sd-empty-state span {
+    color: #64748B;
+}
+.sd-empty-success {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    color: #166534;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .sd-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+    .sd-grid { grid-template-columns: 1fr; }
+    .sd-section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}
+</style>
+{% endblock %}

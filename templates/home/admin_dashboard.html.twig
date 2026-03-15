@@ -1,0 +1,222 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ── Welcome Banner ── #}
+<div class="welcome-banner">
+    <div class="banner-main d-flex align-items-center gap-3">
+        <div class="user-avatar">
+            {% if app.user.profilePicture %}
+                <img src="{{ asset('images/profiles/' ~ app.user.profilePicture) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+            {% else %}
+                {{ app.user.firstName|first }}{{ app.user.lastName|first }}
+            {% endif %}
+        </div>
+        <div>
+            <h2 class="mb-0">Welcome, {{ app.user.firstName }}!</h2>
+            <p>SET-SEF Evaluation Management System — Administrator Panel</p>
+        </div>
+    </div>
+    <div class="banner-bottom">
+        {% set cay = current_academic_year() %}
+        {% if cay %}
+        <span><i class="bi bi-mortarboard-fill me-1"></i>{{ cay.label }}</span>
+        {% endif %}
+        <span><i class="bi bi-calendar3 me-1"></i>{{ 'now'|date('l, F d, Y') }}</span>
+        <span><i class="bi bi-people me-1"></i>{{ totalUsers }} registered users</span>
+        <span><i class="bi bi-clipboard-check me-1"></i>{{ openEvaluations|length }} active evaluation(s)</span>
+    </div>
+</div>
+
+{# ═══════ STAT CARDS ROW ═══════ #}
+<div class="analytics-grid mb-4">
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#EFF6FF;color:#2563EB">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ totalUsers }}</span>
+            <span class="analytics-stat-label">Total Users</span>
+        </div>
+        {% if pendingCount > 0 %}
+        <span class="analytics-stat-badge badge-warning">{{ pendingCount }} pending</span>
+        {% endif %}
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#F0FDF4;color:#16A34A">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ openEvaluations|length }}</span>
+            <span class="analytics-stat-label">Active Evaluations</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#FFF7ED;color:#EA580C">
+            <i class="bi bi-building"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ departments|length }}</span>
+            <span class="analytics-stat-label">Departments</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#ECFDF5;color:#059669">
+            <i class="bi bi-journal-bookmark-fill"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ totalCurricula }}</span>
+            <span class="analytics-stat-label">Curriculum</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#FDF4FF;color:#A855F7">
+            <i class="bi bi-book"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ totalSubjects }}</span>
+            <span class="analytics-stat-label">Subjects</span>
+        </div>
+    </div>
+    <div class="analytics-stat-card">
+        <div class="analytics-stat-icon" style="background:#FEF2F2;color:#DC2626">
+            <i class="bi bi-list-check"></i>
+        </div>
+        <div class="analytics-stat-body">
+            <span class="analytics-stat-value">{{ setQuestions + sefQuestions }}</span>
+            <span class="analytics-stat-label">Questions</span>
+        </div>
+        <span class="analytics-stat-badge badge-info">{{ setQuestions }} SET · {{ sefQuestions }} SEF</span>
+    </div>
+</div>
+
+{# ═══════ EVALUATION SCHEDULE TABLE ═══════ #}
+<div class="ev-search-bar">
+    <div class="ev-search-inner">
+        <i class="bi bi-search ev-search-ico"></i>
+        <input type="text" id="evSearchInput" class="ev-search-input" placeholder="Search evaluations..." oninput="evFilter()">
+    </div>
+</div>
+<div class="ev-table-wrap">
+    <table class="ev-table" id="evTable">
+        <thead>
+            <tr>
+                <th><span class="ev-sort-label" onclick="evSort('subject')">Subject <i class="bi bi-arrow-down-up ev-sort-icon" data-col="subject"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('faculty')">Faculty <i class="bi bi-arrow-down-up ev-sort-icon" data-col="faculty"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('time')">Time <i class="bi bi-arrow-down-up ev-sort-icon" data-col="time"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('section')">Section <i class="bi bi-arrow-down-up ev-sort-icon" data-col="section"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('evaltime')">Evaluation Time <i class="bi bi-arrow-down-up ev-sort-icon" data-col="evaltime"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('college')">College <i class="bi bi-arrow-down-up ev-sort-icon" data-col="college"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('department')">Department <i class="bi bi-arrow-down-up ev-sort-icon" data-col="department"></i></span></th>
+                <th><span class="ev-sort-label" onclick="evSort('responses')">Evaluator <i class="bi bi-arrow-down-up ev-sort-icon" data-col="responses"></i></span></th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="evTableBody">
+            {% for row in completedEvals %}
+            <tr class="ev-row"
+                data-search="{{ row.subject|lower }} {{ row.faculty|lower }} {{ row.section|lower }} {{ row.college|lower }} {{ row.department|lower }}"
+                data-sort-subject="{{ row.subject|lower }}"
+                data-sort-faculty="{{ row.faculty|lower }}"
+                data-sort-time="{{ row.time|lower }}"
+                data-sort-section="{{ row.section|lower }}"
+                data-sort-evaltime="{{ row.submittedAt }}"
+                data-sort-college="{{ row.college|lower }}"
+                data-sort-department="{{ row.department|lower }}"
+                data-sort-responses="{{ row.responseCount }}">
+                <td class="ev-td-subject">{{ row.subject }}</td>
+                <td class="ev-td-meta">{{ row.faculty }}</td>
+                <td class="ev-td-meta">{{ row.time }}</td>
+                <td class="ev-td-meta">{{ row.section }}</td>
+                <td class="ev-td-meta">{{ row.submittedAt|date('M d, Y') }}</td>
+                <td class="ev-td-meta">{{ row.college }}</td>
+                <td class="ev-td-meta">{{ row.department }}</td>
+                <td class="ev-td-response"><span class="ev-response-badge">{{ row.responseCount }}</span></td>
+                <td class="text-center">
+                    <a href="{{ path('admin_results', {evaluation: row.evalId}) }}" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.85rem;color:#3b82f6;background:#eff6ff;border:1px solid #bfdbfe;text-decoration:none;transition:all .2s;" title="View Results">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if completedEvals|length == 0 %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-25"></i>
+        No completed evaluations yet.
+    </div>
+    {% endif %}
+</div>
+
+{# ─── Inline Styles ─── #}
+<style>
+.ev-search-bar{display:flex;justify-content:flex-end;margin-bottom:.75rem;}
+.ev-search-inner{position:relative;width:280px;}
+.ev-search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.82rem;}
+.ev-search-input{width:100%;padding:7px 12px 7px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.82rem;color:#1e293b;background:#fff;transition:border-color .2s,box-shadow .2s;outline:none;}
+.ev-search-input:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.ev-search-input::placeholder{color:#94a3b8;}
+.ev-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);margin-bottom:1.5rem;}
+.ev-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.ev-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.ev-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.ev-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.ev-sort-label:hover{color:#1a56db;}
+.ev-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
+.ev-sort-label:hover .ev-sort-icon{opacity:.7;}
+.ev-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.ev-table tbody tr:last-child{border-bottom:none;}
+.ev-table tbody tr:hover{background:#f8faff;}
+.ev-table tbody td{padding:10px 14px;vertical-align:middle;}
+.ev-td-subject{font-weight:600;color:#1e293b;}
+.ev-td-meta{color:#64748b;}
+.ev-td-response{text-align:center;}
+.ev-response-badge{display:inline-block;min-width:28px;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:#EFF6FF;color:#2563EB;text-align:center;}
+@media(max-width:768px){
+    .ev-search-inner{width:100%;}
+    .ev-search-bar{justify-content:stretch;}
+    .ev-table{font-size:.75rem;}
+    .ev-table thead th{padding:8px 10px;font-size:.62rem;}
+    .ev-table tbody td{padding:8px 10px;}
+}
+.ev-table-wrap,.ev-search-bar{animation:evFadeIn .25s ease;}
+@keyframes evFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+{# ─── Sort & Search Script ─── #}
+<script>
+function evFilter(){
+    const q=(document.getElementById('evSearchInput').value||'').toLowerCase();
+    document.querySelectorAll('#evTableBody .ev-row').forEach(r=>{
+        r.style.display=r.dataset.search.includes(q)?'':'none';
+    });
+}
+function evSort(col){
+    const tb=document.getElementById('evTableBody');
+    if(!tb)return;
+    const rows=Array.from(tb.querySelectorAll('.ev-row'));
+    const key='sort-'+col;
+    const dir=tb.dataset.sortDir===col?'desc':'asc';
+    tb.dataset.sortDir=dir==='asc'?col:'';
+    const isNum=col==='responses';
+    rows.sort((a,b)=>{
+        let va=a.dataset[key]||'',vb=b.dataset[key]||'';
+        if(isNum)return dir==='asc'?Number(va)-Number(vb):Number(vb)-Number(va);
+        return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+    });
+    rows.forEach(r=>tb.appendChild(r));
+    document.querySelectorAll('.ev-sort-icon').forEach(i=>{
+        i.className='bi bi-arrow-down-up ev-sort-icon';
+        i.style.opacity='.35';
+    });
+    const icon=document.querySelector('.ev-sort-icon[data-col="'+col+'"]');
+    if(icon){
+        icon.className='bi '+(dir==='asc'?'bi-arrow-up':'bi-arrow-down')+' ev-sort-icon';
+        icon.style.opacity='.85';
+    }
+}
+</script>
+
+{% endblock %}

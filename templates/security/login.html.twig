@@ -1,0 +1,879 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sign In | QUAMC Evaluation{% endblock %}
+
+{% block body_class %}no-navbar{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════════════════
+   LOGIN PAGE — Professional Split Layout
+   ═══════════════════════════════════════════════════ #}
+
+<div class="lg-page">
+    {# ── LEFT PANEL: Decorative branding ── #}
+    <div class="lg-brand-panel">
+        <div class="lg-brand-bg"></div>
+        <div class="lg-brand-content">
+            <div class="lg-brand-logo-wrap">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-brand-logo">
+            </div>
+            <h1 class="lg-brand-title">SET-SEF Evaluation System</h1>
+            <p class="lg-brand-sub">Welcome back to the Negros Oriental State University evaluation platform</p>
+
+            <div class="lg-brand-features">
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <strong>Secure Access</strong>
+                        <span>Your data is protected with enterprise-grade security</span>
+                    </div>
+                </div>
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-speedometer2"></i></div>
+                    <div>
+                        <strong>Real-time Dashboard</strong>
+                        <span>Instant access to evaluations and analytics</span>
+                    </div>
+                </div>
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-people"></i></div>
+                    <div>
+                        <strong>Multi-role Support</strong>
+                        <span>Students, faculty, and staff — all in one system</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg-brand-footer">
+                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── RIGHT PANEL: Login form ── #}
+    <div class="lg-form-panel">
+        <div class="lg-form-scroll">
+            <div class="lg-form-inner">
+
+                {# Mobile logo (hidden on desktop) #}
+                <div class="lg-mobile-header d-lg-none">
+                    <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-mobile-logo">
+                </div>
+
+                {# Welcome header #}
+                <div class="lg-header">
+                    <h2 class="lg-title">Sign in to your account</h2>
+                    <p class="lg-subtitle">Access your dashboard, evaluations, and analytics</p>
+                </div>
+
+                {# Error alert #}
+                {% if error %}
+                    <div class="lg-error-alert">
+                        <div class="lg-error-icon-box">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="lg-error-title">Authentication failed</strong>
+                            <span class="lg-error-msg">{{ error.messageKey|trans(error.messageData, 'security') }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# Login form #}
+                <form method="post" class="lg-form" id="loginForm">
+                    <div class="lg-field">
+                        <label for="inputEmail" class="lg-label">
+                            Email or Student ID
+                        </label>
+                        <div class="lg-input-wrap">
+                            <i class="bi bi-envelope"></i>
+                            <input type="text" value="{{ last_username }}" name="_username" id="inputEmail"
+                                   class="form-control lg-input" autocomplete="username" required autofocus
+                                   placeholder="Enter your email or student ID">
+                        </div>
+                    </div>
+
+                    <div class="lg-field">
+                        <label for="inputPassword" class="lg-label">
+                            Password
+                        </label>
+                        <div class="lg-input-wrap">
+                            <i class="bi bi-key"></i>
+                            <input type="password" name="_password" id="inputPassword"
+                                   class="form-control lg-input" autocomplete="current-password" required
+                                   placeholder="Enter your password">
+                            <button type="button" class="lg-pwd-toggle" id="pwdToggle" tabindex="-1"
+                                    aria-label="Toggle password visibility">
+                                <i class="bi bi-eye" id="pwdToggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    <button type="submit" class="lg-submit-btn" id="loginSubmitBtn">
+                        <span class="lg-submit-text">
+                            Sign In<i class="bi bi-arrow-right ms-2"></i>
+                        </span>
+                        <span class="lg-submit-loading d-none">
+                            <span class="lg-loading-spinner"></span>
+                            <span>Signing In</span>
+                            <span class="lg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
+                        </span>
+                        <span class="lg-btn-progress"></span>
+                    </button>
+
+                    <div class="lg-divider">
+                        <span>or continue with</span>
+                    </div>
+
+                    <a href="{{ path('app_student_login') }}" class="lg-alt-btn">
+                        <div class="lg-alt-btn-icon">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div class="lg-alt-btn-text">
+                            <strong>Student Quick Login</strong>
+                            <span>Sign in using Student ID only</span>
+                        </div>
+                        <i class="bi bi-chevron-right lg-alt-btn-arrow"></i>
+                    </a>
+
+                    <div class="lg-register-link">
+                        New to the platform? <a href="{{ path('app_register') }}">Create an account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════════════════ #}
+<style>
+/* ── Page layout ── */
+.lg-page {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #F8FAFC;
+}
+
+/* ── Left brand panel ── */
+.lg-brand-panel {
+    position: relative;
+    width: 420px;
+    min-width: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+.lg-brand-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,#1E3A8A 0%,#1E40AF 40%,#059669 100%);
+    z-index: 0;
+}
+.lg-brand-bg::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    top: -150px;
+    right: -120px;
+    animation: float 8s ease-in-out infinite;
+}
+.lg-brand-bg::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    bottom: -80px;
+    left: -60px;
+    animation: float 10s ease-in-out infinite reverse;
+}
+.lg-brand-content {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 2.5rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+}
+.lg-brand-logo-wrap {
+    width: 90px;
+    height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    animation: scaleIn 0.6s ease 0.2s both;
+}
+.lg-brand-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+.lg-brand-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    animation: slideUp 0.5s ease 0.35s both;
+}
+.lg-brand-sub {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+    animation: slideUp 0.5s ease 0.45s both;
+}
+.lg-brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.lg-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    opacity: 0;
+    animation: slideUp 0.4s ease both;
+}
+.lg-feature-item:nth-child(1) { animation-delay: 0.55s; }
+.lg-feature-item:nth-child(2) { animation-delay: 0.65s; }
+.lg-feature-item:nth-child(3) { animation-delay: 0.75s; }
+.lg-feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.625rem;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.lg-feature-item strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+}
+.lg-feature-item span {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+.lg-brand-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+    font-size: 0.78rem;
+    opacity: 0.6;
+}
+
+/* ── Right form panel ── */
+.lg-form-panel {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    background: #fff;
+}
+.lg-form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 2rem;
+}
+.lg-form-inner {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ── Mobile header ── */
+.lg-mobile-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+.lg-mobile-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+/* ── Greeting pill ── */
+.lg-greeting-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    color: #166534;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 2rem;
+    margin-bottom: 0.85rem;
+    animation: slideUp 0.4s ease 0.1s both;
+}
+.lg-wave-icon {
+    display: inline-block;
+    animation: waveHand 1.5s ease 0.8s both;
+    transform-origin: 70% 70%;
+    font-size: 0.85rem;
+}
+@keyframes waveHand {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(20deg); }
+    50% { transform: rotate(-10deg); }
+    75% { transform: rotate(15deg); }
+}
+
+/* ── Header ── */
+.lg-header {
+    margin-bottom: 1.75rem;
+}
+.lg-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0F172A;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    animation: slideUp 0.4s ease 0.2s both;
+}
+.lg-subtitle {
+    font-size: 0.88rem;
+    color: #64748B;
+    margin: 0;
+    animation: slideUp 0.35s ease 0.3s both;
+}
+
+/* ── Error alert ── */
+.lg-error-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    margin-bottom: 1.5rem;
+    animation: shakeX 0.5s ease;
+}
+.lg-error-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    background: #FEE2E2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #DC2626;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.lg-error-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #991B1B;
+    margin-bottom: 0.1rem;
+}
+.lg-error-msg {
+    font-size: 0.8rem;
+    color: #DC2626;
+}
+@keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    15%, 45%, 75%  { transform: translateX(-6px); }
+    30%, 60%, 90%  { transform: translateX(6px); }
+}
+
+/* ── Fields ── */
+.lg-field {
+    margin-bottom: 1.15rem;
+    animation: slideUp 0.4s ease both;
+}
+.lg-field:nth-child(1) { animation-delay: 0.35s; }
+.lg-field:nth-child(2) { animation-delay: 0.42s; }
+.lg-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.4rem;
+}
+.lg-input-wrap {
+    position: relative;
+}
+.lg-input-wrap > i:first-child {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 0.9rem;
+    z-index: 2;
+    pointer-events: none;
+    transition: color 0.25s;
+}
+.lg-input-wrap.lg-focused > i:first-child {
+    color: #1D4ED8;
+}
+.lg-input {
+    padding-left: 2.6rem !important;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 0.75rem;
+    font-size: 0.88rem;
+    height: 46px;
+    transition: all 0.25s;
+    background-color: #F8FAFC;
+    color: #0F172A;
+}
+.lg-input::placeholder {
+    color: #94A3B8;
+    font-size: 0.85rem;
+}
+.lg-input:focus {
+    border-color: #1D4ED8;
+    box-shadow: 0 0 0 3px rgba(29,78,216,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    background-color: #fff;
+}
+
+/* ── Password toggle ── */
+.lg-pwd-toggle {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94A3B8;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    z-index: 2;
+}
+.lg-pwd-toggle:hover {
+    color: #334155;
+    background: #F1F5F9;
+}
+
+/* ── Submit button ── */
+.lg-submit-btn {
+    width: 100%;
+    padding: 0.85rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #1E3A8A, #1E40AF 50%, #059669);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    margin-top: 0.5rem;
+    animation: slideUp 0.4s ease 0.5s both;
+}
+.lg-submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+.lg-submit-btn:hover {
+    box-shadow: 0 8px 24px rgba(30,58,138,0.3), 0 2px 6px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+.lg-submit-btn:hover::before {
+    transform: translateX(100%);
+}
+.lg-submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(30,58,138,0.25);
+}
+.lg-submit-btn.lg-btn-loading {
+    pointer-events: none;
+    background: linear-gradient(135deg, #1a3279, #1a38a0 50%, #047857);
+}
+.lg-submit-btn.lg-btn-loading::before {
+    animation: lgShimmerLoop 1.5s infinite;
+}
+.lg-submit-text,
+.lg-submit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s, transform 0.3s;
+}
+.lg-submit-text {
+    opacity: 1;
+    transform: translateY(0);
+}
+.lg-submit-btn.lg-btn-loading .lg-submit-text {
+    opacity: 0;
+    transform: translateY(8px);
+    position: absolute;
+}
+.lg-submit-loading {
+    opacity: 0;
+    transform: translateY(-8px);
+    gap: 0;
+}
+.lg-submit-btn.lg-btn-loading .lg-submit-loading {
+    opacity: 1;
+    transform: translateY(0);
+}
+.lg-loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: lgSpin 0.7s linear infinite;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+.lg-loading-dots {
+    display: inline-flex;
+    margin-left: 1px;
+}
+.lg-loading-dots span {
+    animation: lgDotBounce 1.2s ease-in-out infinite;
+    font-weight: 700;
+}
+.lg-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.lg-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+.lg-btn-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.9), rgba(255,255,255,0.5));
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+.lg-submit-btn.lg-btn-loading .lg-btn-progress {
+    animation: lgProgress 2s ease-in-out infinite;
+}
+@keyframes lgSpin {
+    to { transform: rotate(360deg); }
+}
+@keyframes lgDotBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes lgShimmerLoop {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+@keyframes lgProgress {
+    0% { width: 0; left: 0; }
+    50% { width: 70%; left: 15%; }
+    100% { width: 0; left: 100%; }
+}
+
+/* ── Divider ── */
+.lg-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+    color: #94A3B8;
+    font-size: 0.75rem;
+    animation: slideUp 0.35s ease 0.55s both;
+}
+.lg-divider::before, .lg-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E2E8F0;
+}
+
+/* ── Alt login button ── */
+.lg-alt-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 0.75rem;
+    background: #fff;
+    text-decoration: none;
+    transition: all 0.25s;
+    animation: slideUp 0.35s ease 0.6s both;
+    gap: 0.85rem;
+}
+.lg-alt-btn:hover {
+    border-color: #1D4ED8;
+    background: #EFF6FF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29,78,216,0.08);
+}
+.lg-alt-btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 0.625rem;
+    background: linear-gradient(135deg, #DBEAFE, #EFF6FF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1D4ED8;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.lg-alt-btn-text {
+    flex: 1;
+}
+.lg-alt-btn-text strong {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0F172A;
+}
+.lg-alt-btn-text span {
+    font-size: 0.72rem;
+    color: #64748B;
+}
+.lg-alt-btn-arrow {
+    color: #94A3B8;
+    font-size: 0.85rem;
+    transition: transform 0.2s, color 0.2s;
+}
+.lg-alt-btn:hover .lg-alt-btn-arrow {
+    color: #1D4ED8;
+    transform: translateX(3px);
+}
+
+/* ── Register link ── */
+.lg-register-link {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #64748B;
+    margin-top: 1.5rem;
+    animation: slideUp 0.35s ease 0.65s both;
+}
+.lg-register-link a {
+    color: #1D4ED8;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.lg-register-link a:hover {
+    color: #1E3A8A;
+    text-decoration: underline;
+}
+
+/* ═══ TABLET ═══ */
+@media (max-width: 991.98px) {
+    .lg-brand-panel {
+        display: none;
+    }
+    .lg-page {
+        background: linear-gradient(135deg,rgba(30,58,138,0.92),rgba(30,64,175,0.88) 40%,rgba(5,150,105,0.82) 100%),
+                    url('/images/norsu.jpg') center 8%/cover no-repeat;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        padding: 1rem;
+    }
+    .lg-form-panel {
+        max-width: 440px;
+        width: 100%;
+        margin: 0 auto;
+        border-radius: 1.25rem;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06);
+        background: rgba(255,255,255,0.98);
+        overflow: hidden;
+        backdrop-filter: blur(20px);
+    }
+    .lg-form-scroll {
+        padding: 1.75rem 1.5rem;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    .lg-mobile-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .lg-mobile-logo {
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
+    }
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 575.98px) {
+    .lg-page {
+        align-items: center;
+        padding: 0.5rem;
+    }
+    .lg-form-panel {
+        margin: 0;
+        border-radius: 1rem;
+        max-width: 100%;
+    }
+    .lg-form-scroll {
+        padding: 1.5rem 1.15rem;
+    }
+    .lg-header {
+        margin-bottom: 1.25rem;
+    }
+    .lg-title {
+        font-size: 1.4rem;
+    }
+    .lg-subtitle {
+        font-size: 0.82rem;
+    }
+    .lg-input {
+        height: 44px;
+        font-size: 0.88rem;
+    }
+    .lg-label {
+        font-size: 0.8rem;
+    }
+    .lg-submit-btn {
+        padding: 0.85rem;
+        font-size: 0.92rem;
+        min-height: 48px;
+    }
+    .lg-pwd-toggle {
+        padding: 0.4rem;
+        font-size: 1.1rem;
+    }
+    .lg-error-alert {
+        padding: 0.7rem 0.85rem;
+    }
+    .lg-divider {
+        margin: 1.25rem 0;
+    }
+    .lg-register-link {
+        font-size: 0.8rem;
+        margin-top: 1.25rem;
+    }
+    .lg-alt-btn {
+        padding: 0.75rem 0.85rem;
+    }
+}
+
+/* ═══ SMALL MOBILE ═══ */
+@media (max-width: 400px) {
+    .lg-page {
+        padding: 0.5rem;
+    }
+    .lg-form-panel {
+        border-radius: 1rem;
+    }
+    .lg-form-scroll {
+        padding: 1.25rem 0.9rem;
+    }
+    .lg-mobile-logo {
+        width: 48px;
+        height: 48px;
+    }
+    .lg-title {
+        font-size: 1.25rem;
+    }
+    .lg-subtitle {
+        font-size: 0.78rem;
+    }
+    .lg-input {
+        height: 42px;
+        font-size: 0.85rem;
+    }
+    .lg-greeting-pill {
+        font-size: 0.72rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lg-brand-logo-wrap,
+    .lg-brand-title,
+    .lg-brand-sub,
+    .lg-feature-item,
+    .lg-greeting-pill,
+    .lg-wave-icon,
+    .lg-title,
+    .lg-subtitle,
+    .lg-field,
+    .lg-submit-btn,
+    .lg-divider,
+    .lg-alt-btn,
+    .lg-register-link,
+    .lg-error-alert,
+    .lg-brand-bg::before,
+    .lg-brand-bg::after {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+}
+</style>
+
+{# ═══════════════════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════════════════ #}
+<script>
+(function() {
+    'use strict';
+
+    /* ── Password visibility toggle ── */
+    var pwdToggle = document.getElementById('pwdToggle');
+    var pwdInput  = document.getElementById('inputPassword');
+    var pwdIcon   = document.getElementById('pwdToggleIcon');
+    if (pwdToggle && pwdInput) {
+        pwdToggle.addEventListener('click', function() {
+            var isPassword = pwdInput.type === 'password';
+            pwdInput.type = isPassword ? 'text' : 'password';
+            pwdIcon.classList.toggle('bi-eye', !isPassword);
+            pwdIcon.classList.toggle('bi-eye-slash', isPassword);
+        });
+    }
+
+    /* ── Submit loading state ── */
+    var loginForm = document.getElementById('loginForm');
+    var submitBtn = document.getElementById('loginSubmitBtn');
+    if (loginForm && submitBtn) {
+        loginForm.addEventListener('submit', function() {
+            var load = submitBtn.querySelector('.lg-submit-loading');
+            if (load) load.classList.remove('d-none');
+            submitBtn.classList.add('lg-btn-loading');
+            submitBtn.disabled = true;
+        });
+    }
+
+    /* ── Focus animation on inputs ── */
+    document.querySelectorAll('.lg-input').forEach(function(input) {
+        input.addEventListener('focus', function() {
+            this.closest('.lg-input-wrap').classList.add('lg-focused');
+        });
+        input.addEventListener('blur', function() {
+            this.closest('.lg-input-wrap').classList.remove('lg-focused');
+        });
+    });
+})();
+</script>
+{% endblock %}

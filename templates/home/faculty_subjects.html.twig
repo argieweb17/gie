@@ -1,0 +1,595 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Subjects | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<div class="sb-animate">
+{# ═══════════════════════════════════════
+   COMPUTE STATS
+   ═══════════════════════════════════════ #}
+{% set totalSubjects = 0 %}
+{% set totalDepts = 0 %}
+{% for dept in deptGroups %}
+    {% if dept.subjects|length > 0 %}
+        {% set totalDepts = totalDepts + 1 %}
+        {% set totalSubjects = totalSubjects + dept.subjects|length %}
+    {% endif %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="sb-header">
+    <div class="sb-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sb-header-icon">
+                    <i class="bi bi-book-half"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subjects</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
+                        {% if selectedSemester %}
+                            <span class="sb-meta-pill sb-meta-filter"><i class="bi bi-funnel-fill me-1"></i>{{ selectedSemester }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sb-stats-row">
+            <div class="sb-stat">
+                <span class="sb-stat-val">{{ totalSubjects }}</span>
+                <span class="sb-stat-lbl">Total Subjects</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
+                <span class="sb-stat-val sb-val-success">{{ loadedSubjectIds|length }}</span>
+                <span class="sb-stat-lbl">Loaded</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
+                <span class="sb-stat-val">{{ totalDepts }}</span>
+                <span class="sb-stat-lbl">Departments</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   FILTER / SEARCH BAR
+   ═══════════════════════════════════════ #}
+<div class="sb-toolbar">
+    <div class="sb-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="sb-search" id="subjectSearchInput" placeholder="Search by code or name..." oninput="searchSubjects(this.value)">
+    </div>
+    <div class="sb-filter-form">
+        <div class="sb-filter-group">
+            <i class="bi bi-calendar-event sb-filter-icon"></i>
+            <select class="sb-filter-select" id="semesterFilter" onchange="filterBySemester(this.value)" style="min-width:150px;">
+                <option value="" {% if not selectedSemester %}selected{% endif %}>All Semesters</option>
+                {% for sem in semesters|sort %}
+                    <option value="{{ sem }}" {% if selectedSemester == sem %}selected{% endif %}>{{ sem }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sb-filter-group">
+            <i class="bi bi-mortarboard sb-filter-icon"></i>
+            <select class="sb-filter-select" id="yearLevelFilter" onchange="filterByYearLevel(this.value)" style="min-width:150px;">
+                <option value="" selected>All Year Levels</option>
+                {% set yearOrder = {'1st Year': 'First Year', '2nd Year': 'Second Year', '3rd Year': 'Third Year', '4th Year': 'Fourth Year', '5th Year': 'Fifth Year'} %}
+                {% for val, label in yearOrder %}
+                    {% if val in yearLevels %}
+                        <option value="{{ val }}">{{ label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="sb-toolbar-right">
+        <span class="sb-selected-count"><span id="checkedCount">{{ loadedSubjectIds|length }}</span> selected</span>
+        <button type="submit" form="loadForm" class="sb-save-btn">
+            <i class="bi bi-check2-all me-1"></i>Save Load
+        </button>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SUBJECTS — DEPARTMENT GROUPS
+   ═══════════════════════════════════════ #}
+<form method="post" action="{{ path('faculty_subjects_publish') }}" id="loadForm">
+<input type="hidden" name="_token" value="{{ csrf_token('publish_subjects') }}">
+
+<div class="sb-table-wrap">
+    {% set hasSubjects = false %}
+    {% for dept in deptGroups %}
+        {% if dept.subjects|length > 0 %}{% set hasSubjects = true %}{% endif %}
+    {% endfor %}
+
+    {% if hasSubjects %}
+    {% for dept in deptGroups %}
+    {% if dept.subjects|length > 0 %}
+    <div class="sb-dept-section" id="deptSection{{ dept.id }}">
+        <div class="sb-dept-header" onclick="toggleDept({{ dept.id }})">
+            <div class="sb-dept-header-left">
+                <div class="sb-dept-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="sb-dept-info">
+                    <span class="sb-dept-name">{{ dept.name }}</span>
+                    <span class="sb-dept-meta">{{ dept.subjects|length }} subject{{ dept.subjects|length != 1 ? 's' : '' }} available</span>
+                </div>
+            </div>
+            <div class="sb-dept-header-right">
+                <a href="{{ path('faculty_department_detail', {deptId: dept.id}) }}{% if selectedSemester %}?semester={{ selectedSemester|url_encode }}{% endif %}"
+                   class="sb-dept-link" onclick="event.stopPropagation();" title="View department details">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+                <span class="sb-dept-count">{{ dept.subjects|length }}</span>
+                <i class="bi bi-chevron-down sb-dept-chevron {% if activeDeptId == dept.id %}open{% endif %}"></i>
+            </div>
+        </div>
+        <div class="sb-dept-body {% if activeDeptId == dept.id %}open{% endif %}" id="deptBody{{ dept.id }}">
+            <table class="sb-table">
+                <thead>
+                    <tr>
+                        <th class="sb-th-check">
+                            <input type="checkbox" class="form-check-input sb-check-all" data-dept="{{ dept.id }}" title="Select all">
+                        </th>
+                        <th class="sb-th-code">Code</th>
+                        <th class="sb-th-name">Subject Name</th>
+                        <th class="sb-th-sem">Semester</th>
+                        <th class="sb-th-units">Units</th>
+                        <th class="sb-th-section">Section</th>
+                        <th class="sb-th-schedule">Schedule/Time</th>
+                        <th class="sb-th-status">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in dept.subjects %}
+                    {% set isLoaded = subject.id in loadedSubjectIds %}
+                    <tr class="sb-row {% if isLoaded %}is-loaded{% endif %}"
+                        data-subject-id="{{ subject.id }}"
+                        data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }}"
+                        data-yearlevel="{{ subject.yearLevel|default('')|lower }}">
+                        <td class="sb-td-check">
+                            <input type="checkbox" name="subject_ids[]" value="{{ subject.id }}"
+                                   class="form-check-input subject-check sb-check"
+                                   {% if isLoaded %}checked{% endif %}
+                                   id="subj_{{ subject.id }}"
+                                   data-dept-id="{{ dept.id }}"
+                                   data-subject-id="{{ subject.id }}">
+                        </td>
+                        <td class="sb-td-code">
+                            <div class="sb-code-cell">
+                                <span class="sb-code-avatar">{{ subject.subjectCode|slice(0,2)|upper }}</span>
+                                <code class="sb-code-text">{{ subject.subjectCode }}</code>
+                            </div>
+                        </td>
+                        <td class="sb-td-name">
+                            <span class="sb-subject-name">{{ subject.subjectName }}</span>
+                        </td>
+                        <td class="sb-td-sem">
+                            {% if subject.semester %}
+                                <span class="sb-pill sb-pill-sem">{{ subject.semester }}</span>
+                            {% else %}
+                                <span class="sb-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="sb-td-units">
+                            <span class="sb-units-badge">{{ subject.units ?? '—' }}</span>
+                        </td>
+                        <td class="sb-td-section">
+                            <input type="text" name="subject_sections[{{ subject.id }}]" 
+                                   value="{{ subject.section ?? '' }}" 
+                                   class="sb-inline-input sb-section-input" 
+                                   placeholder="e.g. A"
+                                   title="Section"
+                                   data-subject-id="{{ subject.id }}"
+                                   style="text-transform:uppercase;">
+                        </td>
+                        <td class="sb-td-schedule">
+                            <select name="subject_schedules[{{ subject.id }}]" 
+                                    class="sb-inline-select" 
+                                    title="Schedule/Time">
+                                <option value="">— Select —</option>
+                                {% set schedOpts = [
+                                    'MWF 7:00 - 8:00 AM','MWF 8:00 - 9:00 AM','MWF 9:00 - 10:00 AM','MWF 10:00 - 11:00 AM','MWF 11:00 - 12:00 PM','MWF 12:00 - 1:00 PM','MWF 1:00 - 2:00 PM','MWF 2:00 - 3:00 PM','MWF 3:00 - 4:00 PM','MWF 4:00 - 5:00 PM','MWF 5:00 - 6:00 PM','MWF 6:00 - 7:00 PM','MWF 7:00 - 8:00 PM','MWF 8:00 - 9:00 PM',
+                                    'TTH 7:00 - 8:30 AM','TTH 8:30 - 10:00 AM','TTH 10:00 - 11:30 AM','TTH 11:30 - 1:00 PM','TTH 1:00 - 2:30 PM','TTH 2:30 - 4:00 PM','TTH 4:00 - 5:30 PM','TTH 5:30 - 7:00 PM','TTH 7:00 - 8:30 PM','TTH 8:30 - 10:00 PM',
+                                    'SAT 7:00 - 10:00 AM','SAT 10:00 - 1:00 PM','SAT 1:00 - 4:00 PM','SAT 4:00 - 7:00 PM',
+                                    'M 7:00 - 8:00 AM','M 8:00 - 9:00 AM','M 9:00 - 10:00 AM','M 10:00 - 11:00 AM','M 11:00 - 12:00 PM','M 12:00 - 1:00 PM','M 1:00 - 2:00 PM','M 2:00 - 3:00 PM','M 3:00 - 4:00 PM','M 4:00 - 5:00 PM','M 5:00 - 6:00 PM','M 6:00 - 7:00 PM','M 7:00 - 8:00 PM','M 8:00 - 9:00 PM',
+                                    'T 7:00 - 8:00 AM','T 8:00 - 9:00 AM','T 9:00 - 10:00 AM','T 10:00 - 11:00 AM','T 11:00 - 12:00 PM','T 12:00 - 1:00 PM','T 1:00 - 2:00 PM','T 2:00 - 3:00 PM','T 3:00 - 4:00 PM','T 4:00 - 5:00 PM','T 5:00 - 6:00 PM','T 6:00 - 7:00 PM','T 7:00 - 8:00 PM','T 8:00 - 9:00 PM',
+                                    'W 7:00 - 8:00 AM','W 8:00 - 9:00 AM','W 9:00 - 10:00 AM','W 10:00 - 11:00 AM','W 11:00 - 12:00 PM','W 12:00 - 1:00 PM','W 1:00 - 2:00 PM','W 2:00 - 3:00 PM','W 3:00 - 4:00 PM','W 4:00 - 5:00 PM','W 5:00 - 6:00 PM','W 6:00 - 7:00 PM','W 7:00 - 8:00 PM','W 8:00 - 9:00 PM',
+                                    'TH 7:00 - 8:30 AM','TH 8:30 - 10:00 AM','TH 10:00 - 11:30 AM','TH 11:30 - 1:00 PM','TH 1:00 - 2:30 PM','TH 2:30 - 4:00 PM','TH 4:00 - 5:30 PM','TH 5:30 - 7:00 PM','TH 7:00 - 8:30 PM','TH 8:30 - 10:00 PM',
+                                    'F 7:00 - 8:00 AM','F 8:00 - 9:00 AM','F 9:00 - 10:00 AM','F 10:00 - 11:00 AM','F 11:00 - 12:00 PM','F 12:00 - 1:00 PM','F 1:00 - 2:00 PM','F 2:00 - 3:00 PM','F 3:00 - 4:00 PM','F 4:00 - 5:00 PM','F 5:00 - 6:00 PM','F 6:00 - 7:00 PM','F 7:00 - 8:00 PM','F 8:00 - 9:00 PM'
+                                ] %}
+                                {% for opt in schedOpts %}
+                                    <option value="{{ opt }}" {% if (subject.schedule ?? '') == opt %}selected{% endif %}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="sb-td-status">
+                            {% if isLoaded %}
+                                <span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded</span>
+                            {% else %}
+                                <span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <div class="sb-empty-state-wrap">
+        <div class="sb-empty-icon"><i class="bi bi-journal-x"></i></div>
+        <h6 class="fw-bold text-muted">No subjects found</h6>
+        <p class="text-muted small mb-0">No subjects available{% if selectedSemester %} for this semester{% endif %}.</p>
+    </div>
+    {% endif %}
+
+    <div id="sbNoResults" class="sb-no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        <span>No subjects match your search.</span>
+    </div>
+</div>
+</form>
+
+{# ── Hidden unload form ── #}
+<form method="post" action="{{ path('faculty_subjects_publish') }}" id="unloadForm" style="display:none;">
+    <input type="hidden" name="_token" value="{{ csrf_token('publish_subjects') }}">
+    <div id="unloadFormSubjects"></div>
+</form>
+
+{# ── Unload Confirm Modal ── #}
+<div class="modal fade" id="unloadModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <div class="modal-body text-center p-4">
+                <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3"
+                     style="width:56px;height:56px;background:linear-gradient(135deg,#fee2e2,#fecaca);">
+                    <i class="bi bi-exclamation-triangle-fill fs-4" style="color:#dc2626;"></i>
+                </div>
+                <h6 class="fw-bold mb-1" style="font-size:.95rem;">Unload Subject?</h6>
+                <p class="text-muted small mb-3">This will remove <strong id="unloadSubjectName"></strong> from your teaching load.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-sm btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="font-size:.78rem;">Cancel</button>
+                    <button class="btn btn-sm btn-danger rounded-pill px-4 fw-bold" id="confirmUnloadBtn" style="font-size:.78rem;">
+                        <i class="bi bi-x-circle-fill me-1"></i>Unload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ─── Header ─── */
+.sb-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.sb-header-inner{padding:22px 26px 18px;}
+.sb-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.sb-meta-filter{background:rgba(251,191,36,.2);color:#fbbf24;}
+.sb-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.sb-stat{flex:1;text-align:center;}
+.sb-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.sb-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.sb-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.sb-val-success{color:#34d399!important;}
+
+/* ─── Toolbar ─── */
+.sb-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.sb-search-wrap{position:relative;flex:1;min-width:200px;max-width:360px;}
+.sb-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.sb-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.sb-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.sb-filter-form{display:flex;align-items:center;gap:6px;}
+.sb-filter-group{position:relative;display:flex;align-items:center;}
+.sb-filter-icon{position:absolute;left:10px;color:#6b7280;font-size:.8rem;pointer-events:none;z-index:1;}
+.sb-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;min-width:150px;cursor:pointer;transition:border-color .15s;}
+.sb-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
+.sb-toolbar-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.sb-selected-count{font-size:.75rem;color:#6b7280;font-weight:600;padding:6px 14px;background:#f1f5f9;border-radius:8px;white-space:nowrap;}
+.sb-save-btn{display:inline-flex;align-items:center;gap:4px;padding:7px 18px;border-radius:8px;border:none;font-size:.78rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#059669,#10b981);cursor:pointer;transition:all .2s ease;box-shadow:0 2px 8px rgba(16,185,129,.25);white-space:nowrap;}
+.sb-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.35);background:linear-gradient(135deg,#047857,#059669);}
+
+/* ─── Table Wrap ─── */
+.sb-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+
+/* ─── Department Sections ─── */
+.sb-dept-section{border-bottom:1px solid #e5e7eb;}
+.sb-dept-section:last-child{border-bottom:none;}
+.sb-dept-header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#f8fafc;cursor:pointer;transition:all .15s ease;user-select:none;}
+.sb-dept-header:hover{background:#f1f5f9;}
+.sb-dept-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
+.sb-dept-icon{width:36px;height:36px;min-width:36px;border-radius:9px;background:linear-gradient(135deg,#1E3A8A,#1E40AF);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;box-shadow:0 2px 6px rgba(30,58,138,.18);}
+.sb-dept-info{display:flex;flex-direction:column;min-width:0;flex:1;}
+.sb-dept-name{font-size:.88rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-dept-meta{font-size:.68rem;color:#94a3b8;font-weight:500;}
+.sb-dept-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sb-dept-link{width:30px;height:30px;border-radius:7px;background:rgba(30,64,175,.06);border:1px solid rgba(30,64,175,.12);color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:.7rem;text-decoration:none;transition:all .15s ease;opacity:.6;}
+.sb-dept-link:hover{background:#1E40AF;color:#fff;opacity:1;box-shadow:0 2px 8px rgba(30,64,175,.2);}
+.sb-dept-count{font-size:.72rem;font-weight:700;padding:4px 14px;border-radius:20px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);color:#1E40AF;border:1px solid #BFDBFE;}
+.sb-dept-chevron{font-size:.7rem;color:#94a3b8;transition:transform .25s ease;}
+.sb-dept-chevron.open{transform:rotate(180deg);}
+.sb-dept-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.sb-dept-body.open{max-height:5000px;}
+
+/* ─── Table ─── */
+.sb-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.sb-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.sb-table thead th{padding:10px 14px;font-size:.65rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;border:none;}
+.sb-th-check{width:44px;text-align:center!important;}
+.sb-th-code{width:160px;}
+.sb-th-name{min-width:200px;}
+.sb-th-sem{width:140px;}
+.sb-th-units{width:80px;text-align:center!important;}
+.sb-th-section{width:110px;}
+.sb-th-schedule{width:180px;}
+.sb-th-status{width:110px;text-align:center!important;}
+
+.sb-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.sb-table tbody tr:last-child{border-bottom:none;}
+.sb-table tbody tr:hover{background:#f8faff;}
+.sb-table tbody td{padding:10px 14px;vertical-align:middle;}
+
+/* Checkbox */
+.sb-td-check{text-align:center;width:44px;}
+.sb-check,.sb-check-all{margin:0!important;width:16px;height:16px;cursor:pointer;border-radius:4px!important;}
+
+/* Code cell */
+.sb-code-cell{display:flex;align-items:center;gap:10px;}
+.sb-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+
+/* Name */
+.sb-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
+
+/* Pills */
+.sb-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.sb-pill-sem{background:#ecfdf5;color:#059669;}
+
+/* Text helpers */
+.sb-empty{color:#cbd5e1;font-size:.78rem;}
+
+/* Units badge */
+.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
+
+/* Inline inputs for section/schedule */
+.sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;}
+.sb-inline-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.sb-inline-input::placeholder{color:#cbd5e1;font-size:.72rem;}
+.sb-row.is-loaded .sb-inline-input{background:#ecfdf5;border-color:#bbf7d0;}
+.sb-row.is-loaded .sb-inline-input:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1);background:#fff;}
+.sb-inline-select{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.72rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;cursor:pointer;appearance:auto;}
+.sb-inline-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.sb-row.is-loaded .sb-inline-select{background:#ecfdf5;border-color:#bbf7d0;}
+.sb-row.is-loaded .sb-inline-select:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1);background:#fff;}
+.sb-td-section{width:110px;}
+.sb-td-schedule{width:180px;}
+
+/* Status badges */
+.sb-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;}
+.sb-status-badge.loaded{background:#DCFCE7;color:#059669;}
+.sb-status-badge.loaded i{font-size:.55rem;}
+.sb-status-badge.available{background:#F1F5F9;color:#94a3b8;}
+.sb-status-badge.available i{font-size:.4rem;}
+
+/* Row states */
+.sb-row.is-loaded{background:#F0FDF4;}
+.sb-row.is-loaded:hover{background:#ECFDF5;}
+.sb-row.is-loaded .sb-code-avatar{background:linear-gradient(135deg,#BBF7D0,#86EFAC);color:#166534;}
+.sb-row.is-loaded .sb-code-text{background:#DCFCE7;border-color:#BBF7D0;color:#059669;}
+
+/* Zebra stripe */
+.sb-table tbody tr:nth-child(even){background:#fafbfc;}
+.sb-table tbody tr:nth-child(even):hover{background:#f8faff;}
+.sb-row.is-loaded:nth-child(even){background:#ECFDF5;}
+.sb-row.is-loaded:nth-child(even):hover{background:#D1FAE5;}
+
+/* Empty states */
+.sb-empty-state-wrap{text-align:center;padding:56px 24px;}
+.sb-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+.sb-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #f1f5f9;}
+.sb-no-results i{font-size:1rem;opacity:.5;}
+
+/* ─── Responsive ─── */
+@media(max-width:991.98px){
+    .sb-toolbar{flex-direction:column;align-items:stretch;gap:8px;}
+    .sb-search-wrap{max-width:100%;}
+    .sb-toolbar-right{justify-content:flex-end;margin-left:0;}
+}
+@media(max-width:767.98px){
+    .sb-header-inner{padding:16px 18px 14px;}
+    .sb-stats-row{flex-wrap:wrap;gap:8px;}
+    .sb-stat{min-width:45%;}
+    .sb-stat-divider{display:none;}
+    .sb-dept-header{padding:12px 16px;}
+    .sb-table{font-size:.75rem;}
+    .sb-table thead th{padding:8px 10px;font-size:.58rem;}
+    .sb-table tbody td{padding:8px 10px;}
+}
+
+/* Animations — only play on initial load, not Turbo cache restore */
+.sb-animate .sb-header,.sb-animate .sb-toolbar,.sb-animate .sb-table-wrap{animation:sbFadeIn .2s ease both;}
+@keyframes sbFadeIn{from{opacity:0.6;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.sb-animate .sb-row{animation:sbRowIn .15s ease both;}
+@keyframes sbRowIn{from{opacity:0.7;transform:translateX(-4px);}to{opacity:1;transform:translateX(0);}}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+/* ── Checked count ── */
+function updateCheckedCount() {
+    var count = document.querySelectorAll('.subject-check:checked').length;
+    document.getElementById('checkedCount').textContent = count;
+}
+document.querySelectorAll('.subject-check').forEach(function(cb) {
+    cb.addEventListener('change', updateCheckedCount);
+});
+
+/* ── Select-all per department ── */
+document.querySelectorAll('.sb-check-all').forEach(function(allCb) {
+    allCb.addEventListener('change', function() {
+        var deptId = this.dataset.dept;
+        var body = document.getElementById('deptBody' + deptId);
+        if (!body) return;
+        body.querySelectorAll('.subject-check').forEach(function(cb) {
+            cb.checked = allCb.checked;
+        });
+        updateCheckedCount();
+    });
+});
+
+/* ── Toggle department sections ── */
+function toggleDept(deptId) {
+    var body = document.getElementById('deptBody' + deptId);
+    var section = document.getElementById('deptSection' + deptId);
+    if (!body) return;
+    var chevron = section.querySelector('.sb-dept-chevron');
+    body.classList.toggle('open');
+    if (chevron) chevron.classList.toggle('open');
+}
+
+/* ── Combined filter: search + year level ── */
+function applyFilters() {
+    var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
+    var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase();
+    var visibleAny = false;
+    document.querySelectorAll('.sb-row').forEach(function(row) {
+        var text = (row.getAttribute('data-search') || '').toLowerCase();
+        var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase();
+        var matchSearch = q === '' || text.indexOf(q) !== -1;
+        var matchYl = yl === '' || rowYl === yl;
+        var show = matchSearch && matchYl;
+        row.style.display = show ? '' : 'none';
+        if (show) visibleAny = true;
+    });
+    // Update department metadata and hide empty sections
+    var hasFilter = q || yl;
+    document.querySelectorAll('.sb-dept-section').forEach(function(section) {
+        var total = section.querySelectorAll('.sb-row').length;
+        var visible = 0;
+        section.querySelectorAll('.sb-row').forEach(function(r) {
+            if (r.style.display !== 'none') visible++;
+        });
+        // Hide entire department section when filter is active and no matches
+        section.style.display = (hasFilter && visible === 0) ? 'none' : '';
+        var meta = section.querySelector('.sb-dept-meta');
+        if (meta) {
+            meta.textContent = hasFilter ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+        }
+    });
+    document.getElementById('sbNoResults').style.display = (!visibleAny && hasFilter) ? '' : 'none';
+}
+
+function searchSubjects(query) {
+    applyFilters();
+}
+
+function filterByYearLevel(val) {
+    applyFilters();
+}
+
+/* ── Semester filter ── */
+function filterBySemester(val) {
+    /* Fade out content then navigate for smooth transition */
+    var mc = document.querySelector('.main-content');
+    if (mc) {
+        mc.style.transition = 'opacity .12s ease';
+        mc.style.opacity = '0';
+    }
+    var url = val
+        ? '{{ path('faculty_subjects') }}?semester=' + encodeURIComponent(val)
+        : '{{ path('faculty_subjects') }}';
+    setTimeout(function() {
+        /* Use a temporary Turbo-driven link for smooth navigation */
+        var a = document.createElement('a');
+        a.href = url;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }, 120);
+}
+
+/* ── Unload ── */
+var unloadTargetId = null;
+var loadedSubjectIds = [{% for id in loadedSubjectIds %}{{ id }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+function unloadSubject(subjectId, subjectCode) {
+    unloadTargetId = subjectId;
+    document.getElementById('unloadSubjectName').textContent = subjectCode;
+    new bootstrap.Modal(document.getElementById('unloadModal')).show();
+}
+document.getElementById('confirmUnloadBtn').addEventListener('click', function() {
+    if (!unloadTargetId) return;
+    var container = document.getElementById('unloadFormSubjects');
+    container.innerHTML = '';
+    loadedSubjectIds.forEach(function(id) {
+        if (id !== unloadTargetId) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'subject_ids[]';
+            input.value = id;
+            container.appendChild(input);
+        }
+    });
+    document.getElementById('unloadForm').submit();
+});
+
+function quickLoadSubject(subjectId) {
+    var cb = document.getElementById('subj_' + subjectId);
+    if (cb) {
+        cb.checked = true;
+        updateCheckedCount();
+    }
+    document.getElementById('loadForm').submit();
+}
+
+/* Stagger row animations */
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sb-row').forEach(function(r, i) {
+        r.style.animationDelay = (i * 0.02) + 's';
+    });
+
+    /* Validate: require section for checked subjects only */
+    document.getElementById('loadForm').addEventListener('submit', function(e) {
+        var missing = [];
+        document.querySelectorAll('.subject-check:checked').forEach(function(cb) {
+            var sid = cb.value;
+            var sectionInput = document.querySelector('.sb-section-input[data-subject-id="' + sid + '"]');
+            if (sectionInput && !sectionInput.value.trim()) {
+                missing.push(sectionInput);
+                sectionInput.style.borderColor = '#ef4444';
+                sectionInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+            }
+        });
+        if (missing.length > 0) {
+            e.preventDefault();
+            missing[0].focus();
+            alert('Please fill in the Section for all selected subjects.');
+            return false;
+        }
+    });
+
+    /* Clear error styling on input */
+    document.querySelectorAll('.sb-section-input').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+            this.style.borderColor = '';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+</div>{# /.sb-animate #}
+{% endblock %}

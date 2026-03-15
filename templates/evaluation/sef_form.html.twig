@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Superior Evaluation for Faculty | SEF{% endblock %}
+
+{% block body %}
+<div class="mb-3">
+    <a href="{{ path('evaluation_sef_index') }}" class="text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Back to SEF
+    </a>
+</div>
+
+<form method="post" id="sefForm">
+<div class="eval-form-paper">
+    <div class="eval-form-header">
+        <img src="{{ asset('images/quamc-logo.png') }}" alt="Logo" class="eval-form-logo">
+        <div>
+            <h5 class="fw-bold mb-0">Negros Oriental State University</h5>
+            <p class="mb-0 small">Superior Evaluation for Faculty (SEF)</p>
+        </div>
+    </div>
+
+    <div class="eval-form-info-grid">
+        <div class="eval-form-info-item">
+            <span class="eval-form-info-label">Faculty</span>
+            <span class="eval-form-info-value">{{ app.user.fullName }}</span>
+        </div>
+        <div class="eval-form-info-item">
+            <span class="eval-form-info-label">Period</span>
+            <span class="eval-form-info-value">{{ evaluation.semester }} {{ evaluation.schoolYear }}</span>
+        </div>
+    </div>
+
+    <div class="eval-form-instructions">
+        <strong>Instructions:</strong> Rate each item using the scale:
+        <strong>5</strong> – Always manifested &nbsp; <strong>4</strong> – Often manifested &nbsp; <strong>3</strong> – Sometimes manifested &nbsp; <strong>2</strong> – Seldom manifested &nbsp; <strong>1</strong> – Never/Rarely manifested
+    </div>
+
+    {% set currentCategory = '' %}
+    {% set counter = 1 %}
+
+    {% for q in questions %}
+        {% if q.category != currentCategory %}
+            {% if currentCategory != '' %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% set currentCategory = q.category %}
+        <div class="eval-form-section">
+            <div class="eval-form-category">
+                <span class="eval-form-category-label">{{ currentCategory ?? 'General' }}</span>
+            </div>
+            <table class="eval-form-table">
+                <thead>
+                    <tr>
+                        <th class="eval-form-num">#</th>
+                        <th class="eval-form-question">Question</th>
+                        <th class="eval-form-rating">1<br><small>Never</small></th>
+                        <th class="eval-form-rating">2<br><small>Seldom</small></th>
+                        <th class="eval-form-rating">3<br><small>Sometimes</small></th>
+                        <th class="eval-form-rating">4<br><small>Often</small></th>
+                        <th class="eval-form-rating">5<br><small>Always</small></th>
+                    </tr>
+                </thead>
+                <tbody>
+        {% endif %}
+
+        {% set draftRating = draftMap[q.id] is defined ? draftMap[q.id].rating : 0 %}
+        <tr>
+            <td class="eval-form-num">{{ counter }}.</td>
+            <td class="eval-form-question">
+                {{ q.questionText }}
+                {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+            </td>
+            {% for r in 1..5 %}
+            <td class="eval-form-rating">
+                <label class="eval-radio-label">
+                    <input type="radio" name="ratings[{{ q.id }}]" value="{{ r }}"
+                           {{ draftRating == r ? 'checked' }}
+                           {{ q.isRequired ? 'required' }}>
+                    <span class="eval-radio-circle {{ draftRating == r ? 'selected' }}"></span>
+                </label>
+            </td>
+            {% endfor %}
+        </tr>
+        {% set counter = counter + 1 %}
+    {% endfor %}
+
+    {# Close last category #}
+    {% if currentCategory != '' %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {# Comment #}
+    <div class="eval-form-section">
+        <div class="eval-form-category">
+            <span class="eval-form-category-label">Reflections & Comments <span class="text-danger">*</span></span>
+        </div>
+        <div class="p-3">
+            <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" required
+                      placeholder="Share your reflections on your teaching performance..."></textarea>
+        </div>
+    </div>
+</div>
+
+{# Buttons outside paper #}
+<div class="eval-form-actions-bar">
+    <button type="submit" name="_action" value="submit" class="btn btn-norsu"
+            onclick="return confirm('Once submitted, you cannot edit this evaluation. Continue?')">
+        <i class="bi bi-send me-1"></i>Submit Evaluation
+    </button>
+    <button type="submit" name="_action" value="save_draft" class="btn btn-outline-secondary">
+        <i class="bi bi-save me-1"></i>Save as Draft
+    </button>
+    <a href="{{ path('evaluation_sef_index') }}" class="btn btn-light">Cancel</a>
+</div>
+</form>
+{% endblock %}

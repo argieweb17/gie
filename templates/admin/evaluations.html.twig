@@ -1,0 +1,1275 @@
+{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Evaluation Periods | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   COMPUTE STATS
+   ═══════════════════════════════════════ #}
+{% set totalEvals   = evaluations|length %}
+{% set openEvals    = evaluations|filter(e => e.status)|length %}
+{% set closedEvals  = evaluations|filter(e => not e.status)|length %}
+{% set setCount     = evaluations|filter(e => e.evaluationType == 'SET')|length %}
+{% set sefCount     = evaluations|filter(e => e.evaluationType == 'SEF' or e.evaluationType == 'SUPERIOR')|length %}
+{% set totalResponses = 0 %}
+{% for ev in evaluations %}
+    {% set totalResponses = totalResponses + (evaluatorCounts[ev.id] ?? 0) %}
+{% endfor %}
+
+{% set expiredEvals = [] %}
+{% set activeEvals = [] %}
+{% for eval in evaluations %}
+    {% set now = "now"|date("U") %}
+    {% set endTs = eval.endDate|date("U") %}
+    {% if now > endTs or not eval.status %}
+        {% set expiredEvals = expiredEvals|merge([eval]) %}
+    {% else %}
+        {% set activeEvals = activeEvals|merge([eval]) %}
+    {% endif %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="ev-header">
+    <div class="ev-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="ev-header-icon">
+                    <i class="bi bi-clipboard2-check"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Evaluation Period Management</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="ev-meta-pill"><i class="bi bi-database me-1"></i>{{ totalEvals }} Period{{ totalEvals != 1 ? 's' : '' }}</span>
+                        {% if currentAY %}
+                            <span class="ev-meta-pill ev-meta-active"><i class="bi bi-check-circle-fill me-1"></i>{{ currentAY.label }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-1">
+                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createEvalModal">
+                    <i class="bi bi-plus-lg me-1"></i>New Period
+                </button>
+                <button type="button" class="btn btn-sm fw-semibold shadow-sm" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;" data-bs-toggle="modal" data-bs-target="#createSuperiorEvalModal">
+                    <i class="bi bi-star-fill me-1"></i>New SEF Evaluation
+                </button>
+            </div>
+        </div>
+        <div class="ev-stats-row">
+            <div class="ev-stat">
+                <span class="ev-stat-val">{{ totalEvals }}</span>
+                <span class="ev-stat-lbl">Total Periods</span>
+            </div>
+            <div class="ev-stat-divider"></div>
+            <div class="ev-stat">
+                <span class="ev-stat-val ev-val-success">{{ openEvals }}</span>
+                <span class="ev-stat-lbl">Open</span>
+            </div>
+            <div class="ev-stat-divider"></div>
+            <div class="ev-stat">
+                <span class="ev-stat-val ev-val-warn">{{ closedEvals }}</span>
+                <span class="ev-stat-lbl">Closed</span>
+            </div>
+            <div class="ev-stat-divider"></div>
+            <div class="ev-stat">
+                <span class="ev-stat-val" style="color:#fca5a5">{{ expiredEvals|length }}</span>
+                <span class="ev-stat-lbl">Expired</span>
+            </div>
+            <div class="ev-stat-divider"></div>
+            <div class="ev-stat">
+                <span class="ev-stat-val ev-val-info">{{ totalResponses }}</span>
+                <span class="ev-stat-lbl">Total Evaluators</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   FILTER TOOLBAR
+   ═══════════════════════════════════════ #}
+<div class="ev-toolbar">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        {# Tab switches #}
+        <div class="ev-filter-group" id="evSectionTabs">
+            <button class="ev-filter-btn active" onclick="switchSection('active', this)">
+                <i class="bi bi-play-circle me-1"></i>Active <span class="ev-filter-count">{{ activeEvals|length }}</span>
+            </button>
+            <button class="ev-filter-btn" onclick="switchSection('previous', this)">
+                <i class="bi bi-clock-history me-1"></i>Previous <span class="ev-filter-count">{{ expiredEvals|length }}</span>
+            </button>
+        </div>
+        <div class="ev-filter-group" id="evTypeFilter">
+            <button class="ev-filter-btn active" data-type="all" onclick="filterType('all', this)">All Types</button>
+            <button class="ev-filter-btn" data-type="SET" onclick="filterType('SET', this)">SET <span class="ev-filter-count">{{ setCount }}</span></button>
+            <button class="ev-filter-btn" data-type="SEF" onclick="filterType('SEF', this)">SEF <span class="ev-filter-count">{{ sefCount }}</span></button>
+        </div>
+        {# Filter dropdowns #}
+        <select class="ev-filter-select" id="evFilterCollege" onchange="applyAllFilters()">
+            <option value="">All Colleges</option>
+            {% for col in colleges %}
+                <option value="{{ col }}">{{ col }}</option>
+            {% endfor %}
+        </select>
+        <select class="ev-filter-select" id="evFilterDept" onchange="applyAllFilters()">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+                <option value="{{ dept.departmentName }}">{{ dept.departmentName }}</option>
+            {% endfor %}
+        </select>
+        <select class="ev-filter-select" id="evFilterFaculty" onchange="applyAllFilters()">
+            <option value="">All Faculty</option>
+            {% for f in facultyUsers %}
+                <option value="{{ f.fullName }}">{{ f.lastName }}, {{ f.firstName }}</option>
+            {% endfor %}
+        </select>
+        <select class="ev-filter-select" id="evFilterYear" onchange="applyAllFilters()">
+            <option value="">All Year Levels</option>
+            {% for yr in ['1st Year','2nd Year','3rd Year','4th Year','5th Year'] %}
+                <option value="{{ yr }}">{{ yr }}</option>
+            {% endfor %}
+        </select>
+        <div class="ev-search-box">
+            <i class="bi bi-search ev-search-icon"></i>
+            <input type="text" class="ev-search-input" id="evSearchInput" placeholder="Search..." oninput="applyAllFilters()">
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   ACTIVE EVALUATIONS TABLE
+   ═══════════════════════════════════════ #}
+<div id="activeSection">
+    <div class="ev-table-container">
+        <table class="ev-table" id="activeTable">
+            <thead>
+                <tr>
+                    <th class="ev-th-type">Type</th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',1)">Period <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',2)">Faculty <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',3)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Year <i class="bi bi-arrow-down-up"></i></th>
+                    <th>Schedule</th>
+                    <th>Status</th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eval in activeEvals %}
+                {% set now = "now"|date("U") %}
+                {% set startTs = eval.startDate|date("U") %}
+                {% set endTs = eval.endDate|date("U") %}
+                {% set isActive = eval.status and now >= startTs and now <= endTs %}
+                {% set isPending = now < startTs %}
+                {% set responseCount = evaluatorCounts[eval.id] ?? 0 %}
+                {% set totalDuration = endTs - startTs %}
+                {% set elapsed = now - startTs %}
+                {% set progress = totalDuration > 0 ? ((elapsed / totalDuration) * 100)|round : 0 %}
+                <tr class="ev-row" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
+                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : (eval.evaluationType == 'SEF' ? 'ev-type-sef' : 'ev-type-superior') }}">{{ eval.evaluationType }}</span></td>
+                    <td>
+                        <div class="ev-cell-period">
+                            <strong>{{ eval.semester ? eval.semester ~ ' — ' : '' }}{{ eval.schoolYear ?? 'N/A' }}</strong>
+                            <small class="text-muted d-block">{{ eval.startDate|date('M d, Y g:i A') }} → {{ eval.endDate|date('M d, Y g:i A') }}</small>
+                        </div>
+                    </td>
+                    <td>{{ eval.faculty ?? '—' }}</td>
+                    <td>
+                        {% if eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
+                    </td>
+                    <td>{{ eval.yearLevel ?? '—' }}</td>
+                    <td>
+                        <div class="ev-cell-schedule">
+                            {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
+                            {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if isActive %}
+                            <span class="ev-status-pill ev-status-active"><span class="ev-dot ev-dot-success"></span>Active</span>
+                            <div class="ev-mini-progress" title="{{ progress }}% elapsed">
+                                <div class="ev-mini-progress-fill" style="width:{{ progress }}%"></div>
+                            </div>
+                        {% elseif isPending %}
+                            <span class="ev-status-pill ev-status-pending"><span class="ev-dot ev-dot-warning"></span>Scheduled</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
+                    <td>
+                        <div class="ev-actions-cell">
+                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}"><i class="bi bi-pencil-square"></i></button>
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
+                                <button class="ev-action-btn ev-action-warning" title="Close"><i class="bi bi-pause-circle"></i></button>
+                            </form>
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_lock_results', {id: eval.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('lock' ~ eval.id) }}">
+                                <button class="ev-action-btn {{ eval.resultsLocked ? 'ev-action-danger' : 'ev-action-success' }}" title="{{ eval.resultsLocked ? 'Unlock' : 'Lock' }} results"><i class="bi {{ eval.resultsLocked ? 'bi-lock-fill' : 'bi-unlock-fill' }}"></i></button>
+                            </form>
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_delete', {id: eval.id}) }}" class="d-inline" onsubmit="return confirm('Delete this evaluation period and all its responses?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_eval' ~ eval.id) }}">
+                                <button class="ev-action-btn ev-action-delete" title="Delete"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   PREVIOUS / EXPIRED EVALUATIONS TABLE
+   ═══════════════════════════════════════ #}
+<div id="previousSection" style="display:none;">
+    {# Academic Year Filter for Previous Evals #}
+    <div class="d-flex align-items-center gap-2 mb-3 px-1">
+        <i class="bi bi-calendar3 text-muted"></i>
+        <select class="ev-filter-select" id="evPrevAYFilter" onchange="filterPreviousByAY()" style="min-width:200px;">
+            <option value="">All Academic Years</option>
+            {% set prevYears = [] %}
+            {% for eval in expiredEvals %}
+                {% if eval.schoolYear and eval.schoolYear not in prevYears %}
+                    {% set prevYears = prevYears|merge([eval.schoolYear]) %}
+                {% endif %}
+            {% endfor %}
+            {% for yr in prevYears %}
+                <option value="{{ yr }}">{{ yr }}</option>
+            {% endfor %}
+        </select>
+        <select class="ev-filter-select" id="evPrevSemFilter" onchange="filterPreviousByAY()" style="min-width:180px;">
+            <option value="">All Semesters</option>
+            <option value="1st Semester">1st Semester</option>
+            <option value="2nd Semester">2nd Semester</option>
+            <option value="Summer">Summer</option>
+        </select>
+    </div>
+    <div class="ev-table-container">
+        <table class="ev-table" id="previousTable">
+            <thead>
+                <tr>
+                    <th class="ev-th-type">Type</th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',1)">Period <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',2)">Faculty <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',3)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',5)">Year <i class="bi bi-arrow-down-up"></i></th>
+                    <th>Ended</th>
+                    <th>Status</th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eval in expiredEvals %}
+                {% set responseCount = evaluatorCounts[eval.id] ?? 0 %}
+                <tr class="ev-row ev-row-expired" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-school-year="{{ eval.schoolYear ?? '' }}" data-semester="{{ eval.semester ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
+                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : (eval.evaluationType == 'SEF' ? 'ev-type-sef' : 'ev-type-superior') }}">{{ eval.evaluationType }}</span></td>
+                    <td>
+                        <div class="ev-cell-period">
+                            <strong>{{ eval.semester ? eval.semester ~ ' — ' : '' }}{{ eval.schoolYear ?? 'N/A' }}</strong>
+                            <small class="text-muted d-block">{{ eval.startDate|date('M d, Y') }} → {{ eval.endDate|date('M d, Y') }}</small>
+                        </div>
+                    </td>
+                    <td>{{ eval.faculty ?? '—' }}</td>
+                    <td>
+                        {% if eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
+                    </td>
+                    <td>{{ eval.yearLevel ?? '—' }}</td>
+                    <td><small class="text-muted">{{ eval.endDate|date('M d, Y g:i A') }}</small></td>
+                    <td>
+                        {% if not eval.status %}
+                            <span class="ev-status-pill ev-status-closed"><span class="ev-dot ev-dot-muted"></span>Closed</span>
+                        {% else %}
+                            <span class="ev-status-pill ev-status-expired"><span class="ev-dot ev-dot-danger"></span>Expired</span>
+                        {% endif %}
+                        <div class="d-flex gap-1 mt-1">
+                            {% if eval.anonymousMode %}
+                                <span class="ev-mini-badge ev-mini-success"><i class="bi bi-eye-slash"></i></span>
+                            {% endif %}
+                            {% if eval.resultsLocked %}
+                                <span class="ev-mini-badge ev-mini-danger"><i class="bi bi-lock-fill"></i></span>
+                            {% else %}
+                                <span class="ev-mini-badge ev-mini-success"><i class="bi bi-unlock-fill"></i></span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
+                    <td>
+                        <div class="ev-actions-cell">
+                            {# View Results #}
+                            <a href="{{ path(prefix ~ '_results', {evaluation: eval.id}) }}" class="ev-action-btn ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
+                            {# QR Code #}
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            {# Reopen #}
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
+                                <button class="ev-action-btn ev-action-reopen" title="Reopen evaluation"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            </form>
+                            {# Edit #}
+                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}"><i class="bi bi-pencil-square"></i></button>
+                            {# Lock/Unlock Results #}
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_lock_results', {id: eval.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('lock' ~ eval.id) }}">
+                                <button class="ev-action-btn {{ eval.resultsLocked ? 'ev-action-danger' : 'ev-action-success' }}" title="{{ eval.resultsLocked ? 'Unlock' : 'Lock' }} results"><i class="bi {{ eval.resultsLocked ? 'bi-lock-fill' : 'bi-unlock-fill' }}"></i></button>
+                            </form>
+                            {# Delete #}
+                            <form method="post" action="{{ path(prefix ~ '_evaluation_delete', {id: eval.id}) }}" class="d-inline" onsubmit="return confirm('Delete this expired evaluation and all its responses?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_eval' ~ eval.id) }}">
+                                <button class="ev-action-btn ev-action-delete" title="Delete"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+    {# ═══════════════════════════════════════
+       EDIT MODAL FOR EACH EVALUATION
+       ═══════════════════════════════════════ #}
+    {% for eval in evaluations %}
+    <div class="modal fade" id="editEvalModal{{ eval.id }}" tabindex="-1">
+        <div class="modal-dialog {{ eval.evaluationType == 'SUPERIOR' ? 'modal-md' : 'modal-lg' }} modal-dialog-centered">
+            <div class="modal-content ev-modal">
+                <div class="ev-modal-header" {{ eval.evaluationType == 'SUPERIOR' ? 'style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);"' : '' }}>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="ev-modal-icon"><i class="bi {{ eval.evaluationType == 'SUPERIOR' ? 'bi-star-fill' : 'bi-pencil-square' }}"></i></div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-white">Edit {{ eval.evaluationType == 'SUPERIOR' ? 'Superior ' : '' }}Evaluation Period</h5>
+                            <small class="text-white-50">{{ eval.evaluationType }} — {{ eval.schoolYear ?? 'N/A' }}</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="{{ path(prefix ~ '_evaluation_edit', {id: eval.id}) }}" data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token('edit_eval' ~ eval.id) }}">
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            {% if eval.evaluationType == 'SUPERIOR' %}
+                                {# ── Superior: simplified fields ── #}
+                                <input type="hidden" name="evaluationType" value="SUPERIOR">
+                                <div class="col-md-6">
+                                    <label class="form-label ev-form-label">School Year</label>
+                                    <select name="schoolYear" class="form-select ev-form-control">
+                                        <option value="">— Select —</option>
+                                        {% for ay in academicYears|default([]) %}
+                                            <option value="{{ ay.yearLabel }}" {{ eval.schoolYear == ay.yearLabel ? 'selected' : '' }}>{{ ay.yearLabel }}{% if ay.isCurrent %} (Current){% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label ev-form-label">Start Date & Time</label>
+                                    <input type="datetime-local" name="startDate" class="form-control ev-form-control" value="{{ eval.startDate|date('Y-m-d\\TH:i') }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label ev-form-label">End Date & Time</label>
+                                    <input type="datetime-local" name="endDate" class="form-control ev-form-control" value="{{ eval.endDate|date('Y-m-d\\TH:i') }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" name="status" id="editStatus{{ eval.id }}" value="1" {{ eval.status ? 'checked' : '' }}>
+                                        <label class="form-check-label ev-form-label" for="editStatus{{ eval.id }}">Open</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" name="anonymousMode" id="editAnon{{ eval.id }}" value="1" {{ eval.anonymousMode ? 'checked' : '' }}>
+                                        <label class="form-check-label ev-form-label" for="editAnon{{ eval.id }}">Anonymous</label>
+                                    </div>
+                                </div>
+                            {% else %}
+                                {# ── SET / SEF: full fields ── #}
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Evaluation Type</label>
+                                    <select name="evaluationType" class="form-select ev-form-control" required>
+                                        <option value="SET" {{ eval.evaluationType == 'SET' ? 'selected' : '' }}>SET (Student Eval)</option>
+                                        <option value="SEF" {{ eval.evaluationType == 'SEF' ? 'selected' : '' }}>SEF (Superior Eval)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">School Year</label>
+                                    <select name="schoolYear" class="form-select ev-form-control">
+                                        <option value="">— Select —</option>
+                                        {% for ay in academicYears|default([]) %}
+                                            <option value="{{ ay.yearLabel }}" {{ eval.schoolYear == ay.yearLabel ? 'selected' : '' }}>{{ ay.yearLabel }}{% if ay.isCurrent %} (Current){% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Year Level</label>
+                                    <select name="yearLevel" class="form-select ev-form-control">
+                                        <option value="">All Year Levels</option>
+                                        {% for yr in ['1st Year','2nd Year','3rd Year','4th Year','5th Year'] %}
+                                            <option value="{{ yr }}" {{ eval.yearLevel == yr ? 'selected' : '' }}>{{ yr }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">College</label>
+                                    <select name="college" class="form-select ev-form-control college-select">
+                                        <option value="">All Colleges</option>
+                                        {% for col in colleges %}
+                                            <option value="{{ col }}" {{ eval.college == col ? 'selected' : '' }}>{{ col }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Department</label>
+                                    <select name="department" class="form-select ev-form-control dept-select">
+                                        <option value="">All Departments</option>
+                                        {% for dept in departments %}
+                                            <option value="{{ dept.id }}" data-college="{{ dept.collegeName }}" {{ eval.department and eval.department.id == dept.id ? 'selected' : '' }}>{{ dept.departmentName }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Faculty</label>
+                                    <select name="faculty" class="form-select ev-form-control faculty-select" data-target-subject="#editSubject{{ eval.id }}">
+                                        <option value="" data-faculty-id="" data-department="">— Select Faculty —</option>
+                                        {% for f in facultyUsers %}
+                                            <option value="{{ f.fullName }}" data-faculty-id="{{ f.id }}" data-department="{{ f.department ? f.department.id : '' }}" {{ eval.faculty == f.fullName ? 'selected' : '' }}>{{ f.lastName }}, {{ f.firstName }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Subject</label>
+                                    <select name="subject" id="editSubject{{ eval.id }}" class="form-select ev-form-control subject-select" data-target-time="#editTime{{ eval.id }}" data-target-section="#editSection{{ eval.id }}" data-current-value="{{ eval.subject }}">
+                                        <option value="" data-schedule="" data-section="">— Select Subject —</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Time</label>
+                                    <input type="text" name="time" id="editTime{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.time }}" placeholder="Auto-filled from subject" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Section</label>
+                                    <input type="text" name="section" id="editSection{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.section }}" placeholder="Auto-filled from subject" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">Start Date & Time</label>
+                                    <input type="datetime-local" name="startDate" class="form-control ev-form-control" value="{{ eval.startDate|date('Y-m-d\\TH:i') }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label ev-form-label">End Date & Time</label>
+                                    <input type="datetime-local" name="endDate" class="form-control ev-form-control" value="{{ eval.endDate|date('Y-m-d\\TH:i') }}" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check form-switch mt-4">
+                                        <input class="form-check-input" type="checkbox" name="status" id="editStatus{{ eval.id }}" value="1" {{ eval.status ? 'checked' : '' }}>
+                                        <label class="form-check-label ev-form-label" for="editStatus{{ eval.id }}">Open</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check form-switch mt-4">
+                                        <input class="form-check-input" type="checkbox" name="anonymousMode" id="editAnon{{ eval.id }}" value="1" {{ eval.anonymousMode ? 'checked' : '' }}>
+                                        <label class="form-check-label ev-form-label" for="editAnon{{ eval.id }}">Anon</label>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 rounded-bottom-4 px-4 py-3" style="{{ eval.evaluationType == 'SUPERIOR' ? 'background:#f5f3ff;' : 'background:#f8f9fa;' }}">
+                        <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm px-3 fw-semibold {{ eval.evaluationType == 'SUPERIOR' ? '' : 'btn-primary' }}" {{ eval.evaluationType == 'SUPERIOR' ? 'style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;"' : '' }}>
+                            <i class="bi bi-check-circle me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+{# ═══════════════════════════════════════
+   QR CODE MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="qrCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content qr-modal">
+            <div class="qr-modal-top">
+                <div class="qr-modal-top-inner">
+                    <div class="qr-modal-icon-wrap"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="qr-modal-title">QR Code</h5>
+                    <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to evaluate</p>
+                </div>
+                <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="qr-modal-body">
+                <div class="qr-eval-info">
+                    <span class="qr-eval-type-badge" id="qrEvalType"></span>
+                    <div class="qr-eval-faculty" id="qrEvalFaculty"></div>
+                    <div class="qr-eval-subject" id="qrEvalSubject"></div>
+                    <div class="qr-eval-details" id="qrEvalDetails"></div>
+                </div>
+                <div class="qr-code-frame">
+                    <img id="qrImage" src="" alt="QR Code">
+                </div>
+                <div class="qr-url-text" id="qrUrl"></div>
+                <div class="qr-actions">
+                    <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                    <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
+                        <i class="bi bi-clipboard"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   CREATE EVALUATION MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="createEvalModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content ev-modal">
+            <div class="ev-modal-header" style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="ev-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-white">New Evaluation Period</h5>
+                        <small class="text-white-50">Define evaluation parameters and schedule</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3 p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ede9fe;">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-info-circle-fill" style="color:#7c3aed;"></i>
+                            <strong style="color:#5b21b6;font-size:.82rem;">About Evaluation Period</strong>
+                        </div>
+                        <p class="mb-0" style="font-size:.78rem;color:#6b7280;">
+                            Create an evaluation period for <strong>Student Evaluation for Teacher (SET)</strong>.
+                            Select a faculty member and their subject to schedule a specific evaluation.
+                        </p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Evaluation Type</label>
+                            <select name="evaluationType" class="form-select ev-form-control" required>
+                                <option value="SET">SET (Student Evaluation for Teacher)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">School Year</label>
+                            <select name="schoolYear" class="form-select ev-form-control">
+                                <option value="">— Select —</option>
+                                {% for ay in academicYears|default([]) %}
+                                    <option value="{{ ay.yearLabel }}" {{ ay.isCurrent ? 'selected' : '' }}>{{ ay.yearLabel }}{% if ay.isCurrent %} (Current){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Year Level</label>
+                            <select name="yearLevel" class="form-select ev-form-control">
+                                <option value="">All Year Levels</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                                <option value="5th Year">5th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">College</label>
+                            <select name="college" class="form-select ev-form-control college-select">
+                                <option value="">All Colleges</option>
+                                {% for col in colleges %}
+                                    <option value="{{ col }}">{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Department</label>
+                            <select name="department" class="form-select ev-form-control dept-select">
+                                <option value="">All Departments</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" data-college="{{ dept.collegeName }}">{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Faculty</label>
+                            <select name="faculty" class="form-select ev-form-control faculty-select" data-target-subject="#createSubject">
+                                <option value="" data-faculty-id="" data-department="">— Select Faculty —</option>
+                                {% for f in facultyUsers %}
+                                    <option value="{{ f.fullName }}" data-faculty-id="{{ f.id }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Subject</label>
+                            <select name="subject" id="createSubject" class="form-select ev-form-control subject-select" data-target-time="#createTime" data-target-section="#createSection" data-current-value="">
+                                <option value="" data-schedule="" data-section="">— Select Faculty first —</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Time</label>
+                            <input type="text" name="time" id="createTime" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Section</label>
+                            <input type="text" name="section" id="createSection" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Start Date & Time</label>
+                            <input type="datetime-local" name="startDate" class="form-control ev-form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">End Date & Time</label>
+                            <input type="datetime-local" name="endDate" class="form-control ev-form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="status" id="evalStatus" value="1" checked>
+                                <label class="form-check-label ev-form-label" for="evalStatus">Open</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="anonymousMode" id="anonMode" value="1" checked>
+                                <label class="form-check-label ev-form-label" for="anonMode">Anonymous</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
+                    <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;">
+                        <i class="bi bi-plus-lg me-1"></i>Create Period
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   CREATE SUPERIOR EVALUATION MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="createSuperiorEvalModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content ev-modal">
+            <div class="ev-modal-header" style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="ev-modal-icon"><i class="bi bi-star-fill"></i></div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-white">New SEF Evaluation</h5>
+                        <small class="text-white-50">Superior Evaluation for Faculty</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
+                <input type="hidden" name="evaluationType" value="SUPERIOR">
+                <div class="modal-body p-4">
+                    <div class="mb-3 p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ede9fe;">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-info-circle-fill" style="color:#7c3aed;"></i>
+                            <strong style="color:#5b21b6;font-size:.82rem;">About SEF Evaluation</strong>
+                        </div>
+                        <p class="mb-0" style="font-size:.78rem;color:#6b7280;">
+                            <strong>Superior Evaluation for Faculty (SEF)</strong> allows Superiors to evaluate personnel
+                            with employment status set to <strong>Dean</strong>, <strong>Department Head</strong>, or <strong>Chair</strong>.
+                            Evaluation questions will use the SEF question set.
+                        </p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">School Year</label>
+                            <select name="schoolYear" class="form-select ev-form-control">
+                                <option value="">— Select —</option>
+                                {% for ay in academicYears|default([]) %}
+                                    <option value="{{ ay.yearLabel }}" {{ ay.isCurrent ? 'selected' : '' }}>{{ ay.yearLabel }}{% if ay.isCurrent %} (Current){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">College</label>
+                            <select name="college" class="form-select ev-form-control sup-college-select">
+                                <option value="">All Colleges</option>
+                                {% for col in colleges %}
+                                    <option value="{{ col }}">{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Department</label>
+                            <select name="department" class="form-select ev-form-control sup-dept-select">
+                                <option value="">All Departments</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" data-college="{{ dept.collegeName }}">{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Faculty</label>
+                            <select name="faculty" class="form-select ev-form-control sup-faculty-select">
+                                <option value="" data-position="" data-department="">— Select Faculty —</option>
+                                {% for f in facultyUsers %}
+                                    <option value="{{ f.fullName }}" data-position="{{ f.employmentStatus }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Position</label>
+                            <input type="text" name="position" class="form-control ev-form-control sup-position-input" placeholder="Auto-filled from faculty" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">Start Date & Time</label>
+                            <input type="datetime-local" name="startDate" class="form-control ev-form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label ev-form-label">End Date & Time</label>
+                            <input type="datetime-local" name="endDate" class="form-control ev-form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="status" id="supEvalStatus" value="1" checked>
+                                <label class="form-check-label ev-form-label" for="supEvalStatus">Open</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="anonymousMode" id="supAnonMode" value="1" checked>
+                                <label class="form-check-label ev-form-label" for="supAnonMode">Anonymous</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
+                    <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;">
+                        <i class="bi bi-star-fill me-1"></i>Create SEF Evaluation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ──── Header ──── */
+.ev-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.ev-header-inner{padding:22px 26px 18px;}
+.ev-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(8px);}
+.ev-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);padding:3px 10px;border-radius:20px;font-weight:600;backdrop-filter:blur(6px);}
+.ev-meta-active{background:rgba(34,197,94,.25);color:#bbf7d0;}
+
+/* ──── Stats Row ──── */
+.ev-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap;}
+.ev-stat{text-align:center;flex:1;min-width:70px;padding:4px 0 8px;}
+.ev-stat-val{display:block;font-size:1.35rem;font-weight:800;color:#fff;}
+.ev-stat-lbl{font-size:.7rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.ev-val-success{color:#86efac !important;}
+.ev-val-warn{color:#fde68a !important;}
+.ev-val-info{color:#93c5fd !important;}
+.ev-stat-divider{width:1px;align-self:stretch;background:rgba(255,255,255,.10);margin:4px 0 8px;}
+
+/* ──── Toolbar ──── */
+.ev-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin:1.25rem 0;}
+.ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
+.ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
+.ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
+.ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
+.ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
+.ev-filter-select{font-size:.78rem;padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:#475569;cursor:pointer;min-width:130px;height:32px;}
+.ev-filter-select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.ev-search-box{position:relative;min-width:180px;}
+.ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
+.ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
+.ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+
+/* ──── Table Container ──── */
+.ev-table-container{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.ev-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.ev-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);}
+.ev-table thead th{padding:10px 12px;font-weight:700;color:#475569;text-transform:uppercase;font-size:.7rem;letter-spacing:.5px;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+.ev-th-type{width:60px;}
+.ev-th-sortable{cursor:pointer;user-select:none;}
+.ev-th-sortable:hover{color:#1e40af;background:rgba(59,130,246,.04);}
+.ev-th-sortable i{font-size:.6rem;opacity:.4;margin-left:2px;}
+.ev-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s;}
+.ev-table tbody tr:hover{background:#f8fafc;}
+.ev-table tbody td{padding:10px 12px;vertical-align:middle;}
+.ev-row-expired{opacity:.85;}
+
+/* ──── Type Badge ──── */
+.ev-type-badge{padding:3px 10px;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.5px;}
+.ev-type-set{background:#dbeafe;color:#1d4ed8;}
+.ev-type-sef{background:#fef3c7;color:#92400e;}
+.ev-type-superior{background:#ede9fe;color:#6d28d9;}
+
+/* ──── Cell Styles ──── */
+.ev-cell-period strong{font-size:.82rem;color:#1e293b;}
+.ev-cell-period small{font-size:.7rem;}
+.ev-cell-schedule{display:flex;flex-direction:column;gap:2px;}
+.ev-cell-schedule small{font-size:.72rem;color:#64748b;}
+
+/* ──── Status Pill ──── */
+.ev-status-pill{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;}
+.ev-status-active{background:#dcfce7;color:#166534;}
+.ev-status-pending{background:#fef3c7;color:#92400e;}
+.ev-status-expired{background:#fee2e2;color:#991b1b;}
+.ev-status-closed{background:#f1f5f9;color:#64748b;}
+.ev-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ev-dot-success{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.4);}
+.ev-dot-warning{background:#f59e0b;}
+.ev-dot-danger{background:#ef4444;}
+.ev-dot-muted{background:#94a3b8;}
+
+/* ──── Mini Progress ──── */
+.ev-mini-progress{height:3px;background:#e2e8f0;border-radius:3px;margin-top:4px;overflow:hidden;width:80px;}
+.ev-mini-progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:3px;}
+
+/* ──── Badges ──── */
+.ev-badge{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;}
+.ev-badge-primary{background:#dbeafe;color:#1e40af;}
+.ev-badge-success{background:#dcfce7;color:#166534;}
+.ev-badge-info{background:#e0f2fe;color:#0369a1;}
+.ev-badge-secondary{background:#f1f5f9;color:#475569;}
+.ev-badge-dark{background:#e2e8f0;color:#1e293b;}
+.ev-badge-muted{background:#f1f5f9;color:#94a3b8;}
+.ev-mini-badge{padding:2px 6px;border-radius:10px;font-size:.65rem;font-weight:600;}
+.ev-mini-success{background:#dcfce7;color:#166534;}
+.ev-mini-warning{background:#fef3c7;color:#92400e;}
+.ev-mini-danger{background:#fee2e2;color:#991b1b;}
+
+/* ──── Actions ──── */
+.ev-actions-cell{display:flex;gap:3px;flex-wrap:nowrap;}
+.ev-action-btn{width:28px;height:28px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.75rem;color:#64748b;text-decoration:none;}
+.ev-action-btn:hover{transform:scale(1.08);}
+.ev-action-edit:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
+.ev-action-success:hover{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+.ev-action-warning:hover{background:#fef3c7;color:#d97706;border-color:#fcd34d;}
+.ev-action-danger:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.ev-action-delete:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.ev-action-reopen{color:#2563EB;}
+.ev-action-reopen:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
+.ev-action-view{color:#7c3aed;}
+.ev-action-view:hover{background:#f3e8ff;color:#6d28d9;border-color:#c4b5fd;}
+.ev-action-qr{color:#0d9488;}
+.ev-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;}
+
+/* ──── Modal ──── */
+.ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
+.ev-modal-header{background:linear-gradient(135deg,#0f172a 0%,#1a56db 50%,#3b82f6 100%);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.ev-modal-icon{width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;}
+.ev-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
+.ev-form-control{font-size:.85rem;border-radius:8px;border-color:#e2e8f0;}
+.ev-form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+
+/* ──── QR Modal ──── */
+.qr-modal{border:0;border-radius:1.1rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.18);animation:qrSlideUp .35s ease;}
+.qr-modal-top{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);padding:1.5rem 1.5rem 1.3rem;text-align:center;position:relative;}
+.qr-modal-top-inner{position:relative;z-index:1;}
+.qr-modal-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;transition:all .2s;z-index:2;backdrop-filter:blur(4px);}
+.qr-modal-close:hover{background:rgba(255,255,255,.3);transform:scale(1.1);}
+.qr-modal-icon-wrap{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin:0 auto .6rem;font-size:1.4rem;color:#fff;backdrop-filter:blur(4px);box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.qr-modal-title{font-size:1.1rem;font-weight:700;color:#fff;margin:0;}
+.qr-modal-subtitle{font-size:.75rem;color:rgba(255,255,255,.7);margin:.2rem 0 0;}
+.qr-modal-body{padding:1.3rem 1.5rem 1.5rem;background:#fff;}
+.qr-eval-info{text-align:center;margin-bottom:1rem;}
+.qr-eval-type-badge{display:inline-block;padding:.22rem .7rem;border-radius:1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
+.qr-eval-faculty{font-size:.88rem;font-weight:600;color:#1E293B;margin-top:.5rem;}
+.qr-eval-subject{font-size:.8rem;color:#64748B;}
+.qr-eval-details{font-size:.72rem;color:#94A3B8;margin-top:.15rem;}
+.qr-code-frame{display:flex;justify-content:center;margin:1rem 0;position:relative;}
+.qr-code-frame img{width:200px;height:200px;border-radius:14px;padding:10px;background:#fff;border:3px solid #E2E8F0;box-shadow:0 4px 20px rgba(0,0,0,.06);transition:all .3s;}
+.qr-code-frame img:hover{box-shadow:0 8px 30px rgba(30,64,175,.12);border-color:#93C5FD;}
+.qr-url-text{text-align:center;font-size:.68rem;color:#94A3B8;word-break:break-all;margin-bottom:1rem;padding:0 .5rem;}
+.qr-actions{display:flex;gap:.6rem;justify-content:center;}
+.qr-action-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1.1rem;border-radius:.6rem;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.qr-btn-download{background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.2);}
+.qr-btn-download:hover{box-shadow:0 4px 16px rgba(30,64,175,.3);transform:translateY(-1px);}
+.qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
+.qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
+@keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ──── Responsive ──── */
+@media(max-width:992px){
+    .ev-table-container{overflow-x:auto;}
+    .ev-table{min-width:900px;}
+}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+/* ── Section Switching ── */
+var currentSection = 'active';
+var currentTypeFilter = 'all';
+
+function switchSection(section, btn) {
+    currentSection = section;
+    document.querySelectorAll('#evSectionTabs .ev-filter-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById('activeSection').style.display = section === 'active' ? '' : 'none';
+    document.getElementById('previousSection').style.display = section === 'previous' ? '' : 'none';
+    applyAllFilters();
+}
+
+function filterType(type, btn) {
+    currentTypeFilter = type;
+    document.querySelectorAll('#evTypeFilter .ev-filter-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    applyAllFilters();
+}
+
+function applyAllFilters() {
+    var q = document.getElementById('evSearchInput').value.toLowerCase().trim();
+    var college = document.getElementById('evFilterCollege').value;
+    var dept = document.getElementById('evFilterDept').value;
+    var faculty = document.getElementById('evFilterFaculty').value;
+    var year = document.getElementById('evFilterYear').value;
+    var tableId = currentSection === 'active' ? 'activeTable' : 'previousTable';
+
+    document.querySelectorAll('#' + tableId + ' tbody .ev-row').forEach(function(row){
+        var tMatch = currentTypeFilter === 'all' || (currentTypeFilter === 'SEF' ? (row.dataset.type === 'SEF' || row.dataset.type === 'SUPERIOR') : row.dataset.type === currentTypeFilter);
+        var cMatch = !college || row.dataset.college === college;
+        var dMatch = !dept || row.dataset.dept === dept;
+        var fMatch = !faculty || row.dataset.faculty === faculty;
+        var yMatch = !year || row.dataset.year === year;
+        var qMatch = !q || row.dataset.search.toLowerCase().indexOf(q) !== -1;
+
+        // For previous section, also apply AY and semester filters
+        var ayMatch = true, semMatch = true;
+        if (currentSection === 'previous') {
+            var ayVal = document.getElementById('evPrevAYFilter').value;
+            var semVal = document.getElementById('evPrevSemFilter').value;
+            ayMatch = !ayVal || row.dataset.schoolYear === ayVal;
+            semMatch = !semVal || row.dataset.semester === semVal;
+        }
+
+        row.style.display = (tMatch && cMatch && dMatch && fMatch && yMatch && qMatch && ayMatch && semMatch) ? '' : 'none';
+    });
+}
+
+function filterPreviousByAY() {
+    applyAllFilters();
+}
+
+/* ── Table Sorting ── */
+var sortDirections = {};
+function sortTable(tableId, colIdx) {
+    var table = document.getElementById(tableId);
+    var tbody = table.querySelector('tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr.ev-row'));
+    var key = tableId + '_' + colIdx;
+    sortDirections[key] = !sortDirections[key];
+    var asc = sortDirections[key];
+
+    rows.sort(function(a, b) {
+        var aText = a.cells[colIdx] ? a.cells[colIdx].textContent.trim().toLowerCase() : '';
+        var bText = b.cells[colIdx] ? b.cells[colIdx].textContent.trim().toLowerCase() : '';
+        if (colIdx === 8) { // Evaluators column - numeric sort
+            return asc ? (parseInt(aText)||0) - (parseInt(bText)||0) : (parseInt(bText)||0) - (parseInt(aText)||0);
+        }
+        return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+    });
+
+    rows.forEach(function(row){ tbody.appendChild(row); });
+}
+
+/* ── Fetch subjects from API based on selected faculty ── */
+function filterSubjectsByFaculty(facultySelect, keepValue) {
+    var facultyOpt = facultySelect.options[facultySelect.selectedIndex];
+    var facultyId = facultyOpt ? facultyOpt.getAttribute('data-faculty-id') : '';
+    var subjectSel = document.querySelector(facultySelect.getAttribute('data-target-subject'));
+    if (!subjectSel) return;
+
+    var currentVal = keepValue || '';
+    var timeField = document.querySelector(subjectSel.getAttribute('data-target-time'));
+    var sectionField = document.querySelector(subjectSel.getAttribute('data-target-section'));
+    if (!keepValue) {
+        if (timeField) timeField.value = '';
+        if (sectionField) sectionField.value = '';
+    }
+
+    subjectSel.innerHTML = '';
+    var defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.setAttribute('data-schedule', '');
+    defaultOpt.setAttribute('data-section', '');
+    defaultOpt.textContent = facultyId ? 'Loading...' : '— Select Faculty first —';
+    subjectSel.appendChild(defaultOpt);
+
+    if (facultyId) {
+        fetch('/admin/api/faculty/' + facultyId + '/subjects')
+            .then(function(r) { return r.json(); })
+            .then(function(subjects) {
+                subjectSel.innerHTML = '';
+                var defOpt = document.createElement('option');
+                defOpt.value = '';
+                defOpt.setAttribute('data-schedule', '');
+                defOpt.setAttribute('data-section', '');
+                defOpt.textContent = '— Select Subject —';
+                subjectSel.appendChild(defOpt);
+
+                subjects.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.value;
+                    opt.setAttribute('data-schedule', s.schedule);
+                    opt.setAttribute('data-section', s.section);
+                    opt.textContent = s.value;
+                    if (s.value === currentVal) opt.selected = true;
+                    subjectSel.appendChild(opt);
+                });
+
+                /* Auto-fill time/section if a value was pre-selected */
+                if (currentVal) {
+                    var selOpt = subjectSel.options[subjectSel.selectedIndex];
+                    if (selOpt && selOpt.value) {
+                        if (timeField) timeField.value = selOpt.getAttribute('data-schedule') || '';
+                        if (sectionField) sectionField.value = selOpt.getAttribute('data-section') || '';
+                    }
+                }
+            });
+    }
+}
+
+/* ── Auto-fill time & section when subject is selected ── */
+document.querySelectorAll('.subject-select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+        var opt = this.options[this.selectedIndex];
+        var timeField = document.querySelector(this.dataset.targetTime);
+        var sectionField = document.querySelector(this.dataset.targetSection);
+        if (timeField) timeField.value = opt.getAttribute('data-schedule') || '';
+        if (sectionField) sectionField.value = opt.getAttribute('data-section') || '';
+    });
+});
+
+document.querySelectorAll('.faculty-select').forEach(function(sel) {
+    sel.addEventListener('change', function() { filterSubjectsByFaculty(this, ''); });
+    var subjectSel = document.querySelector(sel.getAttribute('data-target-subject'));
+    var currentSubjectVal = subjectSel ? subjectSel.getAttribute('data-current-value') : '';
+    if (sel.value) {
+        filterSubjectsByFaculty(sel, currentSubjectVal);
+    }
+});
+
+/* ── Filter faculty options by selected department ── */
+document.querySelectorAll('.dept-select').forEach(function(deptSel) {
+    var modal = deptSel.closest('.modal');
+    var facultySel = modal ? modal.querySelector('.faculty-select') : null;
+    if (!facultySel) return;
+
+    var allFacultyOpts = [];
+    Array.from(facultySel.options).forEach(function(opt) {
+        allFacultyOpts.push({ value: opt.value, text: opt.textContent, facultyId: opt.getAttribute('data-faculty-id') || '', department: opt.getAttribute('data-department') || '', selected: opt.selected });
+    });
+
+    deptSel.addEventListener('change', function() {
+        var selDept = this.value;
+        var currentFacultyVal = facultySel.value;
+        facultySel.innerHTML = '';
+
+        allFacultyOpts.forEach(function(o) {
+            if (!selDept || o.value === '' || o.department === selDept) {
+                var opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.setAttribute('data-faculty-id', o.facultyId);
+                opt.setAttribute('data-department', o.department);
+                if (o.value === currentFacultyVal) opt.selected = true;
+                facultySel.appendChild(opt);
+            }
+        });
+
+        /* Reset subject dropdown when department changes */
+        var subjectSel = modal ? modal.querySelector('.subject-select') : null;
+        if (subjectSel) {
+            subjectSel.innerHTML = '<option value="" data-schedule="" data-section="">— Select Faculty first —</option>';
+        }
+        var timeField = modal ? modal.querySelector('[name="time"]') : null;
+        var sectionField = modal ? modal.querySelector('[name="section"]') : null;
+        if (timeField) timeField.value = '';
+        if (sectionField) sectionField.value = '';
+    });
+});
+
+/* ── Superior modal: Filter faculty by department ── */
+(function() {
+    var deptSel = document.querySelector('.sup-dept-select');
+    var facultySel = document.querySelector('.sup-faculty-select');
+    if (!deptSel || !facultySel) return;
+
+    var allFacultyOpts = [];
+    Array.from(facultySel.options).forEach(function(opt) {
+        allFacultyOpts.push({ value: opt.value, text: opt.textContent, position: opt.getAttribute('data-position') || '', department: opt.getAttribute('data-department') || '' });
+    });
+
+    deptSel.addEventListener('change', function() {
+        var selDept = this.value;
+        facultySel.innerHTML = '';
+        allFacultyOpts.forEach(function(o) {
+            if (!selDept || o.value === '' || o.department === selDept) {
+                var opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.setAttribute('data-position', o.position);
+                opt.setAttribute('data-department', o.department);
+                facultySel.appendChild(opt);
+            }
+        });
+        /* Clear position field */
+        var posInput = document.querySelector('.sup-position-input');
+        if (posInput) posInput.value = '';
+    });
+})();
+
+/* ── Filter department options by selected college ── */
+document.querySelectorAll('.college-select').forEach(function(collegeSel) {
+    var modal = collegeSel.closest('.modal');
+    var deptSel = modal ? modal.querySelector('.dept-select') : null;
+    if (!deptSel) return;
+
+    var allDeptOpts = [];
+    Array.from(deptSel.options).forEach(function(opt) {
+        allDeptOpts.push({ value: opt.value, text: opt.textContent, college: opt.getAttribute('data-college') || '', selected: opt.selected });
+    });
+
+    collegeSel.addEventListener('change', function() {
+        var selCollege = this.value;
+        var currentDeptVal = deptSel.value;
+        deptSel.innerHTML = '';
+
+        allDeptOpts.forEach(function(o) {
+            if (!selCollege || o.value === '' || o.college === selCollege) {
+                var opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.setAttribute('data-college', o.college);
+                if (o.value === currentDeptVal) opt.selected = true;
+                deptSel.appendChild(opt);
+            }
+        });
+    });
+});
+
+/* ── Superior modal: Filter departments by college ── */
+(function() {
+    var collegeSel = document.querySelector('.sup-college-select');
+    var deptSel = document.querySelector('.sup-dept-select');
+    if (!collegeSel || !deptSel) return;
+
+    var allDeptOpts = [];
+    Array.from(deptSel.options).forEach(function(opt) {
+        allDeptOpts.push({ value: opt.value, text: opt.textContent, college: opt.getAttribute('data-college') || '' });
+    });
+
+    collegeSel.addEventListener('change', function() {
+        var selCollege = this.value;
+        deptSel.innerHTML = '';
+        allDeptOpts.forEach(function(o) {
+            if (!selCollege || o.value === '' || o.college === selCollege) {
+                var opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.setAttribute('data-college', o.college);
+                deptSel.appendChild(opt);
+            }
+        });
+    });
+})();
+
+/* ── Superior modal: Auto-fill position from faculty ── */
+(function() {
+    var facultySel = document.querySelector('.sup-faculty-select');
+    var positionInput = document.querySelector('.sup-position-input');
+    if (!facultySel || !positionInput) return;
+
+    facultySel.addEventListener('change', function() {
+        var selected = this.options[this.selectedIndex];
+        positionInput.value = selected ? (selected.getAttribute('data-position') || '') : '';
+    });
+})();
+
+/* ── QR Code Generation ── */
+(function() {
+    var qrModal = document.getElementById('qrCodeModal');
+    if (!qrModal) return;
+    var currentQrUrl = '';
+
+    qrModal.addEventListener('show.bs.modal', function(e) {
+        var btn = e.relatedTarget;
+        if (!btn) return;
+
+        var evalId = btn.getAttribute('data-eval-id');
+        var evalType = btn.getAttribute('data-eval-type');
+        var faculty = btn.getAttribute('data-eval-faculty');
+        var subject = btn.getAttribute('data-eval-subject');
+        var section = btn.getAttribute('data-eval-section');
+        var schoolYear = btn.getAttribute('data-eval-school-year');
+
+        // Build the evaluation URL
+        var baseUrl = window.location.origin;
+        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+
+        // Update modal info
+        var typeBadge = document.getElementById('qrEvalType');
+        typeBadge.textContent = evalType;
+        typeBadge.className = 'ev-type-badge ' + (evalType === 'SET' ? 'ev-type-set' : (evalType === 'SEF' ? 'ev-type-sef' : 'ev-type-superior'));
+
+        document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to evaluate';
+        document.getElementById('qrEvalFaculty').textContent = faculty || '';
+        document.getElementById('qrEvalSubject').textContent = subject || '';
+
+        var details = [];
+        if (section) details.push('Section: ' + section);
+        document.getElementById('qrEvalDetails').textContent = details.join(' · ');
+        document.getElementById('qrUrl').textContent = currentQrUrl;
+
+        // Generate QR code via API
+        var qrImg = document.getElementById('qrImage');
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+    });
+
+    window.downloadQR = function() {
+        var img = document.getElementById('qrImage');
+        var link = document.createElement('a');
+        link.download = 'evaluation-qr-code.png';
+        link.href = img.src;
+        link.click();
+    };
+
+    window.copyQRLink = function() {
+        navigator.clipboard.writeText(currentQrUrl).then(function() {
+            var btn = document.querySelector('#qrCodeModal .qr-btn-copy');
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            setTimeout(function() { btn.innerHTML = orig; }, 1500);
+        });
+    };
+})();
+</script>
+{% endblock %}

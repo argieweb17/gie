@@ -1,0 +1,236 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Evaluate Personnel | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+<style>
+.sp-page { max-width: 1140px; margin: 0 auto; }
+.sp-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
+.sp-breadcrumb a { color: #64748b; text-decoration: none; }
+.sp-breadcrumb a:hover { color: #2563eb; }
+.sp-breadcrumb .sep { color: #cbd5e1; }
+.sp-breadcrumb .current { color: #1e293b; font-weight: 600; }
+.sp-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.sp-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
+.sp-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
+
+.sp-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.sp-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
+.sp-chip-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; color: #fff; flex-shrink: 0; }
+.sp-chip-val { font-weight: 700; }
+
+.sp-panel { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.04); overflow: hidden; margin-bottom: 1.25rem; }
+.sp-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .85rem 1.25rem; border-bottom: 1px solid #f1f5f9; background: #fafbfc; }
+.sp-panel-title { font-size: .85rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: .45rem; }
+.sp-panel-title i { color: #059669; font-size: .95rem; }
+.sp-panel-meta { display: flex; align-items: center; gap: .75rem; font-size: .75rem; color: #64748b; }
+.sp-panel-badge { font-size: .68rem; font-weight: 600; background: #dcfce7; color: #166534; padding: .2rem .55rem; border-radius: 50px; display: inline-flex; align-items: center; gap: .2rem; }
+
+.sp-search-wrap { position: relative; }
+.sp-search-wrap > i { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: #94a3b8; pointer-events: none; }
+.sp-search-wrap input { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: .4rem .75rem .4rem 2rem; font-size: .8rem; width: 200px; transition: border-color .15s, box-shadow .15s; background: #f8fafc; }
+.sp-search-wrap input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.08); background: #fff; }
+
+.sp-list { display: flex; flex-direction: column; }
+.sp-item { display: flex; align-items: center; gap: .85rem; padding: .8rem 1.25rem; border-bottom: 1px solid #f1f5f9; transition: background .1s; }
+.sp-item:last-child { border-bottom: none; }
+.sp-item:hover { background: #f8fafc; }
+
+.sp-item-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .82rem; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: .3px; }
+.sp-item-body { flex: 1; min-width: 0; }
+.sp-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sp-item-name { font-weight: 600; font-size: .88rem; color: #0f172a; }
+.sp-item-role { display: inline-flex; align-items: center; gap: .2rem; padding: .15rem .5rem; border-radius: 6px; font-size: .7rem; font-weight: 700; letter-spacing: .3px; }
+.sp-item-role-dean { background: #fef3c7; color: #92400e; }
+.sp-item-role-head { background: #dbeafe; color: #1e40af; }
+.sp-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
+.sp-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
+
+.sp-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .65rem; border-radius: 50px; font-size: .72rem; font-weight: 600; letter-spacing: .2px; }
+.sp-badge-pending { background: #f1f5f9; color: #64748b; }
+.sp-badge-submitted { background: #dcfce7; color: #166534; }
+
+.sp-action-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .15s; border: none; cursor: pointer; white-space: nowrap; }
+.sp-action-evaluate { background: #059669; color: #fff; }
+.sp-action-evaluate:hover { background: #047857; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
+.sp-action-done { background: #f0fdf4; color: #16a34a; cursor: default; }
+
+.sp-item-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+/* Progress bar */
+.sp-progress { display: flex; align-items: center; gap: .5rem; font-size: .75rem; color: #64748b; }
+.sp-progress-bar { width: 80px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.sp-progress-fill { height: 100%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 3px; transition: width .3s; }
+
+/* Empty State */
+.sp-empty { text-align: center; padding: 4rem 2rem 3.5rem; }
+.sp-empty-illustration { width: 130px; height: 130px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.sp-empty-illustration::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px dashed #d1d5db; animation: sp-spin 20s linear infinite; }
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+.sp-empty-illustration i { font-size: 3.2rem; color: #059669; opacity: .5; }
+.sp-empty-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
+.sp-empty-desc { font-size: .84rem; color: #64748b; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+@media (max-width: 768px) {
+    .sp-header-title { font-size: 1.25rem; }
+    .sp-item { padding: .7rem .85rem; }
+    .sp-search-wrap input { width: 150px; }
+}
+</style>
+
+<div class="sp-page">
+
+<div class="sp-breadcrumb">
+    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <span class="sep">/</span>
+    <span class="current">Evaluate Personnel</span>
+</div>
+
+<div class="sp-header">
+    <div>
+        <h1 class="sp-header-title">Evaluate Personnel</h1>
+        <div class="sp-header-sub">Superior Evaluation &middot; Evaluate Deans and Department Heads</div>
+    </div>
+    {% if evaluatees|length > 0 %}
+    <div class="sp-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="search" id="spSearch" placeholder="Search personnel...">
+    </div>
+    {% endif %}
+</div>
+
+{% if openEvals|length > 0 and evaluatees|length > 0 %}
+
+{% set totalSubmitted = 0 %}
+{% set totalPersonnel = 0 %}
+{% for eval in openEvals %}
+    {% for item in evaluatees %}
+        {% set key = eval.id ~ '-' ~ item.user.id %}
+        {% set totalPersonnel = totalPersonnel + 1 %}
+        {% if submissions[key] is defined and submissions[key] %}{% set totalSubmitted = totalSubmitted + 1 %}{% endif %}
+    {% endfor %}
+{% endfor %}
+
+<div class="sp-chips">
+    <div class="sp-chip">
+        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#059669,#047857);"><i class="bi bi-people"></i></span>
+        <span><span class="sp-chip-val">{{ evaluatees|length }}</span> Personnel</span>
+    </div>
+    <div class="sp-chip">
+        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="bi bi-journal-text"></i></span>
+        <span><span class="sp-chip-val">{{ openEvals|length }}</span> Open Period{{ openEvals|length > 1 ? 's' : '' }}</span>
+    </div>
+    <div class="sp-chip">
+        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-check-circle"></i></span>
+        <span><span class="sp-chip-val">{{ totalSubmitted }}</span>/{{ totalPersonnel }} Done</span>
+    </div>
+</div>
+
+{% for eval in openEvals %}
+    {% set evalSubmitted = 0 %}
+    {% for item in evaluatees %}
+        {% set key = eval.id ~ '-' ~ item.user.id %}
+        {% if submissions[key] is defined and submissions[key] %}{% set evalSubmitted = evalSubmitted + 1 %}{% endif %}
+    {% endfor %}
+    {% set progressPct = evaluatees|length > 0 ? ((evalSubmitted / evaluatees|length) * 100)|round : 0 %}
+
+    <div class="sp-panel">
+        <div class="sp-panel-head">
+            <div class="sp-panel-title">
+                <i class="bi bi-calendar-check"></i>
+                {{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }} &mdash; {{ eval.schoolYear ?? '' }} {{ eval.semester ?? '' }}
+            </div>
+            <div class="sp-panel-meta">
+                <span class="sp-panel-badge"><i class="bi bi-broadcast"></i> Open</span>
+                <span><i class="bi bi-clock me-1"></i>{{ eval.startDate|date('M d') }} – {{ eval.endDate|date('M d, Y') }}</span>
+                <div class="sp-progress">
+                    <div class="sp-progress-bar"><div class="sp-progress-fill" style="width:{{ progressPct }}%"></div></div>
+                    <span>{{ evalSubmitted }}/{{ evaluatees|length }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="sp-list">
+            {% set colors = ['#059669','#2563eb','#7c3aed','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
+            {% for item in evaluatees %}
+                {% set key = eval.id ~ '-' ~ item.user.id %}
+                {% set colorIdx = loop.index0 % colors|length %}
+                {% set nameParts = item.user.fullName|split(' ') %}
+                {% set initials = nameParts[0][:1]|upper ~ (nameParts|length > 1 ? nameParts[nameParts|length - 1][:1]|upper : '') %}
+                <div class="sp-item" data-search="{{ item.user.fullName }} {{ item.label }} {{ item.user.department ? item.user.department.departmentName : '' }}">
+                    <div class="sp-item-avatar" style="background:{{ colors[colorIdx] }};">
+                        {{ initials }}
+                    </div>
+                    <div class="sp-item-body">
+                        <div class="sp-item-top">
+                            <span class="sp-item-name">{{ item.user.fullName }}</span>
+                            <span class="sp-item-role {{ item.type == 'dean' ? 'sp-item-role-dean' : 'sp-item-role-head' }}">{{ item.label }}</span>
+                            {% if submissions[key] is defined and submissions[key] %}
+                                <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                            {% else %}
+                                <span class="sp-badge sp-badge-pending"><i class="bi bi-clock"></i> Pending</span>
+                            {% endif %}
+                        </div>
+                        <div class="sp-item-meta">
+                            {% if item.user.department %}
+                                <span><i class="bi bi-building"></i> {{ item.user.department.departmentName }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="sp-item-actions">
+                        {% if submissions[key] is defined and submissions[key] %}
+                            <span class="sp-action-btn sp-action-done"><i class="bi bi-check2-all"></i> Done</span>
+                        {% else %}
+                            <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-btn sp-action-evaluate">
+                                <i class="bi bi-pencil-square"></i> Evaluate
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endfor %}
+
+{% elseif openEvals|length == 0 %}
+<div class="sp-panel">
+    <div class="sp-panel-head">
+        <div class="sp-panel-title"><i class="bi bi-calendar-check"></i> Evaluation Periods</div>
+    </div>
+    <div class="sp-empty">
+        <div class="sp-empty-illustration">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="sp-empty-title">No evaluations available</div>
+        <div class="sp-empty-desc">Evaluations will appear here when an evaluation period is open for your role.</div>
+    </div>
+</div>
+{% else %}
+<div class="sp-panel">
+    <div class="sp-panel-head">
+        <div class="sp-panel-title"><i class="bi bi-people"></i> Personnel</div>
+    </div>
+    <div class="sp-empty">
+        <div class="sp-empty-illustration">
+            <i class="bi bi-person-x"></i>
+        </div>
+        <div class="sp-empty-title">No personnel to evaluate</div>
+        <div class="sp-empty-desc">Users need their employment status set to "Dean", "Department Head", or "Chair" to appear here.</div>
+    </div>
+</div>
+{% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('spSearch');
+    if (!input) return;
+    input.addEventListener('input', () => {
+        const term = input.value.trim().toLowerCase();
+        document.querySelectorAll('.sp-item').forEach(item => {
+            item.style.display = !term || (item.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

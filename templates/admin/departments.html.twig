@@ -1,0 +1,339 @@
+{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Departments | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   COMPUTE STATS
+   ═══════════════════════════════════════ #}
+{% set totalDepts = departments|length %}
+{% set collegeSet = [] %}
+{% set totalFaculty = 0 %}
+{% set totalSubjects = 0 %}
+{% for d in departments %}
+    {% set totalFaculty = totalFaculty + d.users|length %}
+    {% set totalSubjects = totalSubjects + d.subjects|length %}
+    {% if d.collegeName and d.collegeName not in collegeSet %}
+        {% set collegeSet = collegeSet|merge([d.collegeName]) %}
+    {% endif %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="dp-header">
+    <div class="dp-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dp-header-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Department Management</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="dp-meta-pill"><i class="bi bi-database me-1"></i>{{ totalDepts }} Department{{ totalDepts != 1 ? 's' : '' }}</span>
+                        <span class="dp-meta-pill"><i class="bi bi-mortarboard me-1"></i>{{ collegeSet|length }} College{{ collegeSet|length != 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-1">
+                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+                    <i class="bi bi-plus-lg me-1"></i>Add Department
+                </button>
+            </div>
+        </div>
+        <div class="dp-stats-row">
+            <div class="dp-stat">
+                <span class="dp-stat-val">{{ totalDepts }}</span>
+                <span class="dp-stat-lbl">Departments</span>
+            </div>
+            <div class="dp-stat-divider"></div>
+            <div class="dp-stat">
+                <span class="dp-stat-val dp-val-info">{{ collegeSet|length }}</span>
+                <span class="dp-stat-lbl">Colleges</span>
+            </div>
+            <div class="dp-stat-divider"></div>
+            <div class="dp-stat">
+                <span class="dp-stat-val dp-val-success">{{ totalFaculty }}</span>
+                <span class="dp-stat-lbl">Total Faculty</span>
+            </div>
+            <div class="dp-stat-divider"></div>
+            <div class="dp-stat">
+                <span class="dp-stat-val dp-val-warn">{{ totalSubjects }}</span>
+                <span class="dp-stat-lbl">Total Subjects</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SEARCH BAR
+   ═══════════════════════════════════════ #}
+<div class="dp-toolbar">
+    <div class="dp-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="dp-search" id="dpSearchInput" placeholder="Search departments..." oninput="dpFilterTable()">
+    </div>
+    <div class="dp-toolbar-info">
+        <span class="dp-result-count" id="dpResultCount">{{ totalDepts }} result{{ totalDepts != 1 ? 's' : '' }}</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   DEPARTMENTS TABLE
+   ═══════════════════════════════════════ #}
+<div class="dp-table-wrap">
+    <table class="dp-table" id="dpTable">
+        <thead>
+            <tr>
+                <th onclick="dpSort('name')">
+                    <span class="dp-sort-label">Department <i class="bi bi-arrow-down-up dp-sort-icon" data-col="name"></i></span>
+                </th>
+                <th onclick="dpSort('college')">
+                    <span class="dp-sort-label">College <i class="bi bi-arrow-down-up dp-sort-icon" data-col="college"></i></span>
+                </th>
+                <th class="text-center">Faculty</th>
+                <th class="text-center">Subjects</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="dpTableBody">
+            {% for dept in departments %}
+            <tr class="dp-row"
+                data-search="{{ dept.departmentName|lower }} {{ dept.collegeName|default('')|lower }}"
+                data-sort-name="{{ dept.departmentName|lower }}"
+                data-sort-college="{{ dept.collegeName|default('')|lower }}">
+                <td>
+                    <div class="dp-name-cell">
+                        <span class="dp-name-avatar">{{ dept.departmentName|slice(0,2)|upper }}</span>
+                        <span class="dp-name-text">{{ dept.departmentName }}</span>
+                    </div>
+                </td>
+                <td>
+                    {% if dept.collegeName %}
+                        <span class="dp-college-tag">{{ dept.collegeName }}</span>
+                    {% else %}
+                        <span class="dp-empty">—</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="dp-count-badge dp-count-faculty">{{ dept.users|length }}</span>
+                </td>
+                <td class="text-center">
+                    <span class="dp-count-badge dp-count-subjects">{{ dept.subjects|length }}</span>
+                </td>
+                <td class="text-center">
+                    <div class="dp-actions">
+                        <form method="post" action="{{ path(prefix ~ '_department_delete', {id: dept.id}) }}"
+                              class="d-inline" onsubmit="return confirm('Delete this department?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_dept' ~ dept.id) }}">
+                            <button type="submit" class="dp-action-btn dp-action-delete" title="Delete">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center py-5">
+                    <div class="dp-empty-state">
+                        <div class="dp-empty-icon"><i class="bi bi-building-x"></i></div>
+                        <h6 class="fw-bold text-muted">No departments found</h6>
+                        <p class="text-muted small mb-3">Get started by adding your first department.</p>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+                            <i class="bi bi-plus-lg me-1"></i>Add Department
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="dpNoResults" class="dp-no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        <span>No departments match your search.</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   ADD DEPARTMENT MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="addDeptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dp-modal-content" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_department_create') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_dept') }}">
+                <div class="dp-modal-header-gradient">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;"><i class="bi bi-building-add"></i></div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-white" style="font-size:1.05rem;">New Department</h5>
+                            <span style="font-size:.72rem;color:rgba(255,255,255,.65);">Fill in the details below</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" style="font-size:.7rem;" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label dp-form-label">Department Name <span class="text-danger">*</span></label>
+                            <input type="text" name="departmentName" class="form-control form-control-sm" required placeholder="e.g. Computer Science Department">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label dp-form-label">College Name</label>
+                            <input type="text" name="collegeName" class="form-control form-control-sm" placeholder="e.g. College of Arts and Sciences">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-2" style="background:#f8fafc;">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg me-1"></i>Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ─── Header ─── */
+.dp-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.dp-header-inner{padding:22px 26px 18px;}
+.dp-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.dp-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.dp-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.dp-stat{flex:1;text-align:center;}
+.dp-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.dp-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.dp-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.dp-val-info{color:#38bdf8!important;}
+.dp-val-success{color:#34d399!important;}
+.dp-val-warn{color:#fbbf24!important;}
+
+/* ─── Toolbar ─── */
+.dp-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.dp-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
+.dp-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.dp-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.dp-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.dp-toolbar-info{margin-left:auto;}
+.dp-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
+
+/* ─── Table ─── */
+.dp-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.dp-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.dp-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.dp-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.dp-table thead th .dp-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.dp-table thead th .dp-sort-label:hover{color:#1a56db;}
+.dp-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
+.dp-table thead th .dp-sort-label:hover .dp-sort-icon{opacity:.7;}
+.dp-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.dp-table tbody tr:last-child{border-bottom:none;}
+.dp-table tbody tr:hover{background:#f8faff;}
+.dp-table tbody td{padding:10px 14px;vertical-align:middle;}
+
+/* Name cell */
+.dp-name-cell{display:flex;align-items:center;gap:10px;}
+.dp-name-avatar{width:36px;height:36px;min-width:36px;border-radius:10px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.dp-name-text{font-weight:600;color:#1e293b;font-size:.84rem;}
+
+/* College tag */
+.dp-college-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#0369a1;background:#e0f2fe;padding:3px 10px;border-radius:6px;}
+.dp-empty{color:#cbd5e1;font-size:.78rem;}
+
+/* Count badges */
+.dp-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;font-weight:800;font-size:.78rem;padding:0 6px;}
+.dp-count-faculty{background:#ecfdf5;color:#059669;}
+.dp-count-subjects{background:#fef3c7;color:#b45309;}
+
+/* Actions */
+.dp-actions{display:flex;align-items:center;gap:4px;justify-content:center;}
+.dp-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
+.dp-action-delete{color:#ef4444;}
+.dp-action-delete:hover{background:#fef2f2;color:#dc2626;transform:scale(1.1);}
+
+/* Empty / No results */
+.dp-empty-state{padding:20px 0;}
+.dp-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+.dp-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #f1f5f9;}
+.dp-no-results i{font-size:1rem;opacity:.5;}
+
+/* ─── Modals ─── */
+.dp-modal-content{border:none;box-shadow:0 24px 48px rgba(0,0,0,.12);}
+.dp-modal-header-gradient{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg,#0f172a 0%,#1a56db 60%,#3b82f6 100%);color:#fff;}
+.dp-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
+
+/* ─── Responsive ─── */
+@media(max-width:768px){
+    .dp-stats-row{flex-wrap:wrap;gap:8px;}
+    .dp-stat{min-width:45%;}
+    .dp-stat-divider{display:none;}
+    .dp-toolbar{flex-direction:column;align-items:stretch;}
+    .dp-search-wrap{max-width:100%;}
+    .dp-table{font-size:.75rem;}
+    .dp-table thead th{padding:8px 10px;font-size:.62rem;}
+    .dp-table tbody td{padding:8px 10px;}
+}
+
+/* Animations */
+.dp-header,.dp-toolbar,.dp-table-wrap{animation:dpFadeIn .25s ease;}
+@keyframes dpFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.dp-row{animation:dpRowIn .2s ease backwards;}
+@keyframes dpRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+function dpFilterTable() {
+    var q = document.getElementById('dpSearchInput').value.toLowerCase();
+    var rows = document.querySelectorAll('#dpTableBody .dp-row');
+    var count = 0;
+    rows.forEach(function(r) {
+        var match = (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+        r.style.display = match ? '' : 'none';
+        if (match) count++;
+    });
+    document.getElementById('dpResultCount').textContent = count + ' result' + (count !== 1 ? 's' : '');
+    document.getElementById('dpNoResults').style.display = count === 0 && q.length > 0 ? '' : 'none';
+}
+
+var dpSortState = {};
+function dpSort(col) {
+    var tbody = document.getElementById('dpTableBody');
+    var rows = Array.from(tbody.querySelectorAll('.dp-row'));
+    var asc = dpSortState[col] !== 'asc';
+    dpSortState = {};
+    dpSortState[col] = asc ? 'asc' : 'desc';
+
+    document.querySelectorAll('.dp-sort-icon').forEach(function(ic) {
+        ic.className = 'bi bi-arrow-down-up dp-sort-icon';
+        ic.style.opacity = '.35';
+    });
+    var activeIcon = document.querySelector('.dp-sort-icon[data-col="' + col + '"]');
+    if (activeIcon) {
+        activeIcon.className = 'bi dp-sort-icon ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down');
+        activeIcon.style.opacity = '1';
+    }
+
+    rows.sort(function(a, b) {
+        var va = a.getAttribute('data-sort-' + col) || '';
+        var vb = b.getAttribute('data-sort-' + col) || '';
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dp-row').forEach(function(r, i) {
+        r.style.animationDelay = (i * 0.03) + 's';
+    });
+});
+</script>
+{% endblock %}

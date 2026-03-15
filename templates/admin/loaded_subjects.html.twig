@@ -1,0 +1,707 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Teaching Subjects | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   STATS
+   ═══════════════════════════════════════ #}
+{% set totalSubjects = subjects|length %}
+{% set totalSections = 0 %}
+{% for s in subjects %}{% if s.section %}{% set totalSections = totalSections + 1 %}{% endif %}{% endfor %}
+{% set semSet = [] %}
+{% for s in subjects %}
+    {% if s.semester and s.semester not in semSet %}{% set semSet = semSet|merge([s.semester]) %}{% endif %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="ls-header">
+    <div class="ls-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="ls-header-icon">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Teaching Subjects</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="ls-meta-pill"><i class="bi bi-person-fill me-1"></i>{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                        {% if app.user.department %}
+                            <span class="ls-meta-pill"><i class="bi bi-bank me-1"></i>{{ app.user.department.departmentName }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if subjects|length > 0 %}
+            <form method="post" action="{{ path('faculty_unload_all_subjects') }}" style="display:inline" onsubmit="return confirm('Are you sure you want to unload all {{ subjects|length }} subject{{ subjects|length != 1 ? 's' : '' }}?')">
+                <input type="hidden" name="_token" value="{{ csrf_token('unload_all_subjects') }}">
+                <button type="submit" class="ls-print-btn" style="background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);" title="Unload All Subjects">
+                    <i class="bi bi-x-circle-fill me-1"></i> Unload All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="ls-stats-row">
+            <div class="ls-stat">
+                <span class="ls-stat-val">{{ totalSubjects }}</span>
+                <span class="ls-stat-lbl">Total Subjects</span>
+            </div>
+            <div class="ls-stat-divider"></div>
+            <div class="ls-stat">
+                <span class="ls-stat-val">{{ totalUnits }}</span>
+                <span class="ls-stat-lbl">Total Units</span>
+            </div>
+            <div class="ls-stat-divider"></div>
+            <div class="ls-stat">
+                <span class="ls-stat-val ls-val-accent">{{ totalSections }}</span>
+                <span class="ls-stat-lbl">Sections</span>
+            </div>
+            <div class="ls-stat-divider"></div>
+            <div class="ls-stat">
+                <span class="ls-stat-val">{{ semSet|length }}</span>
+                <span class="ls-stat-lbl">Semesters</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   PREVIOUS LOAD — Current AY (unsaved)
+   ═══════════════════════════════════════ #}
+{% if previousLoads is defined and previousLoads|length > 0 %}
+<div class="ls-prev-load-card">
+    <div class="ls-prev-load-header" onclick="togglePrevLoad('prevCurrentAY')" style="cursor:pointer;">
+        <div class="d-flex align-items-center gap-2">
+            <div class="ls-prev-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
+            <div>
+                <h6 class="fw-bold mb-0" style="font-size:.92rem;color:#1e293b;">Previous Subject Load</h6>
+                <span style="font-size:.72rem;color:#64748b;">{{ previousLoads|length }} subject{{ previousLoads|length != 1 ? 's' : '' }} from current session{% if currentAY %} — {{ currentAY.yearLabel }}{% if currentAY.semester %} · {{ currentAY.semester }}{% endif %}{% endif %}</span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <form method="post" action="{{ path('faculty_restore_load') }}" onclick="event.stopPropagation();">
+                <input type="hidden" name="_token" value="{{ csrf_token('restore_load') }}">
+                <button type="submit" class="ls-restore-btn">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                </button>
+            </form>
+            <i class="bi bi-chevron-down ls-prev-chevron" id="prevChevronprevCurrentAY"></i>
+        </div>
+    </div>
+    <div class="ls-prev-load-body ls-prev-collapsible" id="prevCurrentAY" style="display:none;">
+        <table class="ls-prev-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Subject Name</th>
+                    <th>Section</th>
+                    <th>Schedule/Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fsl in previousLoads %}
+                <tr>
+                    <td><code class="ls-code-text" style="font-size:.74rem;">{{ fsl.subject.subjectCode }}</code></td>
+                    <td style="font-weight:600;color:#1e293b;font-size:.8rem;">{{ fsl.subject.subjectName }}</td>
+                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════
+   PREVIOUS LOAD — Past Academic Years
+   ═══════════════════════════════════════ #}
+{% if pastLoadsByAY is defined and pastLoadsByAY|length > 0 %}
+{% for ayGroup in pastLoadsByAY %}
+<div class="ls-prev-load-card ls-past-ay-card">
+    <div class="ls-prev-load-header ls-past-ay-header" onclick="togglePrevLoad('prevPast{{ ayGroup.ayId }}')" style="cursor:pointer;">
+        <div class="d-flex align-items-center gap-2">
+            <div class="ls-prev-icon ls-past-icon"><i class="bi bi-clock-history"></i></div>
+            <div>
+                <h6 class="fw-bold mb-0" style="font-size:.92rem;color:#1e293b;">Previous Load</h6>
+                <span style="font-size:.72rem;color:#64748b;">{{ ayGroup.loads|length }} subject{{ ayGroup.loads|length != 1 ? 's' : '' }} — {{ ayGroup.label }}</span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <form method="post" action="{{ path('faculty_restore_load') }}" onclick="event.stopPropagation();">
+                <input type="hidden" name="_token" value="{{ csrf_token('restore_load') }}">
+                <input type="hidden" name="ay_id" value="{{ ayGroup.ayId }}">
+                <button type="submit" class="ls-restore-btn ls-restore-past">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                </button>
+            </form>
+            <i class="bi bi-chevron-down ls-prev-chevron" id="prevChevronprevPast{{ ayGroup.ayId }}"></i>
+        </div>
+    </div>
+    <div class="ls-prev-load-body ls-prev-collapsible" id="prevPast{{ ayGroup.ayId }}" style="display:none;">
+        <table class="ls-prev-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Subject Name</th>
+                    <th>Section</th>
+                    <th>Schedule/Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fsl in ayGroup.loads %}
+                <tr>
+                    <td><code class="ls-code-text" style="font-size:.74rem;">{{ fsl.subject.subjectCode }}</code></td>
+                    <td style="font-weight:600;color:#1e293b;font-size:.8rem;">{{ fsl.subject.subjectName }}</td>
+                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{# ═══════════════════════════════════════
+   SEMESTER FILTER + SEARCH BAR
+   ═══════════════════════════════════════ #}
+<div class="ls-toolbar">
+    <div class="ls-filter-row">
+        <span class="ls-filter-label"><i class="bi bi-funnel-fill me-1"></i>Semester:</span>
+        <div class="ls-sem-pills">
+            <button type="button" class="ls-sem-pill active" data-sem="all" onclick="lsSemFilter(this)">All</button>
+            {% for sem in semSet %}
+                <button type="button" class="ls-sem-pill" data-sem="{{ sem|lower }}" onclick="lsSemFilter(this)">{{ sem }}</button>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="ls-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="ls-search" id="lsSearchInput" placeholder="Search subjects..." oninput="lsFilter()">
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SUBJECTS TABLE
+   ═══════════════════════════════════════ #}
+<div class="ls-table-wrap">
+    <table class="ls-table" id="lsTable">
+        <thead>
+            <tr>
+                <th class="ls-th" onclick="lsSort('code')">
+                    <span class="ls-sort-label">Code <i class="bi bi-arrow-down-up ls-sort-icon" data-col="code"></i></span>
+                </th>
+                <th class="ls-th" onclick="lsSort('name')">
+                    <span class="ls-sort-label">Subject Name <i class="bi bi-arrow-down-up ls-sort-icon" data-col="name"></i></span>
+                </th>
+                <th class="ls-th">Semester</th>
+                <th class="ls-th" onclick="lsSort('units')">
+                    <span class="ls-sort-label">Units <i class="bi bi-arrow-down-up ls-sort-icon" data-col="units"></i></span>
+                </th>
+                <th class="ls-th">Year Level</th>
+                <th class="ls-th">Section</th>
+                <th class="ls-th">Schedule/Time</th>
+                <th class="ls-th">Department</th>
+                <th class="ls-th text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="lsTableBody">
+            {% for s in subjects %}
+            <tr class="ls-row"
+                data-search="{{ s.subjectCode|lower }} {{ s.subjectName|lower }}"
+                data-semester="{{ s.semester|default('')|lower }}"
+                data-sort-code="{{ s.subjectCode|lower }}"
+                data-sort-name="{{ s.subjectName|lower }}"
+                data-sort-units="{{ s.units ?? 0 }}"
+                data-view-code="{{ s.subjectCode }}"
+                data-view-name="{{ s.subjectName }}"
+                data-view-semester="{{ s.semester ?? '—' }}"
+                data-view-schoolyear="{{ s.schoolYear ?? '—' }}"
+                data-view-units="{{ s.units ?? '—' }}"
+                data-view-yearlevel="{{ s.yearLevel ?? '—' }}"
+                data-view-term="{{ s.term ?? '—' }}"
+                data-view-section="{{ s.section ?? '—' }}"
+                data-view-schedule="{{ s.schedule ?? '—' }}"
+                data-view-department="{{ s.department ? s.department.departmentName : '—' }}"
+                data-view-id="{{ s.id }}">
+                <td>
+                    <div class="ls-code-cell">
+                        <span class="ls-code-avatar">{{ s.subjectCode|slice(0,2)|upper }}</span>
+                        <code class="ls-code-text">{{ s.subjectCode }}</code>
+                    </div>
+                </td>
+                <td>
+                    <span class="ls-subject-name">{{ s.subjectName }}</span>
+                </td>
+                <td>
+                    {% if s.semester %}
+                        <span class="ls-pill ls-pill-sem">{{ s.semester }}</span>
+                    {% else %}
+                        <span class="ls-empty">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="ls-units-badge">{{ s.units ?? '—' }}</span>
+                </td>
+                <td>
+                    {% if s.yearLevel %}
+                        <span class="ls-pill ls-pill-yl">{{ s.yearLevel }}</span>
+                    {% else %}
+                        <span class="ls-empty">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.section %}
+                        <span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ s.section|upper }}</span>
+                    {% else %}
+                        <span class="ls-empty">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.schedule %}
+                        <span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ s.schedule }}</span>
+                    {% else %}
+                        <span class="ls-empty">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.department %}
+                        <span class="ls-dept-tag">{{ s.department.departmentName }}</span>
+                    {% else %}
+                        <span class="ls-empty">—</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <form method="post" action="{{ path('faculty_subject_unload', {id: s.id}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subjectCode }} — {{ s.subjectName }}?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.id) }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
+                            <i class="bi bi-x-circle me-1"></i>Unload
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <div class="ls-empty-state">
+                        <div class="ls-empty-icon"><i class="bi bi-journal-x"></i></div>
+                        <h6 class="fw-bold text-muted">No loaded subjects</h6>
+                        <p class="text-muted small mb-0">You currently have no subjects assigned to you.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="lsNoResults" class="ls-no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        <span>No subjects match your search.</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   VIEW SUBJECT DETAIL MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="lsViewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <div class="ls-view-header">
+                <div class="ls-view-header-decor"></div>
+                <div class="d-flex align-items-center gap-3 position-relative">
+                    <div class="ls-view-avatar" id="lsViewAvatar"></div>
+                    <div>
+                        <div class="mb-1"><code class="ls-view-code" id="lsViewCode"></code></div>
+                        <h5 class="fw-bold mb-0 text-white" style="font-size:1.05rem;" id="lsViewName"></h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white position-absolute" style="top:16px;right:16px;" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="ls-view-stats-strip">
+                <div class="ls-view-stat">
+                    <div class="ls-view-stat-val" style="color:#d97706;" id="lsViewUnits">—</div>
+                    <div class="ls-view-stat-lbl">Units</div>
+                </div>
+                <div class="ls-view-stat">
+                    <div class="ls-view-stat-val" style="color:#4f46e5;font-size:.82rem;" id="lsViewSection">—</div>
+                    <div class="ls-view-stat-lbl">Section</div>
+                </div>
+                <div class="ls-view-stat">
+                    <div class="ls-view-stat-val" style="color:#0284c7;font-size:.82rem;" id="lsViewYearLevel">—</div>
+                    <div class="ls-view-stat-lbl">Year Level</div>
+                </div>
+            </div>
+            <div class="ls-view-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="ls-detail-label">Semester</div>
+                        <div class="ls-detail-value" id="lsViewSemester">—</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="ls-detail-label">Department</div>
+                        <div class="ls-detail-value" id="lsViewDept">—</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="ls-detail-label">Schedule/Time</div>
+                        <div class="ls-detail-value" id="lsViewSchedule">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top px-4 py-2" style="background:#f8fafc;">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* Header */
+.ls-header{border-radius:14px;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.ls-header-inner{padding:22px 26px 18px;}
+.ls-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.ls-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.ls-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.ls-stat{flex:1;text-align:center;}
+.ls-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.ls-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.ls-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.ls-val-accent{color:#34d399!important;}
+
+/* Toolbar */
+.ls-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:10px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.ls-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ls-filter-label{font-size:.78rem;font-weight:600;color:#6b7280;white-space:nowrap;display:flex;align-items:center;}
+.ls-sem-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.ls-sem-pill{border:none;background:#f1f5f9;color:#64748b;padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.ls-sem-pill:hover{background:#e2e8f0;color:#334155;}
+.ls-sem-pill.active{background:var(--norsu-blue,#1a56db);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,.25);}
+.ls-search-wrap{position:relative;min-width:200px;max-width:280px;}
+.ls-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.ls-search{width:100%;border:1px solid #e5e7eb;border-radius:20px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.ls-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+
+/* Table */
+.ls-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.ls-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.ls-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.ls-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.ls-table thead th .ls-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.ls-table thead th .ls-sort-label:hover{color:#1e40af;}
+.ls-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
+.ls-table thead th .ls-sort-label:hover .ls-sort-icon{opacity:.7;}
+.ls-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.ls-table tbody tr:last-child{border-bottom:none;}
+.ls-table tbody tr:hover{background:#f8faff;}
+.ls-table tbody td{padding:10px 14px;vertical-align:middle;}
+
+/* Code cell */
+.ls-code-cell{display:flex;align-items:center;gap:10px;}
+.ls-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e40af;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.ls-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+
+.ls-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
+
+/* Pills */
+.ls-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.ls-pill-sem{background:#ecfdf5;color:#059669;}
+.ls-pill-term{background:#fef3c7;color:#b45309;}
+.ls-pill-yl{background:#eef2ff;color:#4338ca;}
+.ls-pill-section{background:#f0fdf4;color:#166534;}\n.ls-pill-sched{background:#fff7ed;color:#c2410c;}
+
+.ls-text-muted{color:#64748b;font-size:.78rem;}
+.ls-empty{color:#cbd5e1;font-size:.78rem;}
+
+/* Badges */
+.ls-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
+.ls-dept-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#6366f1;background:#eef2ff;padding:3px 10px;border-radius:6px;}
+
+/* Actions (hidden) */
+.ls-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
+.ls-action-view{color:#059669;}
+.ls-action-view:hover{background:#ecfdf5;color:#047857;transform:scale(1.1);}
+
+.ls-th-actions{text-align:center;width:60px;}
+
+/* Empty */
+.ls-empty-state{padding:20px 0;}
+.ls-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+.ls-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #f1f5f9;}
+.ls-no-results i{font-size:1rem;opacity:.5;}
+
+/* View Modal */
+.ls-view-header{position:relative;padding:22px 26px;background:linear-gradient(135deg,#0f172a 0%,#1e40af 50%,#3b82f6 100%);color:#fff;}
+.ls-view-header-decor{position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;}
+.ls-view-avatar{width:48px;height:48px;min-width:48px;border-radius:13px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:.92rem;font-weight:800;color:#fff;}
+.ls-view-code{font-size:.76rem;font-weight:700;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);padding:3px 12px;border-radius:6px;}
+.ls-view-stats-strip{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #f1f5f9;}
+.ls-view-stat{text-align:center;padding:14px 8px;border-right:1px solid #f1f5f9;}
+.ls-view-stat:last-child{border-right:0;}
+.ls-view-stat-val{font-size:1.2rem;font-weight:800;line-height:1.2;}
+.ls-view-stat-lbl{font-size:.58rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
+.ls-view-body{padding:20px 24px;}
+.ls-detail-label{font-size:.6rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
+.ls-detail-value{font-size:.85rem;font-weight:600;color:#1e293b;}
+
+/* Print Button */
+.ls-print-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.14);backdrop-filter:blur(4px);color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 18px;border-radius:10px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.ls-print-btn:hover{background:rgba(255,255,255,.22);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15);}
+.ls-print-btn:active{transform:translateY(0);}
+
+/* Responsive */
+@media(max-width:768px){
+    .ls-stats-row{flex-wrap:wrap;gap:8px;}
+    .ls-stat{min-width:45%;}
+    .ls-stat-divider{display:none;}
+    .ls-table{font-size:.75rem;}
+    .ls-table thead th{padding:8px 10px;font-size:.62rem;}
+    .ls-table tbody td{padding:8px 10px;}
+}
+
+/* Previous Load Card */
+.ls-prev-load-card{background:#fff;border:1px solid #e0e7ff;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(99,102,241,.06);}
+.ls-prev-load-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 20px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-bottom:1px solid #e0e7ff;user-select:none;}
+.ls-prev-icon{width:36px;height:36px;border-radius:10px;background:#c7d2fe;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.ls-restore-btn{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none;padding:8px 20px;border-radius:10px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .18s ease;box-shadow:0 2px 8px rgba(99,102,241,.25);}
+.ls-restore-btn:hover{background:linear-gradient(135deg,#4338ca,#4f46e5);transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.35);}
+.ls-restore-btn:active{transform:translateY(0);}
+.ls-prev-load-body{padding:0;}
+.ls-prev-collapsible{overflow:hidden;transition:max-height .25s ease;}
+.ls-prev-chevron{font-size:.9rem;color:#64748b;transition:transform .25s ease;}
+.ls-prev-chevron.open{transform:rotate(180deg);}
+.ls-prev-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.ls-prev-table thead{background:#f8fafc;border-bottom:1px solid #e5e7eb;}
+.ls-prev-table th{padding:8px 14px;font-size:.68rem;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;}
+.ls-prev-table td{padding:8px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.ls-prev-table tbody tr:last-child td{border-bottom:none;}
+.ls-prev-table tbody tr:hover{background:#fafaff;}
+
+/* Past Academic Year cards */
+.ls-past-ay-card{border-color:#fde68a;}
+.ls-past-ay-header{background:linear-gradient(135deg,#fffbeb,#fef3c7)!important;border-bottom-color:#fde68a!important;}
+.ls-past-icon{background:#fde68a!important;color:#b45309!important;}
+.ls-restore-past{background:linear-gradient(135deg,#d97706,#f59e0b)!important;box-shadow:0 2px 8px rgba(217,119,6,.25)!important;}
+.ls-restore-past:hover{background:linear-gradient(135deg,#b45309,#d97706)!important;box-shadow:0 4px 12px rgba(217,119,6,.35)!important;}
+
+/* Animations */
+.ls-header,.ls-toolbar,.ls-table-wrap,.ls-prev-load-card{animation:lsFadeIn .25s ease;}
+@keyframes lsFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.ls-row{animation:lsRowIn .2s ease backwards;}
+@keyframes lsRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+
+/* ═══════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════ */
+@media print {
+    /* Hide everything except our content */
+    body * { visibility: hidden !important; }
+    #printArea, #printArea * { visibility: visible !important; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+
+    /* Hide sidebar, toolbar, modals, buttons, non-print elements */
+    .sidebar, .navbar, .ls-toolbar, .ls-print-btn, .ls-action-btn,
+    .ls-td-actions, .ls-th-actions, .modal, .modal-backdrop,
+    .welcome-banner, .ls-no-results, footer { display: none !important; }
+
+    /* Print header */
+    .print-header { display: block !important; text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #1e40af; }
+    .print-header h3 { font-size: 16pt; font-weight: 700; color: #1e40af; margin: 0 0 4px; }
+    .print-header p { font-size: 9pt; color: #475569; margin: 0; }
+
+    /* Print stats row */
+    .print-stats { display: flex !important; justify-content: center; gap: 24px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
+    .print-stat { text-align: center; }
+    .print-stat-val { font-size: 14pt; font-weight: 800; color: #1e40af; }
+    .print-stat-lbl { font-size: 7pt; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+
+    /* Table print styles */
+    .print-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+    .print-table th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        padding: 8px 10px; font-size: 7.5pt; font-weight: 700; color: #334155; text-transform: uppercase;
+        letter-spacing: .5px; border-bottom: 2px solid #cbd5e1; text-align: left; }
+    .print-table td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; color: #1e293b; vertical-align: middle; }
+    .print-table tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .print-table .print-code { font-family: 'Consolas', 'Courier New', monospace; font-weight: 700; color: #1e40af; }
+    .print-table .print-units { text-align: center; font-weight: 700; }
+
+    /* Footer */
+    .print-footer { display: block !important; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0;
+        font-size: 7.5pt; color: #94a3b8; text-align: center; }
+
+    /* Page settings */
+    @page { size: landscape; margin: 15mm 12mm; }
+}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+/* ── Toggle previous load sections ── */
+function togglePrevLoad(id) {
+    var body = document.getElementById(id);
+    var chevron = document.getElementById('prevChevron' + id);
+    if (!body) return;
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        if (chevron) chevron.classList.add('open');
+    } else {
+        body.style.display = 'none';
+        if (chevron) chevron.classList.remove('open');
+    }
+}
+
+/* ── Client-side search + semester filter ── */
+var lsActiveSem = 'all';
+
+function lsSemFilter(btn) {
+    document.querySelectorAll('.ls-sem-pill').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    lsActiveSem = btn.getAttribute('data-sem');
+    lsFilter();
+}
+
+function lsFilter() {
+    var q = document.getElementById('lsSearchInput').value.toLowerCase();
+    var rows = document.querySelectorAll('#lsTableBody .ls-row');
+    var count = 0;
+    rows.forEach(function(r) {
+        var matchSearch = (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+        var matchSem = lsActiveSem === 'all' || (r.getAttribute('data-semester') || '') === lsActiveSem;
+        var show = matchSearch && matchSem;
+        r.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('lsNoResults').style.display = count === 0 ? '' : 'none';
+}
+
+var lsSortState = {};
+function lsSort(col) {
+    var tbody = document.getElementById('lsTableBody');
+    var rows = Array.from(tbody.querySelectorAll('.ls-row'));
+    var asc = lsSortState[col] !== 'asc';
+    lsSortState = {};
+    lsSortState[col] = asc ? 'asc' : 'desc';
+
+    document.querySelectorAll('.ls-sort-icon').forEach(function(ic) {
+        ic.className = 'bi bi-arrow-down-up ls-sort-icon';
+        ic.style.opacity = '.35';
+    });
+    var activeIcon = document.querySelector('.ls-sort-icon[data-col="' + col + '"]');
+    if (activeIcon) {
+        activeIcon.className = 'bi ls-sort-icon ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down');
+        activeIcon.style.opacity = '1';
+    }
+
+    rows.sort(function(a, b) {
+        var va = a.getAttribute('data-sort-' + col) || '';
+        var vb = b.getAttribute('data-sort-' + col) || '';
+        if (col === 'units') {
+            va = parseFloat(va) || 0;
+            vb = parseFloat(vb) || 0;
+            return asc ? va - vb : vb - va;
+        }
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+function lsViewDetail(btn) {
+    var row = btn.closest('.ls-row');
+    if (!row) return;
+    document.getElementById('lsViewAvatar').textContent = row.getAttribute('data-view-code').slice(0,2).toUpperCase();
+    document.getElementById('lsViewCode').textContent = row.getAttribute('data-view-code');
+    document.getElementById('lsViewName').textContent = row.getAttribute('data-view-name');
+    document.getElementById('lsViewUnits').textContent = row.getAttribute('data-view-units');
+    document.getElementById('lsViewSection').textContent = row.getAttribute('data-view-section');
+    document.getElementById('lsViewYearLevel').textContent = row.getAttribute('data-view-yearlevel');
+    document.getElementById('lsViewSemester').textContent = row.getAttribute('data-view-semester');
+    document.getElementById('lsViewDept').textContent = row.getAttribute('data-view-department');
+    document.getElementById('lsViewSchedule').textContent = row.getAttribute('data-view-schedule');
+    new bootstrap.Modal(document.getElementById('lsViewModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.ls-row').forEach(function(r, i) {
+        r.style.animationDelay = (i * 0.03) + 's';
+    });
+});
+
+/* ── Print Loaded Subjects ── */
+function lsPrint() {
+    // Build a clean printable area
+    var old = document.getElementById('printArea');
+    if (old) old.remove();
+
+    var printDiv = document.createElement('div');
+    printDiv.id = 'printArea';
+
+    // Header
+    var userName = '{{ app.user.firstName }} {{ app.user.lastName }}';
+    var deptName = '{{ app.user.department ? app.user.department.departmentName : "" }}';
+    printDiv.innerHTML = '<div class="print-header">' +
+        '<h3>Teaching Subjects</h3>' +
+        '<p>' + userName + (deptName ? ' — ' + deptName : '') + '</p>' +
+        '<p style="font-size:7.5pt;color:#94a3b8;margin-top:4px;">Generated on ' + new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) + '</p>' +
+    '</div>';
+
+    // Stats
+    printDiv.innerHTML += '<div class="print-stats">' +
+        '<div class="print-stat"><div class="print-stat-val">{{ totalSubjects }}</div><div class="print-stat-lbl">Total Subjects</div></div>' +
+        '<div class="print-stat"><div class="print-stat-val">{{ totalUnits }}</div><div class="print-stat-lbl">Total Units</div></div>' +
+        '<div class="print-stat"><div class="print-stat-val">{{ totalSections }}</div><div class="print-stat-lbl">Sections</div></div>' +
+    '</div>';
+
+    // Build table from visible rows
+    var table = '<table class="print-table"><thead><tr>' +
+        '<th style="width:5%">#</th>' +
+        '<th style="width:10%">Code</th>' +
+        '<th>Subject Name</th>' +
+        '<th style="width:8%">Semester</th>' +
+        '<th style="width:5%">Units</th>' +
+        '<th style="width:7%">Year Level</th>' +
+        '<th style="width:7%">Section</th>' +
+        '<th style="width:8%">Schedule/Time</th>' +
+        '<th style="width:10%">Department</th>' +
+        '</tr></thead><tbody>';
+
+    var rows = document.querySelectorAll('#lsTableBody .ls-row');
+    var idx = 0;
+    rows.forEach(function(r) {
+        if (r.style.display === 'none') return; // skip filtered out
+        idx++;
+        table += '<tr>' +
+            '<td>' + idx + '</td>' +
+            '<td class="print-code">' + (r.getAttribute('data-view-code') || '') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-name') || '') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-semester') || '—') + '</td>' +
+            '<td class="print-units">' + (r.getAttribute('data-view-units') || '—') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-yearlevel') || '—') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-section') || '—') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-schedule') || '—') + '</td>' +
+            '<td>' + (r.getAttribute('data-view-department') || '—') + '</td>' +
+            '</tr>';
+    });
+    table += '</tbody></table>';
+    printDiv.innerHTML += table;
+
+    // Footer
+    printDiv.innerHTML += '<div class="print-footer">SET-SEF Evaluation System — Printed ' +
+        new Date().toLocaleString('en-US', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) +
+        '</div>';
+
+    // Hidden elements for screen
+    printDiv.style.display = 'none';
+    document.body.appendChild(printDiv);
+    printDiv.style.display = '';
+    window.print();
+    // Re-hide after print
+    setTimeout(function() { printDiv.style.display = 'none'; }, 500);
+}
+</script>
+{% endblock %}

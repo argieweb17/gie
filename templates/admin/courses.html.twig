@@ -1,0 +1,305 @@
+{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}Courses | SET-SEF Evaluation{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   COMPUTE STATS
+   ═══════════════════════════════════════ #}
+{% set totalCourses = courses|length %}
+{% set totalStudents = 0 %}
+{% for c in courses %}
+    {% set totalStudents = totalStudents + c.users|length %}
+{% endfor %}
+
+{# ═══════════════════════════════════════
+   PROFESSIONAL HEADER
+   ═══════════════════════════════════════ #}
+<div class="cr-header">
+    <div class="cr-header-inner">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="cr-header-icon">
+                    <i class="bi bi-journal-bookmark"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Course Management</h4>
+                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
+                        <span class="cr-meta-pill"><i class="bi bi-database me-1"></i>{{ totalCourses }} Course{{ totalCourses != 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-1">
+                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                    <i class="bi bi-plus-lg me-1"></i>Add Course
+                </button>
+            </div>
+        </div>
+        <div class="cr-stats-row">
+            <div class="cr-stat">
+                <span class="cr-stat-val">{{ totalCourses }}</span>
+                <span class="cr-stat-lbl">Total Courses</span>
+            </div>
+            <div class="cr-stat-divider"></div>
+            <div class="cr-stat">
+                <span class="cr-stat-val cr-val-success">{{ totalStudents }}</span>
+                <span class="cr-stat-lbl">Enrolled Students</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SEARCH BAR
+   ═══════════════════════════════════════ #}
+<div class="cr-toolbar">
+    <div class="cr-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="cr-search" id="crSearchInput" placeholder="Search courses..." oninput="crFilterTable()">
+    </div>
+    <div class="cr-toolbar-info">
+        <span class="cr-result-count" id="crResultCount">{{ totalCourses }} result{{ totalCourses != 1 ? 's' : '' }}</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   COURSES TABLE
+   ═══════════════════════════════════════ #}
+<div class="cr-table-wrap">
+    <table class="cr-table" id="crTable">
+        <thead>
+            <tr>
+                <th onclick="crSort('name')">
+                    <span class="cr-sort-label">Course Name <i class="bi bi-arrow-down-up cr-sort-icon" data-col="name"></i></span>
+                </th>
+                <th class="text-center" onclick="crSort('students')">
+                    <span class="cr-sort-label">Students <i class="bi bi-arrow-down-up cr-sort-icon" data-col="students"></i></span>
+                </th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="crTableBody">
+            {% for course in courses %}
+            <tr class="cr-row"
+                data-search="{{ course.courseName|lower }}"
+                data-sort-name="{{ course.courseName|lower }}"
+                data-sort-students="{{ course.users|length }}">
+                <td>
+                    <div class="cr-name-cell">
+                        <span class="cr-name-avatar">{{ course.courseName|slice(0,2)|upper }}</span>
+                        <div>
+                            <span class="cr-name-text">{{ course.courseName|upper }}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="cr-count-badge">{{ course.users|length }}</span>
+                </td>
+                <td class="text-center">
+                    <div class="cr-actions">
+                        <form method="post" action="{{ path(prefix ~ '_course_delete', {id: course.id}) }}"
+                              class="d-inline" onsubmit="return confirm('Delete this course?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_course' ~ course.id) }}">
+                            <button type="submit" class="cr-action-btn cr-action-delete" title="Delete">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" class="text-center py-5">
+                    <div class="cr-empty-state">
+                        <div class="cr-empty-icon"><i class="bi bi-journal-x"></i></div>
+                        <h6 class="fw-bold text-muted">No courses found</h6>
+                        <p class="text-muted small mb-3">Get started by adding your first course.</p>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                            <i class="bi bi-plus-lg me-1"></i>Add Course
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="crNoResults" class="cr-no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        <span>No courses match your search.</span>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   ADD COURSE MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="addCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content cr-modal-content" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path(prefix ~ '_course_create') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_course') }}">
+                <div class="cr-modal-header-gradient">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;"><i class="bi bi-journal-plus"></i></div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-white" style="font-size:1.05rem;">New Course</h5>
+                            <span style="font-size:.72rem;color:rgba(255,255,255,.65);">Enter the course abbreviation below</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" style="font-size:.7rem;" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label cr-form-label">Course Name <span class="text-danger">*</span></label>
+                            <input type="text" name="courseName" class="form-control form-control-sm" style="text-transform:uppercase" placeholder="e.g. BSIT, BSCS, BSEd" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-2" style="background:#f8fafc;">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg me-1"></i>Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   SCOPED STYLES
+   ═══════════════════════════════════════ #}
+<style>
+/* ─── Header ─── */
+.cr-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.cr-header-inner{padding:22px 26px 18px;}
+.cr-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.cr-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.cr-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.cr-stat{flex:1;text-align:center;}
+.cr-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.cr-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.cr-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.cr-val-success{color:#34d399!important;}
+
+/* ─── Toolbar ─── */
+.cr-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.cr-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
+.cr-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.cr-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.cr-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.cr-toolbar-info{margin-left:auto;}
+.cr-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
+
+/* ─── Table ─── */
+.cr-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.cr-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.cr-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.cr-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
+.cr-table thead th .cr-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
+.cr-table thead th .cr-sort-label:hover{color:#1a56db;}
+.cr-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
+.cr-table thead th .cr-sort-label:hover .cr-sort-icon{opacity:.7;}
+.cr-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.cr-table tbody tr:last-child{border-bottom:none;}
+.cr-table tbody tr:hover{background:#f8faff;}
+.cr-table tbody td{padding:10px 14px;vertical-align:middle;}
+
+/* Name cell */
+.cr-name-cell{display:flex;align-items:center;gap:10px;}
+.cr-name-avatar{width:36px;height:36px;min-width:36px;border-radius:10px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.cr-name-text{font-weight:700;color:#1e293b;font-size:.88rem;letter-spacing:.4px;}
+
+/* Count badge */
+.cr-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#ecfdf5;color:#059669;font-weight:800;font-size:.78rem;padding:0 6px;}
+
+/* Actions */
+.cr-actions{display:flex;align-items:center;gap:4px;justify-content:center;}
+.cr-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
+.cr-action-delete{color:#ef4444;}
+.cr-action-delete:hover{background:#fef2f2;color:#dc2626;transform:scale(1.1);}
+
+/* Empty / No results */
+.cr-empty-state{padding:20px 0;}
+.cr-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+.cr-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid #f1f5f9;}
+.cr-no-results i{font-size:1rem;opacity:.5;}
+
+/* ─── Modals ─── */
+.cr-modal-content{border:none;box-shadow:0 24px 48px rgba(0,0,0,.12);}
+.cr-modal-header-gradient{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg,#0f172a 0%,#1a56db 60%,#3b82f6 100%);color:#fff;}
+.cr-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
+
+/* ─── Responsive ─── */
+@media(max-width:768px){
+    .cr-stats-row{flex-wrap:wrap;gap:8px;}
+    .cr-stat{min-width:45%;}
+    .cr-stat-divider{display:none;}
+    .cr-toolbar{flex-direction:column;align-items:stretch;}
+    .cr-search-wrap{max-width:100%;}
+    .cr-table{font-size:.75rem;}
+    .cr-table thead th{padding:8px 10px;font-size:.62rem;}
+    .cr-table tbody td{padding:8px 10px;}
+}
+
+/* Animations */
+.cr-header,.cr-toolbar,.cr-table-wrap{animation:crFadeIn .25s ease;}
+@keyframes crFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.cr-row{animation:crRowIn .2s ease backwards;}
+@keyframes crRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+</style>
+
+{# ═══════════════════════════════════════
+   JAVASCRIPT
+   ═══════════════════════════════════════ #}
+<script>
+function crFilterTable() {
+    var q = document.getElementById('crSearchInput').value.toLowerCase();
+    var rows = document.querySelectorAll('#crTableBody .cr-row');
+    var count = 0;
+    rows.forEach(function(r) {
+        var match = (r.getAttribute('data-search') || '').indexOf(q) !== -1;
+        r.style.display = match ? '' : 'none';
+        if (match) count++;
+    });
+    document.getElementById('crResultCount').textContent = count + ' result' + (count !== 1 ? 's' : '');
+    document.getElementById('crNoResults').style.display = count === 0 && q.length > 0 ? '' : 'none';
+}
+
+var crSortState = {};
+function crSort(col) {
+    var tbody = document.getElementById('crTableBody');
+    var rows = Array.from(tbody.querySelectorAll('.cr-row'));
+    var asc = crSortState[col] !== 'asc';
+    crSortState = {};
+    crSortState[col] = asc ? 'asc' : 'desc';
+
+    document.querySelectorAll('.cr-sort-icon').forEach(function(ic) {
+        ic.className = 'bi bi-arrow-down-up cr-sort-icon';
+        ic.style.opacity = '.35';
+    });
+    var activeIcon = document.querySelector('.cr-sort-icon[data-col="' + col + '"]');
+    if (activeIcon) {
+        activeIcon.className = 'bi cr-sort-icon ' + (asc ? 'bi-arrow-up' : 'bi-arrow-down');
+        activeIcon.style.opacity = '1';
+    }
+
+    rows.sort(function(a, b) {
+        var va = a.getAttribute('data-sort-' + col) || '';
+        var vb = b.getAttribute('data-sort-' + col) || '';
+        if (col === 'students') {
+            va = parseInt(va) || 0;
+            vb = parseInt(vb) || 0;
+            return asc ? va - vb : vb - va;
+        }
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.cr-row').forEach(function(r, i) {
+        r.style.animationDelay = (i * 0.03) + 's';
+    });
+});
+</script>
+{% endblock %}

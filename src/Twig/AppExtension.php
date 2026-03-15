@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Twig;
+
+use App\Repository\AcademicYearRepository;
+use App\Repository\AuditLogRepository;
+use App\Repository\CurriculumRepository;
+use App\Repository\EvaluationMessageRepository;
+use App\Repository\EvaluationPeriodRepository;
+use App\Repository\QuestionRepository;
+use App\Repository\SubjectRepository;
+use App\Repository\UserRepository;
+use Symfony\Bundle\SecurityBundle\Security;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
+
+class AppExtension extends AbstractExtension
+{
+    private ?array $cachedCounts = null;
+
+    public function __construct(
+        private Security $security,
+        private SubjectRepository $subjectRepo,
+        private UserRepository $userRepo,
+        private CurriculumRepository $curriculumRepo,
+        private AcademicYearRepository $academicYearRepo,
+        private EvaluationPeriodRepository $evalPeriodRepo,
+        private QuestionRepository $questionRepo,
+        private AuditLogRepository $auditLogRepo,
+        private EvaluationMessageRepository $evalMessageRepo,
+    ) {}
+
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('faculty_subjects', [$this, 'getFacultySubjects']),
+            new TwigFunction('sidebar_counts', [$this, 'getSidebarCounts']),
+            new TwigFunction('current_academic_year', [$this, 'getCurrentAcademicYear']),
+        ];
+    }
+
+    public function getCurrentAcademicYear(): ?array
+    {
+        $ay = $this->academicYearRepo->findCurrent();
+        if (!$ay) {
+            return null;
+        }
+        $label = $ay->getYearLabel();
+        if ($ay->getSemester()) {
+            $label .= ' · ' . $ay->getSemester();
+        }
+        return [
+            'id' => $ay->getId(),
+            'label' => $label,
+            'yearLabel' => $ay->getYearLabel(),
+            'semester' => $ay->getSemester(),
+        ];
+    }
+
+    public function getSidebarCounts(): array
+    {
+        if ($this->cachedCounts !== null) {
+            return $this->cachedCounts;
+        }
+
+        $allUsers = $this->userRepo->findAll();
+
+        $students = 0;
+        $faculty = 0;
+        $staff = 0;
+        $superiors = 0;
+        $admins = 0;
+
+        foreach ($allUsers as $u) {
+            $roles = $u->getRoles();
+            if (in_array('ROLE_ADMIN', $roles)) {
+                $admins++;
+            } elseif (in_array('ROLE_SUPERIOR', $roles)) {
+                $superiors++;
+            } elseif (in_array('ROLE_FACULTY', $roles)) {
+                $faculty++;
+            } elseif (in_array('ROLE_STAFF', $roles)) {
+                $staff++;
+            } else {
+                $students++;
+            }
+        }
+
+        $this->cachedCounts = [
+            'users' => count($allUsers),
+            'students' => $students,
+            'faculty' => $faculty,
+            'staff' => $staff,
+            'superiors' => $superiors,
+            'admins' => $admins,
+            'curricula' => count($this->curriculumRepo->findAll()),
+            'subjects' => count($this->subjectRepo->findAll()),
+            'academic_years' => count($this->academicYearRepo->findAll()),
+            'eval_periods' => count($this->evalPeriodRepo->findAll()),
+            'questions' => count($this->questionRepo->findAll()),
+            'audit_logs' => count($this->auditLogRepo->findAll()),
+            'faculty_messages' => $this->evalMessageRepo->countPending(),
+        ];
+
+        return $this->cachedCounts;
+    }
+
+    /**
+     * Returns subjects assigned to the currently logged-in faculty user.
+     */
+    public function getFacultySubjects(): array
+    {
+        /** @var \App\Entity\User|null $user */
+        $user = $this->security->getUser();
+        if (!$user || !in_array('ROLE_FACULTY', $user->getRoles())) {
+            return [];
+        }
+
+        return $this->subjectRepo->findByFaculty($user->getId());
+    }
+}
