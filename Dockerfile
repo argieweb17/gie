@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -24,6 +24,17 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     intl \
     opcache
 
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Set document root to Symfony's public directory
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Allow .htaccess overrides
+RUN sed -ri -e 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -44,10 +55,14 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 COPY . .
 
 # Run Symfony scripts
+ENV APP_ENV=prod
 RUN composer run-script post-install-cmd
 
 # Set permissions
-RUN chown -R www-data:www-data var/
+RUN chown -R www-data:www-data var/ public/
 
-EXPOSE 9000
-CMD ["php-fpm"]
+# Railway sets PORT dynamically — make Apache listen on it
+RUN sed -ri -e 's/80/${PORT}/g' /etc/apache2/sites-available/*.conf /etc/apache2/ports.conf
+
+EXPOSE ${PORT}
+CMD ["apache2-foreground"]
