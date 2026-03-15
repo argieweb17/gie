@@ -15,9 +15,13 @@ sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-a
 mkdir -p /var/www/html/var/cache /var/www/html/var/log
 chown -R www-data:www-data /var/www/html/var
 
-# Warm Symfony cache
-php /var/www/html/bin/console cache:clear --env=prod --no-debug 2>/dev/null || true
-php /var/www/html/bin/console cache:warmup --env=prod --no-debug 2>/dev/null || true
+# Warm Symfony cache (don't suppress errors so we can debug)
+php /var/www/html/bin/console cache:clear --env=prod --no-debug || echo "WARNING: cache:clear failed"
+php /var/www/html/bin/console cache:warmup --env=prod --no-debug || echo "WARNING: cache:warmup failed"
+
+# Run database migrations
+php /var/www/html/bin/console doctrine:migrations:migrate --no-interaction --env=prod --allow-no-migration || echo "WARNING: migrations failed"
+
 chown -R www-data:www-data /var/www/html/var
 
 # Verify Apache config before starting
