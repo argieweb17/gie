@@ -58,13 +58,14 @@ COPY . .
 # Create var directories (excluded by .dockerignore)
 RUN mkdir -p var/cache var/log var/share
 
-# Run Symfony scripts (use a dummy DATABASE_URL at build time only)
+# Run Symfony scripts (force dummy DATABASE_URL at build — real DB is only available at runtime)
 ENV APP_ENV=prod
-ARG DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy?serverVersion=8.0.32&charset=utf8mb4"
-RUN DATABASE_URL="${DATABASE_URL}" composer run-script post-install-cmd
+RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy?serverVersion=8.0.32&charset=utf8mb4" \
+    composer run-script post-install-cmd
 
 # Compile assets for production (AssetMapper)
-RUN DATABASE_URL="${DATABASE_URL}" php bin/console asset-map:compile --env=prod
+RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy?serverVersion=8.0.32&charset=utf8mb4" \
+    php bin/console asset-map:compile --env=prod
 
 # Set permissions
 RUN chown -R www-data:www-data var/ public/
