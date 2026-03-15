@@ -1,6 +1,18 @@
 #!/bin/bash
-# Replace Apache's listen port with Railway's PORT at runtime
+set -e
+
+# Configure Apache port from Railway's PORT env var
 PORT="${PORT:-80}"
 sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
-sed -i "s/:80/:${PORT}/" /etc/apache2/sites-available/*.conf
+sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/*.conf
+
+# Ensure var directory is writable
+mkdir -p /var/www/html/var/cache /var/www/html/var/log
+chown -R www-data:www-data /var/www/html/var
+
+# Warm Symfony cache
+php /var/www/html/bin/console cache:clear --env=prod --no-debug 2>/dev/null || true
+php /var/www/html/bin/console cache:warmup --env=prod --no-debug 2>/dev/null || true
+chown -R www-data:www-data /var/www/html/var
+
 exec apache2-foreground
