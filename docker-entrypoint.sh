@@ -28,6 +28,7 @@ php /var/www/html/bin/console cache:warmup --env=prod --no-debug || echo "WARNIN
 echo "=== Updating database schema ==="
 php /var/www/html/bin/console doctrine:schema:update --force --env=prod --no-interaction || echo "WARNING: schema update failed"
 php /var/www/html/bin/console doctrine:migrations:migrate --no-interaction --env=prod --allow-no-migration || echo "WARNING: migrations failed"
+php /var/www/html/bin/console app:seed-departments --env=prod || echo "WARNING: department seeding failed"
 echo "==================================="
 
 chown -R www-data:www-data /var/www/html/var
