@@ -55,8 +55,8 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy the rest of the application
 COPY . .
 
-# Create var directory (excluded by .dockerignore)
-RUN mkdir -p var/cache var/log
+# Create var directories (excluded by .dockerignore)
+RUN mkdir -p var/cache var/log var/share
 
 # Run Symfony scripts (use a dummy DATABASE_URL at build time only)
 ENV APP_ENV=prod
