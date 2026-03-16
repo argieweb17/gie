@@ -36,6 +36,9 @@
                     </div>
                 </div>
             </div>
+            <button type="button" class="btn btn-sm text-white fw-bold rounded-pill px-3" style="background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);font-size:.78rem;" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <i class="bi bi-plus-circle-fill me-1"></i>Add Subject
+            </button>
         </div>
         <div class="sb-stats-row">
             <div class="sb-stat">
@@ -149,7 +152,8 @@
                 <tbody>
                     {% for subject in dept.subjects %}
                     {% set isLoaded = subject.id in loadedSubjectIds %}
-                    <tr class="sb-row {% if isLoaded %}is-loaded{% endif %}"
+                    {% set otherFaculty = subjectFacultyMap[subject.id] | default(null) %}
+                    <tr class="sb-row {% if otherFaculty and not isLoaded %} is-other-loaded{% endif %}"
                         data-subject-id="{{ subject.id }}"
                         data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }}"
                         data-yearlevel="{{ subject.yearLevel|default('')|lower }}">
@@ -181,17 +185,19 @@
                             <span class="sb-units-badge">{{ subject.units ?? '—' }}</span>
                         </td>
                         <td class="sb-td-section">
-                            <input type="text" name="subject_sections[{{ subject.id }}]" 
-                                   value="{{ subject.section ?? '' }}" 
-                                   class="sb-inline-input sb-section-input" 
+                            {% set mySection = fslDataMap[subject.id].section | default(null) %}
+                            <input type="text" name="subject_sections[{{ subject.id }}]"
+                                   value="{{ mySection is not null ? mySection : (subject.section ?? '') }}"
+                                   class="sb-inline-input sb-section-input"
                                    placeholder="e.g. A"
                                    title="Section"
                                    data-subject-id="{{ subject.id }}"
                                    style="text-transform:uppercase;">
                         </td>
                         <td class="sb-td-schedule">
-                            <select name="subject_schedules[{{ subject.id }}]" 
-                                    class="sb-inline-select" 
+                            {% set mySchedule = fslDataMap[subject.id].schedule | default(null) %}
+                            <select name="subject_schedules[{{ subject.id }}]"
+                                    class="sb-inline-select"
                                     title="Schedule/Time">
                                 <option value="">— Select —</option>
                                 {% set schedOpts = [
@@ -204,14 +210,15 @@
                                     'TH 7:00 - 8:30 AM','TH 8:30 - 10:00 AM','TH 10:00 - 11:30 AM','TH 11:30 - 1:00 PM','TH 1:00 - 2:30 PM','TH 2:30 - 4:00 PM','TH 4:00 - 5:30 PM','TH 5:30 - 7:00 PM','TH 7:00 - 8:30 PM','TH 8:30 - 10:00 PM',
                                     'F 7:00 - 8:00 AM','F 8:00 - 9:00 AM','F 9:00 - 10:00 AM','F 10:00 - 11:00 AM','F 11:00 - 12:00 PM','F 12:00 - 1:00 PM','F 1:00 - 2:00 PM','F 2:00 - 3:00 PM','F 3:00 - 4:00 PM','F 4:00 - 5:00 PM','F 5:00 - 6:00 PM','F 6:00 - 7:00 PM','F 7:00 - 8:00 PM','F 8:00 - 9:00 PM'
                                 ] %}
+                                {% set currentSchedule = mySchedule is not null ? mySchedule : (subject.schedule ?? '') %}
                                 {% for opt in schedOpts %}
-                                    <option value="{{ opt }}" {% if (subject.schedule ?? '') == opt %}selected{% endif %}>{{ opt }}</option>
+                                    <option value="{{ opt }}" {% if currentSchedule == opt %}selected{% endif %}>{{ opt }}</option>
                                 {% endfor %}
                             </select>
                         </td>
                         <td class="sb-td-status">
-                            {% if isLoaded %}
-                                <span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded</span>
+                            {% if otherFaculty %}
+                                <span class="sb-status-badge other-loaded" title="Loaded by {{ otherFaculty }}"><i class="bi bi-person-fill"></i> {{ otherFaculty }}</span>
                             {% else %}
                                 <span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>
                             {% endif %}
@@ -333,7 +340,7 @@
 .sb-th-units{width:80px;text-align:center!important;}
 .sb-th-section{width:110px;}
 .sb-th-schedule{width:180px;}
-.sb-th-status{width:110px;text-align:center!important;}
+.sb-th-status{width:140px;text-align:center!important;}
 
 .sb-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
 .sb-table tbody tr:last-child{border-bottom:none;}
@@ -366,33 +373,27 @@
 .sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;}
 .sb-inline-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
 .sb-inline-input::placeholder{color:#cbd5e1;font-size:.72rem;}
-.sb-row.is-loaded .sb-inline-input{background:#ecfdf5;border-color:#bbf7d0;}
-.sb-row.is-loaded .sb-inline-input:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1);background:#fff;}
 .sb-inline-select{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.72rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;cursor:pointer;appearance:auto;}
 .sb-inline-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
-.sb-row.is-loaded .sb-inline-select{background:#ecfdf5;border-color:#bbf7d0;}
-.sb-row.is-loaded .sb-inline-select:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1);background:#fff;}
 .sb-td-section{width:110px;}
 .sb-td-schedule{width:180px;}
 
 /* Status badges */
 .sb-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;}
-.sb-status-badge.loaded{background:#DCFCE7;color:#059669;}
-.sb-status-badge.loaded i{font-size:.55rem;}
 .sb-status-badge.available{background:#F1F5F9;color:#94a3b8;}
 .sb-status-badge.available i{font-size:.4rem;}
+.sb-status-badge.other-loaded{background:#FEF3C7;color:#92400e;font-size:.6rem;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-status-badge.other-loaded i{font-size:.55rem;}
 
 /* Row states */
-.sb-row.is-loaded{background:#F0FDF4;}
-.sb-row.is-loaded:hover{background:#ECFDF5;}
-.sb-row.is-loaded .sb-code-avatar{background:linear-gradient(135deg,#BBF7D0,#86EFAC);color:#166534;}
-.sb-row.is-loaded .sb-code-text{background:#DCFCE7;border-color:#BBF7D0;color:#059669;}
+.sb-row.is-other-loaded{background:#FFFBEB;}
+.sb-row.is-other-loaded:hover{background:#FEF3C7;}
+.sb-row.is-other-loaded .sb-code-avatar{background:linear-gradient(135deg,#FDE68A,#FCD34D);color:#92400e;}
+.sb-row.is-other-loaded .sb-code-text{background:#FEF3C7;border-color:#FDE68A;color:#92400e;}
 
 /* Zebra stripe */
 .sb-table tbody tr:nth-child(even){background:#fafbfc;}
 .sb-table tbody tr:nth-child(even):hover{background:#f8faff;}
-.sb-row.is-loaded:nth-child(even){background:#ECFDF5;}
-.sb-row.is-loaded:nth-child(even):hover{background:#D1FAE5;}
 
 /* Empty states */
 .sb-empty-state-wrap{text-align:center;padding:56px 24px;}
@@ -591,5 +592,88 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+{# ── Add Subject Modal ── #}
+<div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path('faculty_subject_create') }}" data-turbo="false">
+                <input type="hidden" name="_token" value="{{ csrf_token('faculty_create_subject') }}">
+                <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#1E3A8A,#1E40AF);padding:20px 24px 16px;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(255,255,255,.15);">
+                            <i class="bi bi-plus-circle-fill text-white"></i>
+                        </div>
+                        <h6 class="fw-bold text-white mb-0" style="font-size:.95rem;">Add New Subject</h6>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding:20px 24px;">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectCode" class="form-control form-control-sm" placeholder="e.g. CS 101" required style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Subject Name <span class="text-danger">*</span></label>
+                            <input type="text" name="subjectName" class="form-control form-control-sm" placeholder="e.g. Introduction to Computing" required style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Department</label>
+                            <select name="department" class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
+                                <option value="">— Select —</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if facultyDept and dept.id == facultyDept.id %}selected{% endif %}>{{ dept.departmentName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Units</label>
+                            <input type="number" name="units" class="form-control form-control-sm" min="0" max="12" placeholder="3" style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Year Level</label>
+                            <select name="yearLevel" class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
+                                <option value="">— Select —</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Semester</label>
+                            <select name="semester" class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
+                                <option value="">— Select —</option>
+                                {% for sem in semesters %}
+                                    <option value="{{ sem }}" {% if selectedSemester == sem %}selected{% endif %}>{{ sem }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Section</label>
+                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. A" style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Room</label>
+                            <input type="text" name="room" class="form-control form-control-sm" placeholder="e.g. Room 301" style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Schedule</label>
+                            <input type="text" name="schedule" class="form-control form-control-sm" placeholder="e.g. MWF 9:00-10:00 AM" style="border-radius:8px;font-size:.82rem;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0" style="padding:0 24px 20px;">
+                    <button type="button" class="btn btn-sm btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="font-size:.78rem;">Cancel</button>
+                    <button type="submit" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:linear-gradient(135deg,#059669,#10b981);">
+                        <i class="bi bi-check-circle-fill me-1"></i>Create Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </div>{# /.sb-animate #}
 {% endblock %}

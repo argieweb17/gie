@@ -186,14 +186,22 @@ class ReportController extends AbstractController
             $evaluatorCounts[$epId] = ($evaluatorCounts[$epId] ?? 0) + $cnt;
         }
 
+        $facultyUsers = $userRepo->createQueryBuilder('u')->andWhere("u.roles LIKE :role")->andWhere("u.roles NOT LIKE :superior")->setParameter('role', '%ROLE_FACULTY%')->setParameter('superior', '%ROLE_SUPERIOR%')->orderBy('u.lastName', 'ASC')->getQuery()->getResult();
+
+        $facultyPositionMap = [];
+        foreach ($facultyUsers as $fu) {
+            $facultyPositionMap[$fu->getFullName()] = $fu->getEmploymentStatus() ?? '';
+        }
+
         return $this->render('admin/evaluations.html.twig', [
             'evaluations' => $repo->findAllOrdered(),
             'departments' => $departments,
             'colleges' => $colleges,
             'currentAY' => $ayRepo->findCurrent(),
             'academicYears' => $ayRepo->findAllOrdered(),
-            'facultyUsers' => $userRepo->createQueryBuilder('u')->andWhere("u.roles LIKE :role")->setParameter('role', '%ROLE_FACULTY%')->orderBy('u.lastName', 'ASC')->getQuery()->getResult(),
+            'facultyUsers' => $facultyUsers,
             'evaluatorCounts' => $evaluatorCounts,
+            'facultyPositionMap' => $facultyPositionMap,
             'staffMode' => true,
         ]);
     }

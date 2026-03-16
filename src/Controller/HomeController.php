@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Enrollment;
 use App\Entity\EvaluationMessage;
 use App\Entity\FacultySubjectLoad;
+use App\Entity\Subject;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
 use App\Repository\AuditLogRepository;
@@ -581,6 +582,7 @@ class HomeController extends AbstractController
         DepartmentRepository $deptRepo,
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         /** @var User $user */
@@ -599,8 +601,34 @@ class HomeController extends AbstractController
         $data = $this->buildAllDeptGroups($departments, $semesterFilter, $subjectRepo);
         $allSemesters = $subjectRepo->findDistinctSemesters();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
+
+        // Get loaded subject IDs from both Subject.faculty and FacultySubjectLoad table
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
         $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
+        $fslEntries = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        // Build per-faculty section/schedule map from FSL table
+        $fslDataMap = [];
+        foreach ($fslEntries as $fsl) {
+            $sid = $fsl->getSubject()->getId();
+            $fslDataMap[$sid] = [
+                'section' => $fsl->getSection(),
+                'schedule' => $fsl->getSchedule(),
+            ];
+            if (!in_array($sid, $loadedIds)) {
+                $loadedIds[] = $sid;
+            }
+        }
+
+        // Build map of subjectId => faculty name for subjects loaded by other faculty
+        $subjectFacultyMap = [];
+        foreach ($data['groups'] as $group) {
+            foreach ($group['subjects'] as $s) {
+                $f = $s->getFaculty();
+                if ($f && $f->getId() !== $user->getId()) {
+                    $subjectFacultyMap[$s->getId()] = $f->getFirstName() . ' ' . $f->getLastName();
+                }
+            }
+        }
 
         // Keep departments collapsed on initial load; user expands manually.
         $selectedDepartment = null;
@@ -619,6 +647,9 @@ class HomeController extends AbstractController
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
             'currentAY' => $currentAY,
+            'departments' => $departments,
+            'subjectFacultyMap' => $subjectFacultyMap,
+            'fslDataMap' => $fslDataMap,
         ]);
     }
 
@@ -634,15 +665,22 @@ class HomeController extends AbstractController
         $user = $this->getUser();
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
 
+        // Also include subjects loaded via FSL table (shared subjects owned by other faculty)
+        $currentAY = $ayRepo->findCurrent();
+        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
+        foreach ($savedLoads as $fsl) {
+            $sid = $fsl->getSubject()->getId();
+            if (!in_array($sid, $loadedIds)) {
+                $loadedSubjects[] = $fsl->getSubject();
+                $loadedIds[] = $sid;
+            }
+        }
+
         $totalUnits = 0;
         foreach ($loadedSubjects as $s) {
             $totalUnits += $s->getUnits() ?? 0;
         }
-
-        // Get saved loads from faculty_subject_load for "Previous Load" feature
-        $currentAY = $ayRepo->findCurrent();
-        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
-        $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
 
         // Only show previous loads that are NOT currently loaded (current AY)
         $previousLoads = array_filter($savedLoads, fn($fsl) => !in_array($fsl->getSubject()->getId(), $loadedIds));
@@ -750,19 +788,20 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('faculty_loaded_subjects');
         }
 
+        // Unload subjects where this user is the direct owner
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
-        $count = count($loadedSubjects);
-
         foreach ($loadedSubjects as $subject) {
             $subject->setFaculty(null);
             $subject->setSchedule(null);
             $subject->setSection(null);
         }
 
-        // Also remove all from faculty_subject_load for current AY
+        // Also remove all from faculty_subject_load for current AY (includes shared subjects)
         $currentAY = $ayRepo->findCurrent();
+        $count = count($loadedSubjects);
         if ($currentAY) {
             $loads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY->getId());
+            $count = max($count, count($loads));
             foreach ($loads as $fsl) {
                 $em->remove($fsl);
             }
@@ -793,17 +832,36 @@ class HomeController extends AbstractController
         }
 
         $subject = $subjectRepo->find($id);
-        if (!$subject || !$subject->getFaculty() || $subject->getFaculty()->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Subject not found or not assigned to you.');
+        if (!$subject) {
+            $this->addFlash('danger', 'Subject not found.');
             return $this->redirectToRoute('faculty_loaded_subjects');
         }
 
-        $subject->setFaculty(null);
-        $subject->setSchedule(null);
-        $subject->setSection(null);
-
-        // Also remove from faculty_subject_load table
+        // Check if user owns the subject directly or via FSL
         $currentAY = $ayRepo->findCurrent();
+        $isDirectOwner = $subject->getFaculty() && $subject->getFaculty()->getId() === $user->getId();
+        $fslEntries = $currentAY ? $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY->getId()) : [];
+        $hasFslEntry = false;
+        foreach ($fslEntries as $fsl) {
+            if ($fsl->getSubject()->getId() === $subject->getId()) {
+                $hasFslEntry = true;
+                break;
+            }
+        }
+
+        if (!$isDirectOwner && !$hasFslEntry) {
+            $this->addFlash('danger', 'Subject not assigned to you.');
+            return $this->redirectToRoute('faculty_loaded_subjects');
+        }
+
+        // Only clear Subject entity fields if this user is the direct owner
+        if ($isDirectOwner) {
+            $subject->setFaculty(null);
+            $subject->setSchedule(null);
+            $subject->setSection(null);
+        }
+
+        // Remove from faculty_subject_load table
         if ($currentAY) {
             $fslRepo->removeByFacultySubjectAndAcademicYear($user->getId(), $subject->getId(), $currentAY->getId());
         }
@@ -842,7 +900,10 @@ class HomeController extends AbstractController
         $unloaded = 0;
         foreach ($currentlyLoaded as $loaded) {
             if (!isset($selectedIdMap[$loaded->getId()])) {
-                $loaded->setFaculty(null);
+                // Only clear faculty if this user is the current owner
+                if ($loaded->getFaculty() && $loaded->getFaculty()->getId() === $user->getId()) {
+                    $loaded->setFaculty(null);
+                }
                 $unloaded++;
             }
         }
@@ -854,22 +915,22 @@ class HomeController extends AbstractController
         if (!is_array($sections)) $sections = [];
 
         // Assign faculty to selected subjects
-        // If a subject is already assigned to another faculty, reset that assignment first
+        // Allow multiple faculty to load the same subject
         $count = 0;
         foreach ($subjectIds as $sid) {
             $subject = $subjectRepo->find($sid);
             if ($subject) {
                 $prevFaculty = $subject->getFaculty();
-                if ($prevFaculty && $prevFaculty->getId() !== $user->getId()) {
-                    // Reset the previous faculty's assignment
-                    $subject->setFaculty(null);
-                }
-                $subject->setFaculty($user);
-                if (isset($schedules[$sid])) {
-                    $subject->setSchedule($schedules[$sid] ?: null);
-                }
-                if (isset($sections[$sid])) {
-                    $subject->setSection($sections[$sid] ?: null);
+                $isOwner = !$prevFaculty || $prevFaculty->getId() === $user->getId();
+                if ($isOwner) {
+                    $subject->setFaculty($user);
+                    // Only update subject entity section/schedule when this faculty owns it
+                    if (isset($schedules[$sid])) {
+                        $subject->setSchedule($schedules[$sid] ?: null);
+                    }
+                    if (isset($sections[$sid])) {
+                        $subject->setSection($sections[$sid] ?: null);
+                    }
                 }
                 $count++;
             }
@@ -877,6 +938,7 @@ class HomeController extends AbstractController
         $em->flush();
 
         // Persist load data to faculty_subject_load table
+        // Each faculty gets their own section/schedule stored independently
         $currentAY = $ayRepo->findCurrent();
         $fslRepo->removeByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
 
@@ -887,8 +949,8 @@ class HomeController extends AbstractController
                 $fsl->setFaculty($user);
                 $fsl->setSubject($subject);
                 $fsl->setAcademicYear($currentAY);
-                $fsl->setSection($subject->getSection());
-                $fsl->setSchedule($subject->getSchedule());
+                $fsl->setSection(isset($sections[$sid]) ? ($sections[$sid] ?: null) : $subject->getSection());
+                $fsl->setSchedule(isset($schedules[$sid]) ? ($schedules[$sid] ?: null) : $subject->getSchedule());
                 $em->persist($fsl);
             }
         }
@@ -905,6 +967,56 @@ class HomeController extends AbstractController
         return $this->redirectToRoute('faculty_subjects');
     }
 
+    #[Route('/faculty/subjects/create', name: 'faculty_subject_create', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultySubjectCreate(
+        Request $request,
+        EntityManagerInterface $em,
+        DepartmentRepository $deptRepo,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('faculty_create_subject', $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $subject = new Subject();
+        $subject->setSubjectCode($request->request->get('subjectCode', ''));
+        $subject->setSubjectName($request->request->get('subjectName', ''));
+        $subject->setSemester($request->request->get('semester'));
+        $subject->setSchoolYear($request->request->get('schoolYear'));
+        $subject->setTerm($request->request->get('term'));
+        $subject->setSection($request->request->get('section'));
+        $subject->setRoom($request->request->get('room'));
+        $subject->setSchedule($request->request->get('schedule'));
+        $subject->setFaculty($user);
+
+        $unitsVal = $request->request->get('units');
+        if ($unitsVal !== null && $unitsVal !== '') {
+            $subject->setUnits((int) $unitsVal);
+        }
+
+        $ylVal = $request->request->get('yearLevel');
+        if ($ylVal) {
+            $subject->setYearLevel($ylVal);
+        }
+
+        $deptId = $request->request->get('department');
+        if ($deptId) {
+            $subject->setDepartment($deptRepo->find($deptId));
+        } elseif ($user->getDepartment()) {
+            $subject->setDepartment($user->getDepartment());
+        }
+
+        $em->persist($subject);
+        $em->flush();
+
+        $this->addFlash('success', 'Subject "' . $subject->getSubjectCode() . '" created and added to your load.');
+        return $this->redirectToRoute('faculty_subjects');
+    }
+
     #[Route('/faculty/subjects/department/{deptId}', name: 'faculty_department_detail')]
     #[IsGranted('ROLE_FACULTY')]
     public function facultyDepartmentDetail(
@@ -912,6 +1024,8 @@ class HomeController extends AbstractController
         Request $request,
         DepartmentRepository $deptRepo,
         SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -945,6 +1059,30 @@ class HomeController extends AbstractController
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
         $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
 
+        $currentAY = $ayRepo->findCurrent();
+        $fslEntries = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        $fslDataMap = [];
+        foreach ($fslEntries as $fsl) {
+            $sid = $fsl->getSubject()->getId();
+            $fslDataMap[$sid] = [
+                'section' => $fsl->getSection(),
+                'schedule' => $fsl->getSchedule(),
+            ];
+            if (!in_array($sid, $loadedIds)) {
+                $loadedIds[] = $sid;
+            }
+        }
+
+        $subjectFacultyMap = [];
+        foreach ($data['groups'] as $group) {
+            foreach ($group['subjects'] as $s) {
+                $f = $s->getFaculty();
+                if ($f && $f->getId() !== $user->getId()) {
+                    $subjectFacultyMap[$s->getId()] = $f->getFirstName() . ' ' . $f->getLastName();
+                }
+            }
+        }
+
         return $this->render('home/faculty_subjects.html.twig', [
             'deptGroups' => $data['groups'],
             'semesters' => $allSemesters,
@@ -956,6 +1094,8 @@ class HomeController extends AbstractController
             'facultyDept' => $facultyDept,
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
+            'subjectFacultyMap' => $subjectFacultyMap,
+            'fslDataMap' => $fslDataMap,
         ]);
     }
 
@@ -966,6 +1106,8 @@ class HomeController extends AbstractController
         Request $request,
         DepartmentRepository $deptRepo,
         SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -993,6 +1135,30 @@ class HomeController extends AbstractController
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
         $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
 
+        $currentAY = $ayRepo->findCurrent();
+        $fslEntries = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        $fslDataMap = [];
+        foreach ($fslEntries as $fsl) {
+            $sid = $fsl->getSubject()->getId();
+            $fslDataMap[$sid] = [
+                'section' => $fsl->getSection(),
+                'schedule' => $fsl->getSchedule(),
+            ];
+            if (!in_array($sid, $loadedIds)) {
+                $loadedIds[] = $sid;
+            }
+        }
+
+        $subjectFacultyMap = [];
+        foreach ($data['groups'] as $group) {
+            foreach ($group['subjects'] as $s) {
+                $f = $s->getFaculty();
+                if ($f && $f->getId() !== $user->getId()) {
+                    $subjectFacultyMap[$s->getId()] = $f->getFirstName() . ' ' . $f->getLastName();
+                }
+            }
+        }
+
         return $this->render('home/faculty_subjects.html.twig', [
             'deptGroups' => $data['groups'],
             'semesters' => $allSemesters,
@@ -1004,6 +1170,8 @@ class HomeController extends AbstractController
             'facultyDept' => $facultyDept,
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
+            'subjectFacultyMap' => $subjectFacultyMap,
+            'fslDataMap' => $fslDataMap,
         ]);
     }
 

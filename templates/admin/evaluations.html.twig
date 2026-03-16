@@ -51,10 +51,10 @@
             </div>
             <div class="d-flex gap-2 mt-1">
                 <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createEvalModal">
-                    <i class="bi bi-plus-lg me-1"></i>New Period
+                    <i class="bi bi-plus-lg me-1"></i>New SET Evaluation
                 </button>
-                <button type="button" class="btn btn-sm fw-semibold shadow-sm" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;" data-bs-toggle="modal" data-bs-target="#createSuperiorEvalModal">
-                    <i class="bi bi-star-fill me-1"></i>New SEF Evaluation
+                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createSuperiorEvalModal">
+                    <i class="bi bi-plus-lg me-1"></i>New SEF Evaluation
                 </button>
             </div>
         </div>
@@ -91,7 +91,7 @@
    FILTER TOOLBAR
    ═══════════════════════════════════════ #}
 <div class="ev-toolbar">
-    <div class="d-flex align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center flex-nowrap gap-2">
         {# Tab switches #}
         <div class="ev-filter-group" id="evSectionTabs">
             <button class="ev-filter-btn active" onclick="switchSection('active', this)">
@@ -102,8 +102,7 @@
             </button>
         </div>
         <div class="ev-filter-group" id="evTypeFilter">
-            <button class="ev-filter-btn active" data-type="all" onclick="filterType('all', this)">All Types</button>
-            <button class="ev-filter-btn" data-type="SET" onclick="filterType('SET', this)">SET <span class="ev-filter-count">{{ setCount }}</span></button>
+            <button class="ev-filter-btn active" data-type="SET" onclick="filterType('SET', this)">SET <span class="ev-filter-count">{{ setCount }}</span></button>
             <button class="ev-filter-btn" data-type="SEF" onclick="filterType('SEF', this)">SEF <span class="ev-filter-count">{{ sefCount }}</span></button>
         </div>
         {# Filter dropdowns #}
@@ -125,12 +124,6 @@
                 <option value="{{ f.fullName }}">{{ f.lastName }}, {{ f.firstName }}</option>
             {% endfor %}
         </select>
-        <select class="ev-filter-select" id="evFilterYear" onchange="applyAllFilters()">
-            <option value="">All Year Levels</option>
-            {% for yr in ['1st Year','2nd Year','3rd Year','4th Year','5th Year'] %}
-                <option value="{{ yr }}">{{ yr }}</option>
-            {% endfor %}
-        </select>
         <div class="ev-search-box">
             <i class="bi bi-search ev-search-icon"></i>
             <input type="text" class="ev-search-input" id="evSearchInput" placeholder="Search..." oninput="applyAllFilters()">
@@ -149,12 +142,13 @@
                     <th class="ev-th-type">Type</th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',1)">Period <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',2)">Faculty <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',3)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',3)">Position <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Year <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',6)">Year <i class="bi bi-arrow-down-up"></i></th>
                     <th>Schedule</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',9)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -170,7 +164,7 @@
                 {% set elapsed = now - startTs %}
                 {% set progress = totalDuration > 0 ? ((elapsed / totalDuration) * 100)|round : 0 %}
                 <tr class="ev-row" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
-                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : (eval.evaluationType == 'SEF' ? 'ev-type-sef' : 'ev-type-superior') }}">{{ eval.evaluationType }}</span></td>
+                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
                         <div class="ev-cell-period">
                             <strong>{{ eval.semester ? eval.semester ~ ' — ' : '' }}{{ eval.schoolYear ?? 'N/A' }}</strong>
@@ -179,17 +173,23 @@
                     </td>
                     <td>{{ eval.faculty ?? '—' }}</td>
                     <td>
-                        {% if eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% else %}—{% endif %}
+                        {% set pos = facultyPositionMap[eval.faculty] ?? '' %}
+                        {% if pos %}<span class="ev-badge ev-badge-info"><i class="bi bi-person-badge me-1"></i>{{ pos }}</span>{% else %}—{% endif %}
                     </td>
                     <td>
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
-                    <td>{{ eval.yearLevel ?? '—' }}</td>
                     <td>
-                        <div class="ev-cell-schedule">
-                            {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
-                            {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
-                        </div>
+                        {% if eval.evaluationType == 'SET' and eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% elseif eval.evaluationType == 'SET' %}—{% else %}—{% endif %}
+                    </td>
+                    <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
+                    <td>
+                        {% if eval.evaluationType == 'SET' %}
+                            <div class="ev-cell-schedule">
+                                {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
+                                {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                            </div>
+                        {% else %}—{% endif %}
                     </td>
                     <td>
                         {% if isActive %}
@@ -222,7 +222,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
+                <tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -262,12 +262,14 @@
                     <th class="ev-th-type">Type</th>
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',1)">Period <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',2)">Faculty <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',3)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',3)">Position <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',5)">Year <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',6)">Year <i class="bi bi-arrow-down-up"></i></th>
+                    <th>Schedule</th>
                     <th>Ended</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',10)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -275,7 +277,7 @@
                 {% for eval in expiredEvals %}
                 {% set responseCount = evaluatorCounts[eval.id] ?? 0 %}
                 <tr class="ev-row ev-row-expired" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-school-year="{{ eval.schoolYear ?? '' }}" data-semester="{{ eval.semester ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
-                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : (eval.evaluationType == 'SEF' ? 'ev-type-sef' : 'ev-type-superior') }}">{{ eval.evaluationType }}</span></td>
+                    <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
                         <div class="ev-cell-period">
                             <strong>{{ eval.semester ? eval.semester ~ ' — ' : '' }}{{ eval.schoolYear ?? 'N/A' }}</strong>
@@ -284,12 +286,24 @@
                     </td>
                     <td>{{ eval.faculty ?? '—' }}</td>
                     <td>
-                        {% if eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% else %}—{% endif %}
+                        {% set pos = facultyPositionMap[eval.faculty] ?? '' %}
+                        {% if pos %}<span class="ev-badge ev-badge-info"><i class="bi bi-person-badge me-1"></i>{{ pos }}</span>{% else %}—{% endif %}
                     </td>
                     <td>
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
-                    <td>{{ eval.yearLevel ?? '—' }}</td>
+                    <td>
+                        {% if eval.evaluationType == 'SET' and eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% elseif eval.evaluationType == 'SET' %}—{% else %}—{% endif %}
+                    </td>
+                    <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
+                    <td>
+                        {% if eval.evaluationType == 'SET' %}
+                            <div class="ev-cell-schedule">
+                                {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
+                                {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                            </div>
+                        {% else %}—{% endif %}
+                    </td>
                     <td><small class="text-muted">{{ eval.endDate|date('M d, Y g:i A') }}</small></td>
                     <td>
                         {% if not eval.status %}
@@ -336,7 +350,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
+                <tr><td colspan="12" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -350,7 +364,7 @@
     <div class="modal fade" id="editEvalModal{{ eval.id }}" tabindex="-1">
         <div class="modal-dialog {{ eval.evaluationType == 'SUPERIOR' ? 'modal-md' : 'modal-lg' }} modal-dialog-centered">
             <div class="modal-content ev-modal">
-                <div class="ev-modal-header" {{ eval.evaluationType == 'SUPERIOR' ? 'style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);"' : '' }}>
+                <div class="ev-modal-header">
                     <div class="d-flex align-items-center gap-2">
                         <div class="ev-modal-icon"><i class="bi {{ eval.evaluationType == 'SUPERIOR' ? 'bi-star-fill' : 'bi-pencil-square' }}"></i></div>
                         <div>
@@ -489,7 +503,7 @@
                     </div>
                     <div class="modal-footer border-0 rounded-bottom-4 px-4 py-3" style="{{ eval.evaluationType == 'SUPERIOR' ? 'background:#f5f3ff;' : 'background:#f8f9fa;' }}">
                         <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-sm px-3 fw-semibold {{ eval.evaluationType == 'SUPERIOR' ? '' : 'btn-primary' }}" {{ eval.evaluationType == 'SUPERIOR' ? 'style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;"' : '' }}>
+                        <button type="submit" class="btn btn-sm px-3 fw-semibold {{ eval.evaluationType == 'SUPERIOR' ? '' : 'btn-primary' }}" {{ eval.evaluationType == 'SUPERIOR' ? 'style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;"' : '' }}>
                             <i class="bi bi-check-circle me-1"></i>Save Changes
                         </button>
                     </div>
@@ -543,7 +557,7 @@
 <div class="modal fade" id="createEvalModal" tabindex="-1">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content ev-modal">
-            <div class="ev-modal-header" style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);">
+            <div class="ev-modal-header">
                 <div class="d-flex align-items-center gap-2">
                     <div class="ev-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
                     <div>
@@ -658,7 +672,7 @@
                 </div>
                 <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;">
+                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
                         <i class="bi bi-plus-lg me-1"></i>Create Period
                     </button>
                 </div>
@@ -671,11 +685,11 @@
    CREATE SUPERIOR EVALUATION MODAL
    ═══════════════════════════════════════ #}
 <div class="modal fade" id="createSuperiorEvalModal" tabindex="-1">
-    <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content ev-modal">
-            <div class="ev-modal-header" style="background:linear-gradient(135deg,#5b21b6,#7c3aed 60%,#8b5cf6 100%);">
+            <div class="ev-modal-header">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="ev-modal-icon"><i class="bi bi-star-fill"></i></div>
+                    <div class="ev-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
                     <div>
                         <h5 class="mb-0 fw-bold text-white">New SEF Evaluation</h5>
                         <small class="text-white-50">Superior Evaluation for Faculty</small>
@@ -763,8 +777,8 @@
                 </div>
                 <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border:none;">
-                        <i class="bi bi-star-fill me-1"></i>Create SEF Evaluation
+                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
+                        <i class="bi bi-plus-lg me-1"></i>Create SEF Evaluation
                     </button>
                 </div>
             </form>
@@ -794,16 +808,16 @@
 .ev-stat-divider{width:1px;align-self:stretch;background:rgba(255,255,255,.10);margin:4px 0 8px;}
 
 /* ──── Toolbar ──── */
-.ev-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin:1.25rem 0;}
+.ev-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin:1.25rem 0;overflow-x:auto;}
 .ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
 .ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
 .ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
 .ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
 .ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
-.ev-filter-select{font-size:.78rem;padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:#475569;cursor:pointer;min-width:130px;height:32px;}
+.ev-filter-select{font-size:.78rem;padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:#475569;cursor:pointer;min-width:110px;height:32px;}
 .ev-filter-select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-.ev-search-box{position:relative;min-width:180px;}
+.ev-search-box{position:relative;min-width:150px;flex:1;}
 .ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
 .ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
 .ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
@@ -881,7 +895,7 @@
 
 /* ──── Modal ──── */
 .ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
-.ev-modal-header{background:linear-gradient(135deg,#1e3a8a 0%,#1a56db 50%,#3b82f6 100%);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.ev-modal-header{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
 .ev-modal-icon{width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;}
 .ev-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
 .ev-form-control{font-size:.85rem;border-radius:8px;border-color:#e2e8f0;}
@@ -914,10 +928,20 @@
 .qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
 @keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
+/* ──── Hide SET-only columns (Subject, Year, Schedule) ──── */
+.ev-table.hide-set-cols th:nth-child(6),
+.ev-table.hide-set-cols td:nth-child(6),
+.ev-table.hide-set-cols th:nth-child(7),
+.ev-table.hide-set-cols td:nth-child(7),
+.ev-table.hide-set-cols th:nth-child(8),
+.ev-table.hide-set-cols td:nth-child(8) {
+    display: none;
+}
+
 /* ──── Responsive ──── */
 @media(max-width:992px){
     .ev-table-container{overflow-x:auto;}
-    .ev-table{min-width:900px;}
+    .ev-table{min-width:1000px;}
 }
 </style>
 
@@ -927,7 +951,7 @@
 <script>
 /* ── Section Switching ── */
 var currentSection = 'active';
-var currentTypeFilter = 'all';
+var currentTypeFilter = 'SET';
 
 function switchSection(section, btn) {
     currentSection = section;
@@ -942,6 +966,17 @@ function filterType(type, btn) {
     currentTypeFilter = type;
     document.querySelectorAll('#evTypeFilter .ev-filter-btn').forEach(function(b){b.classList.remove('active');});
     btn.classList.add('active');
+
+    // Hide Subject, Year, Schedule columns when filtering by SEF/Superior
+    var hideCols = (type === 'SEF');
+    document.querySelectorAll('.ev-table').forEach(function(table){
+        if (hideCols) {
+            table.classList.add('hide-set-cols');
+        } else {
+            table.classList.remove('hide-set-cols');
+        }
+    });
+
     applyAllFilters();
 }
 
@@ -950,7 +985,6 @@ function applyAllFilters() {
     var college = document.getElementById('evFilterCollege').value;
     var dept = document.getElementById('evFilterDept').value;
     var faculty = document.getElementById('evFilterFaculty').value;
-    var year = document.getElementById('evFilterYear').value;
     var tableId = currentSection === 'active' ? 'activeTable' : 'previousTable';
 
     document.querySelectorAll('#' + tableId + ' tbody .ev-row').forEach(function(row){
@@ -958,7 +992,6 @@ function applyAllFilters() {
         var cMatch = !college || row.dataset.college === college;
         var dMatch = !dept || row.dataset.dept === dept;
         var fMatch = !faculty || row.dataset.faculty === faculty;
-        var yMatch = !year || row.dataset.year === year;
         var qMatch = !q || row.dataset.search.toLowerCase().indexOf(q) !== -1;
 
         // For previous section, also apply AY and semester filters
@@ -970,7 +1003,7 @@ function applyAllFilters() {
             semMatch = !semVal || row.dataset.semester === semVal;
         }
 
-        row.style.display = (tMatch && cMatch && dMatch && fMatch && yMatch && qMatch && ayMatch && semMatch) ? '' : 'none';
+        row.style.display = (tMatch && cMatch && dMatch && fMatch && qMatch && ayMatch && semMatch) ? '' : 'none';
     });
 }
 
@@ -991,7 +1024,7 @@ function sortTable(tableId, colIdx) {
     rows.sort(function(a, b) {
         var aText = a.cells[colIdx] ? a.cells[colIdx].textContent.trim().toLowerCase() : '';
         var bText = b.cells[colIdx] ? b.cells[colIdx].textContent.trim().toLowerCase() : '';
-        if (colIdx === 8) { // Evaluators column - numeric sort
+        if (colIdx === 9 || colIdx === 10) { // Evaluators column - numeric sort
             return asc ? (parseInt(aText)||0) - (parseInt(bText)||0) : (parseInt(bText)||0) - (parseInt(aText)||0);
         }
         return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
@@ -1271,5 +1304,8 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         });
     };
 })();
+
+/* ── Initial filter on page load ── */
+applyAllFilters();
 </script>
 {% endblock %}
