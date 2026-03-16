@@ -22,6 +22,7 @@ use App\Repository\EvaluationResponseRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
+use App\Repository\SuperiorEvaluationRepository;
 use App\Repository\UserRepository;
 use App\Service\AuditLogger;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -167,16 +168,33 @@ class ReportController extends AbstractController
     // ════════════════════════════════════════════════
 
     #[Route('/evaluations', name: 'staff_evaluations', methods: ['GET'])]
-    public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo): Response
+    public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo): Response
     {
-        return $this->render('report/evaluations.html.twig', [
+        $departments = $deptRepo->findAllOrdered();
+        $colleges = [];
+        foreach ($departments as $d) {
+            $cn = $d->getCollegeName();
+            if ($cn && !in_array($cn, $colleges, true)) {
+                $colleges[] = $cn;
+            }
+        }
+        sort($colleges);
+
+        $evaluatorCounts = $responseRepo->countEvaluatorsByPeriod();
+        $superiorCounts = $superiorEvalRepo->countEvaluatorsByPeriod();
+        foreach ($superiorCounts as $epId => $cnt) {
+            $evaluatorCounts[$epId] = ($evaluatorCounts[$epId] ?? 0) + $cnt;
+        }
+
+        return $this->render('admin/evaluations.html.twig', [
             'evaluations' => $repo->findAllOrdered(),
-            'departments' => $deptRepo->findAllOrdered(),
+            'departments' => $departments,
+            'colleges' => $colleges,
             'currentAY' => $ayRepo->findCurrent(),
             'academicYears' => $ayRepo->findAllOrdered(),
             'facultyUsers' => $userRepo->createQueryBuilder('u')->andWhere("u.roles LIKE :role")->setParameter('role', '%ROLE_FACULTY%')->orderBy('u.lastName', 'ASC')->getQuery()->getResult(),
-            'subjects' => $subjectRepo->findBy([], ['subjectCode' => 'ASC']),
-            'evaluatorCounts' => $responseRepo->countEvaluatorsByPeriod(),
+            'evaluatorCounts' => $evaluatorCounts,
+            'staffMode' => true,
         ]);
     }
 
