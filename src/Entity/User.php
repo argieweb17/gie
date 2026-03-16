@@ -84,7 +84,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getLastName(): ?string { return $this->lastName; }
     public function setLastName(string $lastName): static { $this->lastName = $lastName; return $this; }
 
-    public function getUserIdentifier(): string { return (string) $this->email; }
+    public function getUserIdentifier(): string { return (string) ($this->email ?? $this->schoolId); }
 
     /** @return list<string> */
     public function getRoles(): array

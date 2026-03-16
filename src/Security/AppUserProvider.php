@@ -36,7 +36,20 @@ class AppUserProvider implements UserProviderInterface
 
     public function refreshUser(UserInterface $user): UserInterface
     {
-        return $this->loadUserByIdentifier($user->getUserIdentifier());
+        if (!$user instanceof User) {
+            throw new \InvalidArgumentException(sprintf('Instances of "%s" are not supported.', get_class($user)));
+        }
+
+        // Reload by primary key to avoid issues when email is null (students)
+        $refreshed = $this->userRepo->find($user->getId());
+
+        if (!$refreshed) {
+            $e = new UserNotFoundException(sprintf('User with ID "%s" not found.', $user->getId()));
+            $e->setUserIdentifier($user->getUserIdentifier());
+            throw $e;
+        }
+
+        return $refreshed;
     }
 
     public function supportsClass(string $class): bool
