@@ -10,7 +10,20 @@
 .rl-stat-val{display:block;font-size:1.3rem;font-weight:700;color:#fff;line-height:1.2;}
 .rl-stat-lbl{display:block;font-size:.65rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
 .rl-stat-divider{width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:0 .25rem;}
-.rl-toolbar{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.rl-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.rl-search-wrap{position:relative;flex:1;min-width:200px;max-width:360px;}
+.rl-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.rl-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.rl-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.rl-filter-form{display:flex;align-items:center;gap:6px;}
+.rl-filter-group{position:relative;display:flex;align-items:center;}
+.rl-filter-icon{position:absolute;left:10px;color:#6b7280;font-size:.8rem;pointer-events:none;z-index:1;}
+.rl-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;min-width:150px;cursor:pointer;transition:border-color .15s;}
+.rl-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
+.rl-clear-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:.75rem;cursor:pointer;transition:all .15s;}
+.rl-clear-btn:hover{background:#fee2e2;color:#dc2626;}
+.rl-toolbar-info{margin-left:auto;}
+.rl-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
 .rl-table-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.5rem;}
 .rl-table-header{background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);color:#fff;padding:.65rem 1.1rem;font-size:.85rem;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
 .rl-table-badge{background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:20px;font-size:.72rem;}

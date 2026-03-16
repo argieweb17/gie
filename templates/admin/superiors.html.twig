@@ -56,34 +56,36 @@
 
 {# ── Filter Toolbar ── #}
 <div class="rl-toolbar">
-    <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-search me-1"></i>Search</label>
-            <input type="text" class="form-control form-control-sm" id="rlSearch" placeholder="Name or email…" autocomplete="off">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-building me-1"></i>Department</label>
-            <select class="form-select form-select-sm" id="rlDept">
+    <div class="rl-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="rl-search" id="rlSearch" placeholder="Search by name or email..." autocomplete="off">
+    </div>
+    <div class="rl-filter-form">
+        <div class="rl-filter-group">
+            <i class="bi bi-building rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlDept" style="min-width:180px;">
                 <option value="">All Departments</option>
                 {% for dept in departments %}
                 <option value="{{ dept.departmentName|lower }}">{{ dept.departmentName }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-sort-down me-1"></i>Sort By</label>
-            <select class="form-select form-select-sm" id="rlSort">
+        <div class="rl-filter-group">
+            <i class="bi bi-sort-down rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlSort" style="min-width:150px;">
                 <option value="name-asc">Name (A–Z)</option>
                 <option value="name-desc">Name (Z–A)</option>
                 <option value="date-desc">Newest First</option>
                 <option value="date-asc">Oldest First</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="rlReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
-        </div>
+        <button type="button" class="rl-clear-btn" id="rlReset" title="Reset all filters">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
-    <div class="mt-2"><small class="text-muted" id="rlCount"></small></div>
+    <div class="rl-toolbar-info">
+        <span class="rl-result-count" id="rlCount"></span>
+    </div>
 </div>
 
 {# ── Superiors Table ── #}

@@ -77,14 +77,14 @@
 
 {# ── Filter / Search Toolbar ── #}
 <div class="mu-toolbar">
-    <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-search me-1"></i>Search Users</label>
-            <input type="text" class="form-control form-control-sm" id="userSearch" placeholder="Type a name or email…" autocomplete="off">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-shield me-1"></i>Role</label>
-            <select class="form-select form-select-sm" id="roleFilter">
+    <div class="mu-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="mu-search" id="userSearch" placeholder="Search by name or email..." autocomplete="off">
+    </div>
+    <div class="mu-filter-form">
+        <div class="mu-filter-group">
+            <i class="bi bi-shield-fill mu-filter-icon"></i>
+            <select class="mu-filter-select" id="roleFilter" style="min-width:150px;">
                 <option value="">All Roles</option>
                 <option value="Admin">Admin</option>
                 <option value="Faculty">Faculty</option>
@@ -92,31 +92,31 @@
                 <option value="Student">Student</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-circle-half me-1"></i>Status</label>
-            <select class="form-select form-select-sm" id="statusFilter">
+        <div class="mu-filter-group">
+            <i class="bi bi-circle-half mu-filter-icon"></i>
+            <select class="mu-filter-select" id="statusFilter" style="min-width:150px;">
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
                 <option value="Pending">Pending</option>
                 <option value="Inactive">Inactive</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-semibold small text-muted mb-1"><i class="bi bi-sort-down me-1"></i>Sort By</label>
-            <select class="form-select form-select-sm" id="sortFilter">
+        <div class="mu-filter-group">
+            <i class="bi bi-sort-down mu-filter-icon"></i>
+            <select class="mu-filter-select" id="sortFilter" style="min-width:150px;">
                 <option value="name-asc">Name (A–Z)</option>
                 <option value="name-desc">Name (Z–A)</option>
                 <option value="date-desc">Newest First</option>
                 <option value="date-asc">Oldest First</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="resetFilters">
-                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-            </button>
-        </div>
+        <button type="button" class="mu-clear-btn" id="resetFilters" title="Reset all filters">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
-    <div class="mt-2"><small class="text-muted" id="resultCount"></small></div>
+    <div class="mu-toolbar-info">
+        <span class="mu-result-count" id="resultCount"></span>
+    </div>
 </div>
 
 {# ── Pending Approvals Section ── #}
@@ -353,7 +353,20 @@
 .mu-modal-icon{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;backdrop-filter:blur(4px);}
 
 /* ── Toolbar ── */
-.mu-toolbar{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.mu-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.mu-search-wrap{position:relative;flex:1;min-width:200px;max-width:360px;}
+.mu-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.mu-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.mu-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.mu-filter-form{display:flex;align-items:center;gap:6px;}
+.mu-filter-group{position:relative;display:flex;align-items:center;}
+.mu-filter-icon{position:absolute;left:10px;color:#6b7280;font-size:.8rem;pointer-events:none;z-index:1;}
+.mu-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;min-width:150px;cursor:pointer;transition:border-color .15s;}
+.mu-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
+.mu-clear-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:.75rem;cursor:pointer;transition:all .15s;}
+.mu-clear-btn:hover{background:#fee2e2;color:#dc2626;}
+.mu-toolbar-info{margin-left:auto;}
+.mu-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
 
 /* ── Table Card ── */
 .mu-table-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.5rem;}

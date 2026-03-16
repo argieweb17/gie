@@ -52,14 +52,14 @@
    FILTER / SEARCH BAR
    ═══════════════════════════════════════ #}
 <div class="en-toolbar">
-    <form method="get" action="{{ path('staff_enrollments') }}" class="d-flex align-items-center gap-2 flex-wrap w-100">
-        <div class="en-search-wrap">
-            <i class="bi bi-search"></i>
-            <input type="text" name="q" class="en-search" placeholder="Search student or subject..." value="{{ filterSearch }}">
-        </div>
+    <div class="en-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" class="en-search" id="enSearchInput" placeholder="Search student or subject..." value="{{ filterSearch }}" oninput="enFilterTable()">
+    </div>
+    <form method="get" action="{{ path('staff_enrollments') }}" class="en-filter-form" id="enFilterForm">
         <div class="en-filter-group">
             <i class="bi bi-mortarboard-fill en-filter-icon"></i>
-            <select name="college" class="en-filter-select" onchange="this.form.submit()" style="min-width:180px;">
+            <select name="college" class="en-filter-select" onchange="this.form.submit()" style="min-width:200px;">
                 <option value="">All Colleges</option>
                 {% for c in colleges %}
                     <option value="{{ c }}" {{ filterCollege == c ? 'selected' }}>{{ c }}</option>
@@ -68,7 +68,7 @@
         </div>
         <div class="en-filter-group">
             <i class="bi bi-building en-filter-icon"></i>
-            <select name="department" class="en-filter-select" onchange="this.form.submit()" style="min-width:170px;">
+            <select name="department" class="en-filter-select" onchange="this.form.submit()" style="min-width:180px;">
                 <option value="">All Departments</option>
                 {% for dept in departments %}
                     <option value="{{ dept.id }}" {{ filterDept is not null and filterDept == dept.id ? 'selected' }}>{{ dept.departmentName }}</option>
@@ -80,10 +80,10 @@
                 <i class="bi bi-x-lg"></i>
             </a>
         {% endif %}
-        <div class="ms-auto">
-            <span class="en-result-count">{{ totalFiltered }} result{{ totalFiltered != 1 ? 's' : '' }}</span>
-        </div>
     </form>
+    <div class="en-toolbar-info">
+        <span class="en-result-count" id="enResultCount">{{ totalFiltered }} result{{ totalFiltered != 1 ? 's' : '' }}</span>
+    </div>
 </div>
 
 {# ═══════════════════════════════════════
@@ -281,12 +281,14 @@
 .en-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
 .en-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
 .en-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.en-filter-form{display:flex;align-items:center;gap:6px;}
 .en-filter-group{position:relative;display:flex;align-items:center;}
 .en-filter-icon{position:absolute;left:10px;color:#6b7280;font-size:.8rem;pointer-events:none;z-index:1;}
-.en-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;cursor:pointer;transition:border-color .15s;}
+.en-filter-select{border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;background:#fafbfc;min-width:200px;cursor:pointer;transition:border-color .15s;}
 .en-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
 .en-clear-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:.75rem;text-decoration:none;transition:all .15s;}
 .en-clear-btn:hover{background:#fee2e2;color:#dc2626;}
+.en-toolbar-info{margin-left:auto;}
 .en-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
 
 /* ─── Table ─── */
