@@ -2,6 +2,86 @@
 
 {% block title %}Evaluation Results | SET-SEF Evaluation{% endblock %}
 
+{% block stylesheets %}
+<style>
+/* ─── Header ─── */
+.er-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.er-header-inner{padding:22px 26px 18px;}
+.er-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.er-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.er-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.er-stat{flex:1;text-align:center;}
+.er-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
+.er-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.er-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
+.er-val-accent{color:#34d399!important;}
+
+/* ─── Toolbar ─── */
+.er-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.er-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
+.er-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
+.er-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
+.er-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
+.er-toolbar-info{margin-left:auto;}
+.er-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
+
+/* ─── Period Cards ─── */
+.er-period-card{background:#fff;border:1px solid #e0e7ff;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(99,102,241,.06);}
+.er-period-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 20px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-bottom:1px solid #e0e7ff;cursor:pointer;user-select:none;transition:background .15s;}
+.er-period-header:hover{background:linear-gradient(135deg,#e0e7ff,#c7d2fe);}
+.er-period-icon{width:36px;height:36px;border-radius:10px;background:#c7d2fe;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.er-period-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;border-radius:6px;background:#4338ca;color:#fff;font-size:.72rem;font-weight:700;padding:0 8px;}
+.er-period-chevron{font-size:.9rem;color:#64748b;transition:transform .25s ease;}
+.er-period-card.er-collapsed .er-period-chevron{transform:rotate(-90deg);}
+.er-period-card.er-collapsed .er-period-body{display:none;}
+
+/* ─── Table ─── */
+.er-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.er-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
+.er-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;}
+.er-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
+.er-table tbody tr:last-child{border-bottom:none;}
+.er-table tbody tr:hover{background:#f8faff;}
+.er-table tbody td{padding:10px 14px;vertical-align:middle;}
+.er-td-num{color:#94a3b8;font-size:.72rem;font-weight:600;text-align:center;}
+
+/* Code cell */
+.er-code-cell{display:flex;align-items:center;gap:10px;}
+.er-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.er-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+
+/* Name */
+.er-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
+
+/* Pills */
+.er-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.er-pill-evaluator{background:#EFF6FF;color:#2563EB;}
+.er-pill-status{background:#ecfdf5;color:#059669;}
+
+/* ─── Empty ─── */
+.er-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.er-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.88rem;}
+.er-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
+.er-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;}
+
+/* ─── Responsive ─── */
+@media(max-width:768px){
+    .er-header-inner{padding:16px 18px 14px;}
+    .er-header-icon{width:42px;height:42px;font-size:1.1rem;border-radius:11px;}
+    .er-table{font-size:.75rem;}
+    .er-table thead th{padding:8px 10px;font-size:.62rem;}
+    .er-table tbody td{padding:8px 10px;}
+    .er-code-avatar{width:28px;height:28px;min-width:28px;font-size:.55rem;border-radius:7px;}
+    .er-period-header{padding:12px 14px;}
+    .er-search-wrap{max-width:100%;}
+}
+
+/* ─── Animations ─── */
+.er-header,.er-toolbar,.er-period-card,.er-table-wrap{animation:erFadeIn .25s ease;}
+@keyframes erFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+{% endblock %}
+
 {% block body %}
 
 {% set totalSubjects = 0 %}
@@ -129,83 +209,6 @@
 {# ═══════════════════════════════════════
    SCOPED STYLES
    ═══════════════════════════════════════ #}
-<style>
-/* ─── Header ─── */
-.er-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
-.er-header-inner{padding:22px 26px 18px;}
-.er-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
-.er-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
-.er-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
-.er-stat{flex:1;text-align:center;}
-.er-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
-.er-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
-.er-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
-.er-val-accent{color:#34d399!important;}
-
-/* ─── Toolbar ─── */
-.er-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
-.er-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
-.er-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
-.er-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
-.er-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
-.er-toolbar-info{margin-left:auto;}
-.er-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
-
-/* ─── Period Cards ─── */
-.er-period-card{background:#fff;border:1px solid #e0e7ff;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(99,102,241,.06);}
-.er-period-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 20px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-bottom:1px solid #e0e7ff;cursor:pointer;user-select:none;transition:background .15s;}
-.er-period-header:hover{background:linear-gradient(135deg,#e0e7ff,#c7d2fe);}
-.er-period-icon{width:36px;height:36px;border-radius:10px;background:#c7d2fe;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
-.er-period-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;border-radius:6px;background:#4338ca;color:#fff;font-size:.72rem;font-weight:700;padding:0 8px;}
-.er-period-chevron{font-size:.9rem;color:#64748b;transition:transform .25s ease;}
-.er-period-card.er-collapsed .er-period-chevron{transform:rotate(-90deg);}
-.er-period-card.er-collapsed .er-period-body{display:none;}
-
-/* ─── Table ─── */
-.er-table{width:100%;border-collapse:collapse;font-size:.82rem;}
-.er-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
-.er-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;}
-.er-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
-.er-table tbody tr:last-child{border-bottom:none;}
-.er-table tbody tr:hover{background:#f8faff;}
-.er-table tbody td{padding:10px 14px;vertical-align:middle;}
-.er-td-num{color:#94a3b8;font-size:.72rem;font-weight:600;text-align:center;}
-
-/* Code cell */
-.er-code-cell{display:flex;align-items:center;gap:10px;}
-.er-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
-.er-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
-
-/* Name */
-.er-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
-
-/* Pills */
-.er-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.er-pill-evaluator{background:#EFF6FF;color:#2563EB;}
-.er-pill-status{background:#ecfdf5;color:#059669;}
-
-/* ─── Empty ─── */
-.er-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
-.er-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.88rem;}
-.er-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
-.er-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;}
-
-/* ─── Responsive ─── */
-@media(max-width:768px){
-    .er-header-inner{padding:16px 18px 14px;}
-    .er-header-icon{width:42px;height:42px;font-size:1.1rem;border-radius:11px;}
-    .er-table{font-size:.75rem;}
-    .er-table thead th{padding:8px 10px;font-size:.62rem;}
-    .er-table tbody td{padding:8px 10px;}
-    .er-code-avatar{width:28px;height:28px;min-width:28px;font-size:.55rem;border-radius:7px;}
-    .er-period-header{padding:12px 14px;}
-    .er-search-wrap{max-width:100%;}
-}
-
-/* ─── Animations ─── */
-.er-header,.er-toolbar,.er-period-card,.er-table-wrap{animation:erFadeIn .25s ease;}
-@keyframes erFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-</style>
 
 <script>
 function erFilter(){

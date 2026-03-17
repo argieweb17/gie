@@ -24,30 +24,30 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for subject in subjects %}
+                    {% for item in subjects %}
                     <tr>
-                        <td class="ps-3 fw-semibold">{{ subject.subjectCode }}</td>
-                        <td>{{ subject.subjectName }}</td>
-                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ subject.semester|default('—') }}</span></td>
-                        <td>{{ subject.yearLevel|default('—') }}</td>
-                        <td>{{ subject.units|default('—') }}</td>
+                        <td class="ps-3 fw-semibold">{{ item.subject.subjectCode }}</td>
+                        <td>{{ item.subject.subjectName }}</td>
+                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ item.subject.semester|default('—') }}</span></td>
+                        <td>{{ item.subject.yearLevel|default('—') }}</td>
+                        <td>{{ item.subject.units|default('—') }}</td>
                         <td>
-                            {% if subject.section %}
-                                <span class="badge bg-success bg-opacity-10 text-success">{{ subject.section }}</span>
+                            {% if item.section %}
+                                <span class="badge bg-success bg-opacity-10 text-success">{{ item.section }}</span>
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if subject.room %}
-                                <span class="badge bg-info bg-opacity-10 text-info"><i class="bi bi-door-open me-1"></i>{{ subject.room }}</span>
+                            {% if item.subject.room %}
+                                <span class="badge bg-info bg-opacity-10 text-info"><i class="bi bi-door-open me-1"></i>{{ item.subject.room }}</span>
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if subject.schedule %}
-                                <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock me-1"></i>{{ subject.schedule }}</span>
+                            {% if item.schedule %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock me-1"></i>{{ item.schedule }}</span>
                             {% else %}
                                 <span class="text-muted fst-italic">Not yet set</span>
                             {% endif %}

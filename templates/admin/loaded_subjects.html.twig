@@ -191,7 +191,7 @@
 {% for s in subjects %}{% if s.section %}{% set totalSections = totalSections + 1 %}{% endif %}{% endfor %}
 {% set semSet = [] %}
 {% for s in subjects %}
-    {% if s.semester and s.semester not in semSet %}{% set semSet = semSet|merge([s.semester]) %}{% endif %}
+    {% if s.subject.semester and s.subject.semester not in semSet %}{% set semSet = semSet|merge([s.subject.semester]) %}{% endif %}
 {% endfor %}
 
 {# ═══════════════════════════════════════
@@ -392,44 +392,44 @@
         <tbody id="lsTableBody">
             {% for s in subjects %}
             <tr class="ls-row"
-                data-search="{{ s.subjectCode|lower }} {{ s.subjectName|lower }}"
-                data-semester="{{ s.semester|default('')|lower }}"
-                data-sort-code="{{ s.subjectCode|lower }}"
-                data-sort-name="{{ s.subjectName|lower }}"
-                data-sort-units="{{ s.units ?? 0 }}"
-                data-view-code="{{ s.subjectCode }}"
-                data-view-name="{{ s.subjectName }}"
-                data-view-semester="{{ s.semester ?? '—' }}"
-                data-view-schoolyear="{{ s.schoolYear ?? '—' }}"
-                data-view-units="{{ s.units ?? '—' }}"
-                data-view-yearlevel="{{ s.yearLevel ?? '—' }}"
-                data-view-term="{{ s.term ?? '—' }}"
+                data-search="{{ s.subject.subjectCode|lower }} {{ s.subject.subjectName|lower }}"
+                data-semester="{{ s.subject.semester|default('')|lower }}"
+                data-sort-code="{{ s.subject.subjectCode|lower }}"
+                data-sort-name="{{ s.subject.subjectName|lower }}"
+                data-sort-units="{{ s.subject.units ?? 0 }}"
+                data-view-code="{{ s.subject.subjectCode }}"
+                data-view-name="{{ s.subject.subjectName }}"
+                data-view-semester="{{ s.subject.semester ?? '—' }}"
+                data-view-schoolyear="{{ s.subject.schoolYear ?? '—' }}"
+                data-view-units="{{ s.subject.units ?? '—' }}"
+                data-view-yearlevel="{{ s.subject.yearLevel ?? '—' }}"
+                data-view-term="{{ s.subject.term ?? '—' }}"
                 data-view-section="{{ s.section ?? '—' }}"
                 data-view-schedule="{{ s.schedule ?? '—' }}"
-                data-view-department="{{ s.department ? s.department.departmentName : '—' }}"
-                data-view-id="{{ s.id }}">
+                data-view-department="{{ s.subject.department ? s.subject.department.departmentName : '—' }}"
+                data-view-id="{{ s.subject.id }}">
                 <td>
                     <div class="ls-code-cell">
-                        <span class="ls-code-avatar">{{ s.subjectCode|slice(0,2)|upper }}</span>
-                        <code class="ls-code-text">{{ s.subjectCode }}</code>
+                        <span class="ls-code-avatar">{{ s.subject.subjectCode|slice(0,2)|upper }}</span>
+                        <code class="ls-code-text">{{ s.subject.subjectCode }}</code>
                     </div>
                 </td>
                 <td>
-                    <span class="ls-subject-name">{{ s.subjectName }}</span>
+                    <span class="ls-subject-name">{{ s.subject.subjectName }}</span>
                 </td>
                 <td>
-                    {% if s.semester %}
-                        <span class="ls-pill ls-pill-sem">{{ s.semester }}</span>
+                    {% if s.subject.semester %}
+                        <span class="ls-pill ls-pill-sem">{{ s.subject.semester }}</span>
                     {% else %}
                         <span class="ls-empty">—</span>
                     {% endif %}
                 </td>
                 <td>
-                    <span class="ls-units-badge">{{ s.units ?? '—' }}</span>
+                    <span class="ls-units-badge">{{ s.subject.units ?? '—' }}</span>
                 </td>
                 <td>
-                    {% if s.yearLevel %}
-                        <span class="ls-pill ls-pill-yl">{{ s.yearLevel }}</span>
+                    {% if s.subject.yearLevel %}
+                        <span class="ls-pill ls-pill-yl">{{ s.subject.yearLevel }}</span>
                     {% else %}
                         <span class="ls-empty">—</span>
                     {% endif %}
@@ -449,19 +449,28 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if s.department %}
-                        <span class="ls-dept-tag">{{ s.department.departmentName }}</span>
+                    {% if s.subject.department %}
+                        <span class="ls-dept-tag">{{ s.subject.department.departmentName }}</span>
                     {% else %}
                         <span class="ls-empty">—</span>
                     {% endif %}
                 </td>
                 <td class="text-center">
-                    <form method="post" action="{{ path('faculty_subject_unload', {id: s.id}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subjectCode }} — {{ s.subjectName }}?')">
-                        <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.id) }}">
+                    {% if s.fslId %}
+                    <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
                             <i class="bi bi-x-circle me-1"></i>Unload
                         </button>
                     </form>
+                    {% else %}
+                    <form method="post" action="{{ path('faculty_subject_unload', {id: s.subject.id}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — {{ s.subject.subjectName }}?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.subject.id) }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
+                            <i class="bi bi-x-circle me-1"></i>Unload
+                        </button>
+                    </form>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}

@@ -82,4 +82,13 @@ class FacultySubjectLoadRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+
+    public function removeById(int $id): void
+    {
+        $fsl = $this->find($id);
+        if ($fsl) {
+            $this->getEntityManager()->remove($fsl);
+            $this->getEntityManager()->flush();
+        }
+    }
 }

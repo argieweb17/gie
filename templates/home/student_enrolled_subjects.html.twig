@@ -2,7 +2,7 @@
 
 {% block title %}Enrolled Subjects | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
+{% block stylesheets %}
 <style>
 /* ── Page Layout ── */
 .ses-page { max-width: 1140px; margin: 0 auto; }
@@ -435,6 +435,9 @@
 .ses-view-btn.active { background: #2563eb; color: #fff; }
 .ses-view-btn:not(.active):hover { background: #f1f5f9; color: #475569; }
 </style>
+{% endblock %}
+
+{% block body %}
 
 {% set totalUnits = 0 %}
 {% set pendingCount = 0 %}

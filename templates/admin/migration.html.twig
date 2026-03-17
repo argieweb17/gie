@@ -2,6 +2,112 @@
 
 {% block title %}Data Migration | SET-SEF Evaluation{% endblock %}
 
+{% block stylesheets %}
+<style>
+/* ── Header ── */
+.mg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.mg-header-left{display:flex;align-items:center;gap:.85rem}
+.mg-header-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.mg-title{font-size:1.35rem;font-weight:800;color:#0F172A;margin:0;letter-spacing:-.3px}
+.mg-subtitle{font-size:.8rem;color:#64748B;margin:0}
+.mg-back-btn{display:inline-flex;align-items:center;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:600;background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;text-decoration:none;transition:all .2s}
+.mg-back-btn:hover{background:#E2E8F0;color:#1E293B}
+
+/* ── Flash ── */
+.mg-flash{display:flex;align-items:center;padding:.75rem 1rem;border-radius:10px;font-size:.82rem;font-weight:600;margin-bottom:1rem;animation:mgFadeIn .3s ease}
+.mg-flash-success{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534}
+.mg-flash-danger{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+
+/* ── Stat Cards ── */
+.mg-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-bottom:1.25rem}
+.mg-stat-card{display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;background:#fff;border:1px solid #E8ECF1;border-radius:12px;text-decoration:none;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.mg-stat-card:hover{border-color:#C7D2FE;box-shadow:0 4px 15px rgba(37,99,235,.08);transform:translateY(-2px)}
+.mg-stat-total{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:transparent}
+.mg-stat-total:hover{border-color:transparent;box-shadow:0 4px 15px rgba(30,58,138,.25)}
+.mg-stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.mg-stat-body{flex:1;min-width:0}
+.mg-stat-value{display:block;font-size:1.3rem;font-weight:800;color:#0F172A;line-height:1.2}
+.mg-stat-label{display:block;font-size:.65rem;color:#64748B;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.mg-stat-arrow{color:#CBD5E1;font-size:.7rem;transition:transform .2s}
+.mg-stat-card:hover .mg-stat-arrow{color:#2563EB;transform:translateX(2px)}
+
+/* ── Two Column Layout ── */
+.mg-two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+
+/* ── Card ── */
+.mg-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.mg-card-header{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.15rem;color:#fff}
+.mg-card-header strong{display:block;font-size:.88rem;font-weight:700}
+.mg-card-header span{display:block;font-size:.72rem;opacity:.85}
+.mg-card-header-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;backdrop-filter:blur(4px)}
+.mg-card-header-import{background:linear-gradient(135deg,#059669,#10B981)}
+.mg-card-header-export{background:linear-gradient(135deg,#1D4ED8,#3B82F6)}
+.mg-card-body{padding:1.15rem}
+
+/* ── Form ── */
+.mg-form-group{margin-bottom:.85rem}
+.mg-form-label{display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
+.mg-form-select{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.82rem;color:#1E293B;background:#F8FAFC;outline:none;transition:border-color .2s,box-shadow .2s;appearance:auto}
+.mg-form-select:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+
+/* ── File Upload ── */
+.mg-file-upload{position:relative;border:2px dashed #CBD5E1;border-radius:10px;padding:1.25rem;text-align:center;transition:all .2s;cursor:pointer;background:#FAFBFC}
+.mg-file-upload:hover,.mg-file-upload.mg-drag-over{border-color:#2563EB;background:#EFF6FF}
+.mg-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+.mg-file-placeholder{display:flex;flex-direction:column;align-items:center;gap:.25rem;color:#94A3B8;pointer-events:none}
+.mg-file-placeholder i{font-size:1.5rem;color:#CBD5E1}
+.mg-file-placeholder strong{font-size:.8rem;color:#475569}
+.mg-file-placeholder span{font-size:.7rem}
+.mg-file-selected{display:flex;align-items:center;justify-content:center;gap:.5rem;pointer-events:none}
+.mg-file-selected i{color:#16A34A;font-size:1.1rem}
+.mg-file-selected span{font-size:.82rem;font-weight:600;color:#166534}
+
+/* ── Import Button ── */
+.mg-btn-import{width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#10B981);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:1rem}
+.mg-btn-import:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px)}
+
+/* ── Guide ── */
+.mg-guide{border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}
+.mg-guide-header{padding:.55rem .85rem;background:#F8FAFC;font-size:.74rem;font-weight:700;color:#475569;border-bottom:1px solid #E2E8F0}
+.mg-guide-body{padding:.65rem .85rem}
+.mg-guide-row{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.76rem;color:#475569;flex-wrap:wrap}
+.mg-guide-row code{font-size:.7rem;padding:1px 6px;border-radius:4px;background:#F1F5F9;color:#334155}
+.mg-guide-tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0}
+.mg-tag-required{background:#FEF2F2;color:#DC2626}
+.mg-tag-optional{background:#EFF6FF;color:#2563EB}
+.mg-tag-student{background:#F5F3FF;color:#7C3AED}
+.mg-tag-faculty{background:#FFF7ED;color:#EA580C}
+.mg-guide-note{margin-top:.5rem;padding-top:.5rem;border-top:1px solid #F1F5F9;font-size:.72rem;color:#64748B}
+.mg-guide-note code{font-size:.68rem;padding:1px 5px;border-radius:3px;background:#F1F5F9;color:#334155}
+
+/* ── Export ── */
+.mg-export-desc{font-size:.82rem;color:#64748B;margin-bottom:1rem}
+.mg-export-list{display:flex;flex-direction:column;gap:.5rem}
+.mg-export-item{display:flex;align-items:center;gap:.75rem;padding:.75rem .85rem;border:1px solid #E8ECF1;border-radius:10px;text-decoration:none;transition:all .2s}
+.mg-export-item:hover{border-color:#BFDBFE;background:#F8FAFF;box-shadow:0 2px 8px rgba(37,99,235,.06);transform:translateX(2px)}
+.mg-export-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.mg-export-info{flex:1;min-width:0}
+.mg-export-info strong{display:block;font-size:.82rem;font-weight:700;color:#1E293B}
+.mg-export-info span{font-size:.7rem;color:#64748B}
+.mg-export-action{width:32px;height:32px;border-radius:8px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
+.mg-export-item:hover .mg-export-action{background:#2563EB;color:#fff}
+
+/* ── Responsive ── */
+@media(max-width:992px){
+    .mg-stats-grid{grid-template-columns:repeat(3,1fr)}
+    .mg-two-col{grid-template-columns:1fr}
+}
+@media(max-width:576px){
+    .mg-stats-grid{grid-template-columns:repeat(2,1fr)}
+    .mg-header{flex-direction:column;align-items:flex-start}
+}
+
+/* ── Animation ── */
+.mg-header,.mg-stats-grid,.mg-card,.mg-flash{animation:mgFadeIn .25s ease}
+@keyframes mgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+{% endblock %}
+
 {% block body %}
 {# ═══════ PAGE HEADER ═══════ #}
 <div class="mg-header">
@@ -216,109 +322,6 @@
 </div>
 
 {# ═══════ STYLES ═══════ #}
-<style>
-/* ── Header ── */
-.mg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
-.mg-header-left{display:flex;align-items:center;gap:.85rem}
-.mg-header-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
-.mg-title{font-size:1.35rem;font-weight:800;color:#0F172A;margin:0;letter-spacing:-.3px}
-.mg-subtitle{font-size:.8rem;color:#64748B;margin:0}
-.mg-back-btn{display:inline-flex;align-items:center;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:600;background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;text-decoration:none;transition:all .2s}
-.mg-back-btn:hover{background:#E2E8F0;color:#1E293B}
-
-/* ── Flash ── */
-.mg-flash{display:flex;align-items:center;padding:.75rem 1rem;border-radius:10px;font-size:.82rem;font-weight:600;margin-bottom:1rem;animation:mgFadeIn .3s ease}
-.mg-flash-success{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534}
-.mg-flash-danger{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
-
-/* ── Stat Cards ── */
-.mg-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-bottom:1.25rem}
-.mg-stat-card{display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;background:#fff;border:1px solid #E8ECF1;border-radius:12px;text-decoration:none;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
-.mg-stat-card:hover{border-color:#C7D2FE;box-shadow:0 4px 15px rgba(37,99,235,.08);transform:translateY(-2px)}
-.mg-stat-total{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:transparent}
-.mg-stat-total:hover{border-color:transparent;box-shadow:0 4px 15px rgba(30,58,138,.25)}
-.mg-stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
-.mg-stat-body{flex:1;min-width:0}
-.mg-stat-value{display:block;font-size:1.3rem;font-weight:800;color:#0F172A;line-height:1.2}
-.mg-stat-label{display:block;font-size:.65rem;color:#64748B;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.mg-stat-arrow{color:#CBD5E1;font-size:.7rem;transition:transform .2s}
-.mg-stat-card:hover .mg-stat-arrow{color:#2563EB;transform:translateX(2px)}
-
-/* ── Two Column Layout ── */
-.mg-two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
-
-/* ── Card ── */
-.mg-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
-.mg-card-header{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.15rem;color:#fff}
-.mg-card-header strong{display:block;font-size:.88rem;font-weight:700}
-.mg-card-header span{display:block;font-size:.72rem;opacity:.85}
-.mg-card-header-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;backdrop-filter:blur(4px)}
-.mg-card-header-import{background:linear-gradient(135deg,#059669,#10B981)}
-.mg-card-header-export{background:linear-gradient(135deg,#1D4ED8,#3B82F6)}
-.mg-card-body{padding:1.15rem}
-
-/* ── Form ── */
-.mg-form-group{margin-bottom:.85rem}
-.mg-form-label{display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
-.mg-form-select{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.82rem;color:#1E293B;background:#F8FAFC;outline:none;transition:border-color .2s,box-shadow .2s;appearance:auto}
-.mg-form-select:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
-
-/* ── File Upload ── */
-.mg-file-upload{position:relative;border:2px dashed #CBD5E1;border-radius:10px;padding:1.25rem;text-align:center;transition:all .2s;cursor:pointer;background:#FAFBFC}
-.mg-file-upload:hover,.mg-file-upload.mg-drag-over{border-color:#2563EB;background:#EFF6FF}
-.mg-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
-.mg-file-placeholder{display:flex;flex-direction:column;align-items:center;gap:.25rem;color:#94A3B8;pointer-events:none}
-.mg-file-placeholder i{font-size:1.5rem;color:#CBD5E1}
-.mg-file-placeholder strong{font-size:.8rem;color:#475569}
-.mg-file-placeholder span{font-size:.7rem}
-.mg-file-selected{display:flex;align-items:center;justify-content:center;gap:.5rem;pointer-events:none}
-.mg-file-selected i{color:#16A34A;font-size:1.1rem}
-.mg-file-selected span{font-size:.82rem;font-weight:600;color:#166534}
-
-/* ── Import Button ── */
-.mg-btn-import{width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#10B981);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:1rem}
-.mg-btn-import:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px)}
-
-/* ── Guide ── */
-.mg-guide{border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}
-.mg-guide-header{padding:.55rem .85rem;background:#F8FAFC;font-size:.74rem;font-weight:700;color:#475569;border-bottom:1px solid #E2E8F0}
-.mg-guide-body{padding:.65rem .85rem}
-.mg-guide-row{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.76rem;color:#475569;flex-wrap:wrap}
-.mg-guide-row code{font-size:.7rem;padding:1px 6px;border-radius:4px;background:#F1F5F9;color:#334155}
-.mg-guide-tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0}
-.mg-tag-required{background:#FEF2F2;color:#DC2626}
-.mg-tag-optional{background:#EFF6FF;color:#2563EB}
-.mg-tag-student{background:#F5F3FF;color:#7C3AED}
-.mg-tag-faculty{background:#FFF7ED;color:#EA580C}
-.mg-guide-note{margin-top:.5rem;padding-top:.5rem;border-top:1px solid #F1F5F9;font-size:.72rem;color:#64748B}
-.mg-guide-note code{font-size:.68rem;padding:1px 5px;border-radius:3px;background:#F1F5F9;color:#334155}
-
-/* ── Export ── */
-.mg-export-desc{font-size:.82rem;color:#64748B;margin-bottom:1rem}
-.mg-export-list{display:flex;flex-direction:column;gap:.5rem}
-.mg-export-item{display:flex;align-items:center;gap:.75rem;padding:.75rem .85rem;border:1px solid #E8ECF1;border-radius:10px;text-decoration:none;transition:all .2s}
-.mg-export-item:hover{border-color:#BFDBFE;background:#F8FAFF;box-shadow:0 2px 8px rgba(37,99,235,.06);transform:translateX(2px)}
-.mg-export-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
-.mg-export-info{flex:1;min-width:0}
-.mg-export-info strong{display:block;font-size:.82rem;font-weight:700;color:#1E293B}
-.mg-export-info span{font-size:.7rem;color:#64748B}
-.mg-export-action{width:32px;height:32px;border-radius:8px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
-.mg-export-item:hover .mg-export-action{background:#2563EB;color:#fff}
-
-/* ── Responsive ── */
-@media(max-width:992px){
-    .mg-stats-grid{grid-template-columns:repeat(3,1fr)}
-    .mg-two-col{grid-template-columns:1fr}
-}
-@media(max-width:576px){
-    .mg-stats-grid{grid-template-columns:repeat(2,1fr)}
-    .mg-header{flex-direction:column;align-items:flex-start}
-}
-
-/* ── Animation ── */
-.mg-header,.mg-stats-grid,.mg-card,.mg-flash{animation:mgFadeIn .25s ease}
-@keyframes mgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-</style>
 
 {# ═══════ SCRIPT ═══════ #}
 <script>

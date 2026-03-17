@@ -610,7 +610,11 @@ class HomeController extends AbstractController
         $fslDataMap = [];
         foreach ($fslEntries as $fsl) {
             $sid = $fsl->getSubject()->getId();
-            $fslDataMap[$sid] = [
+            if (!isset($fslDataMap[$sid])) {
+                $fslDataMap[$sid] = [];
+            }
+            $fslDataMap[$sid][] = [
+                'id' => $fsl->getId(),
                 'section' => $fsl->getSection(),
                 'schedule' => $fsl->getSchedule(),
             ];
@@ -663,27 +667,47 @@ class HomeController extends AbstractController
         /** @var \App\Entity\User $user */
         /** @var User $user */
         $user = $this->getUser();
-        $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
-
-        // Also include subjects loaded via FSL table (shared subjects owned by other faculty)
         $currentAY = $ayRepo->findCurrent();
         $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
-        $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
+
+        // Build a flat list of loaded items from FSL entries (each section is a separate row)
+        $loadedItems = [];
+        $loadedSubjectIds = [];
+        $totalUnits = 0;
+        $countedSubjectIds = []; // track unique subjects for units calculation
         foreach ($savedLoads as $fsl) {
-            $sid = $fsl->getSubject()->getId();
-            if (!in_array($sid, $loadedIds)) {
-                $loadedSubjects[] = $fsl->getSubject();
-                $loadedIds[] = $sid;
+            $subject = $fsl->getSubject();
+            $sid = $subject->getId();
+            $loadedSubjectIds[] = $sid;
+            $loadedItems[] = [
+                'fslId' => $fsl->getId(),
+                'subject' => $subject,
+                'section' => $fsl->getSection(),
+                'schedule' => $fsl->getSchedule(),
+            ];
+            if (!in_array($sid, $countedSubjectIds)) {
+                $totalUnits += $subject->getUnits() ?? 0;
+                $countedSubjectIds[] = $sid;
             }
         }
 
-        $totalUnits = 0;
-        foreach ($loadedSubjects as $s) {
-            $totalUnits += $s->getUnits() ?? 0;
+        // Also include direct Subject.faculty subjects without FSL entries
+        $directLoaded = $subjectRepo->findByFaculty($user->getId());
+        foreach ($directLoaded as $subject) {
+            if (!in_array($subject->getId(), $loadedSubjectIds)) {
+                $loadedItems[] = [
+                    'fslId' => null,
+                    'subject' => $subject,
+                    'section' => $subject->getSection(),
+                    'schedule' => $subject->getSchedule(),
+                ];
+                $totalUnits += $subject->getUnits() ?? 0;
+                $loadedSubjectIds[] = $subject->getId();
+            }
         }
 
         // Only show previous loads that are NOT currently loaded (current AY)
-        $previousLoads = array_filter($savedLoads, fn($fsl) => !in_array($fsl->getSubject()->getId(), $loadedIds));
+        $previousLoads = array_filter($savedLoads, fn($fsl) => !in_array($fsl->getSubject()->getId(), $loadedSubjectIds));
 
         // Past academic year loads grouped by AY
         $pastLoadsRaw = $fslRepo->findPastLoadsByFaculty($user->getId(), $currentAY?->getId());
@@ -712,7 +736,7 @@ class HomeController extends AbstractController
         }
 
         return $this->render('admin/loaded_subjects.html.twig', [
-            'subjects' => $loadedSubjects,
+            'subjects' => $loadedItems,
             'totalUnits' => $totalUnits,
             'previousLoads' => array_values($previousLoads),
             'pastLoadsByAY' => array_values($pastLoadsByAY),
@@ -940,17 +964,54 @@ class HomeController extends AbstractController
         // Persist load data to faculty_subject_load table
         // Each faculty gets their own section/schedule stored independently
         $currentAY = $ayRepo->findCurrent();
-        $fslRepo->removeByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
 
+        // Get existing FSL entries to preserve additional sections (picked via "Pick Again")
+        $existingFslEntries = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+
+        // Build map: subjectId => [fsl entries] to identify extra sections
+        $existingBySubject = [];
+        foreach ($existingFslEntries as $fsl) {
+            $sid = $fsl->getSubject()->getId();
+            $existingBySubject[$sid][] = $fsl;
+        }
+
+        // For each selected subject: update the first (primary) FSL entry, keep additional ones
+        // For unselected subjects: remove all FSL entries
+        $selectedIdMap2 = array_flip($subjectIds);
+
+        // Remove FSL entries for subjects that are no longer selected
+        foreach ($existingBySubject as $sid => $fslList) {
+            if (!isset($selectedIdMap2[$sid])) {
+                // Subject was unchecked — remove all its FSL entries
+                foreach ($fslList as $fsl) {
+                    $em->remove($fsl);
+                }
+                unset($existingBySubject[$sid]);
+            }
+        }
+
+        // Update or create the primary FSL entry for each selected subject
         foreach ($subjectIds as $sid) {
             $subject = $subjectRepo->find($sid);
-            if ($subject) {
+            if (!$subject) continue;
+
+            $newSection = isset($sections[$sid]) ? ($sections[$sid] ?: null) : null;
+            $newSchedule = isset($schedules[$sid]) ? ($schedules[$sid] ?: null) : null;
+
+            if (isset($existingBySubject[$sid]) && count($existingBySubject[$sid]) > 0) {
+                // Update the first (primary) entry
+                $primaryFsl = $existingBySubject[$sid][0];
+                $primaryFsl->setSection($newSection);
+                $primaryFsl->setSchedule($newSchedule);
+                // Additional entries (index 1+) are preserved as-is
+            } else {
+                // No existing entry — create a new one
                 $fsl = new FacultySubjectLoad();
                 $fsl->setFaculty($user);
                 $fsl->setSubject($subject);
                 $fsl->setAcademicYear($currentAY);
-                $fsl->setSection(isset($sections[$sid]) ? ($sections[$sid] ?: null) : $subject->getSection());
-                $fsl->setSchedule(isset($schedules[$sid]) ? ($schedules[$sid] ?: null) : $subject->getSchedule());
+                $fsl->setSection($newSection);
+                $fsl->setSchedule($newSchedule);
                 $em->persist($fsl);
             }
         }
@@ -964,6 +1025,81 @@ class HomeController extends AbstractController
             $messages[] = $unloaded . ' subject' . ($unloaded !== 1 ? 's' : '') . ' unloaded';
         }
         $this->addFlash('success', $messages ? implode(', ', $messages) . '.' : 'No changes made.');
+        return $this->redirectToRoute('faculty_subjects');
+    }
+
+    #[Route('/faculty/subjects/pick-again', name: 'faculty_subject_pick_again', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultySubjectPickAgain(
+        Request $request,
+        SubjectRepository $subjectRepo,
+        EntityManagerInterface $em,
+        AcademicYearRepository $ayRepo,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $token = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('pick_again_subject', $token)) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $subjectId = (int) $request->request->get('subject_id');
+        $section = trim($request->request->get('section', ''));
+        $schedule = $request->request->get('schedule', '');
+
+        if (!$subjectId || !$section) {
+            $this->addFlash('danger', 'Subject and section are required.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $subject = $subjectRepo->find($subjectId);
+        if (!$subject) {
+            $this->addFlash('danger', 'Subject not found.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $currentAY = $ayRepo->findCurrent();
+
+        $fsl = new FacultySubjectLoad();
+        $fsl->setFaculty($user);
+        $fsl->setSubject($subject);
+        $fsl->setAcademicYear($currentAY);
+        $fsl->setSection($section);
+        $fsl->setSchedule($schedule ?: null);
+        $em->persist($fsl);
+        $em->flush();
+
+        $this->addFlash('success', 'Subject "' . $subject->getSubjectCode() . ' — Section ' . strtoupper($section) . '" added to your load.');
+        return $this->redirectToRoute('faculty_subjects');
+    }
+
+    #[Route('/faculty/subjects/unload-fsl/{id}', name: 'faculty_subject_unload_fsl', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultySubjectUnloadFsl(
+        int $id,
+        Request $request,
+        FacultySubjectLoadRepository $fslRepo,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $token = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('unload_fsl_' . $id, $token)) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $fsl = $fslRepo->find($id);
+        if (!$fsl || $fsl->getFaculty()->getId() !== $user->getId()) {
+            $this->addFlash('danger', 'Load entry not found or not yours.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $code = $fsl->getSubject()->getSubjectCode();
+        $sec = $fsl->getSection();
+        $fslRepo->removeById($id);
+
+        $this->addFlash('success', 'Subject "' . $code . ($sec ? ' — Section ' . $sec : '') . '" unloaded.');
         return $this->redirectToRoute('faculty_subjects');
     }
 
@@ -1295,13 +1431,43 @@ class HomeController extends AbstractController
 
     #[Route('/faculty/schedule', name: 'faculty_schedule')]
     #[IsGranted('ROLE_FACULTY')]
-    public function facultySchedule(SubjectRepository $subjectRepo): Response
-    {
+    public function facultySchedule(
+        SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
-        $subjects = $subjectRepo->findByFaculty($user->getId());
+        $currentAY = $ayRepo->findCurrent();
+        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+
+        // Build schedule items from FSL entries (each section as a separate row)
+        $scheduleItems = [];
+        $loadedSubjectIds = [];
+        foreach ($savedLoads as $fsl) {
+            $subject = $fsl->getSubject();
+            $loadedSubjectIds[] = $subject->getId();
+            $scheduleItems[] = [
+                'subject' => $subject,
+                'section' => $fsl->getSection(),
+                'schedule' => $fsl->getSchedule(),
+            ];
+        }
+
+        // Include direct Subject.faculty subjects without FSL entries
+        $directLoaded = $subjectRepo->findByFaculty($user->getId());
+        foreach ($directLoaded as $subject) {
+            if (!in_array($subject->getId(), $loadedSubjectIds)) {
+                $scheduleItems[] = [
+                    'subject' => $subject,
+                    'section' => $subject->getSection(),
+                    'schedule' => $subject->getSchedule(),
+                ];
+            }
+        }
+
         return $this->render('home/faculty/schedule.html.twig', [
-            'subjects' => $subjects,
+            'subjects' => $scheduleItems,
         ]);
     }
 
