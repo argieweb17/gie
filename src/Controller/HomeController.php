@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Enrollment;
 use App\Entity\EvaluationMessage;
+use App\Entity\FacultyNotificationRead;
 use App\Entity\FacultySubjectLoad;
 use App\Entity\Subject;
 use App\Entity\User;
@@ -11,6 +12,7 @@ use App\Repository\AcademicYearRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\CurriculumRepository;
+use App\Repository\FacultyNotificationReadRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\DepartmentRepository;
 use App\Repository\EnrollmentRepository;
@@ -2438,5 +2440,60 @@ class HomeController extends AbstractController
             'pending' => $pending,
             'completed' => $completed,
         ]);
+    }
+
+    #[Route('/faculty/notification/read/{id}', name: 'faculty_notification_read', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function markNotificationRead(
+        int $id,
+        EvaluationPeriodRepository $evalRepo,
+        FacultyNotificationReadRepository $readRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $eval = $evalRepo->find($id);
+        if (!$eval) {
+            return $this->json(['ok' => false], 404);
+        }
+
+        $existing = $readRepo->findOneBy(['user' => $user, 'evaluationPeriod' => $eval]);
+        if (!$existing) {
+            $nr = new FacultyNotificationRead();
+            $nr->setUser($user);
+            $nr->setEvaluationPeriod($eval);
+            $em->persist($nr);
+            $em->flush();
+        }
+
+        return $this->json(['ok' => true]);
+    }
+
+    #[Route('/faculty/notification/read-all', name: 'faculty_notification_read_all', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function markAllNotificationsRead(
+        EvaluationPeriodRepository $evalRepo,
+        FacultyNotificationReadRepository $readRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $facultyName = $user->getFullName();
+        $allOpen = $evalRepo->findOpen();
+        $readIds = $readRepo->findReadEvaluationIds($user->getId());
+
+        foreach ($allOpen as $eval) {
+            if ($eval->getEvaluationType() === 'SUPERIOR') continue;
+            if ($eval->getFaculty() !== $facultyName) continue;
+            if (in_array($eval->getId(), $readIds)) continue;
+
+            $nr = new FacultyNotificationRead();
+            $nr->setUser($user);
+            $nr->setEvaluationPeriod($eval);
+            $em->persist($nr);
+        }
+        $em->flush();
+
+        return $this->json(['ok' => true]);
     }
 }

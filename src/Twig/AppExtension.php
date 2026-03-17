@@ -7,6 +7,7 @@ use App\Repository\AuditLogRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
+use App\Repository\FacultyNotificationReadRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\UserRepository;
@@ -28,6 +29,7 @@ class AppExtension extends AbstractExtension
         private QuestionRepository $questionRepo,
         private AuditLogRepository $auditLogRepo,
         private EvaluationMessageRepository $evalMessageRepo,
+        private FacultyNotificationReadRepository $notifReadRepo,
     ) {}
 
     public function getFunctions(): array
@@ -36,6 +38,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('faculty_subjects', [$this, 'getFacultySubjects']),
             new TwigFunction('sidebar_counts', [$this, 'getSidebarCounts']),
             new TwigFunction('current_academic_year', [$this, 'getCurrentAcademicYear']),
+            new TwigFunction('faculty_pending_evaluations', [$this, 'getFacultyPendingEvaluations']),
         ];
     }
 
@@ -117,5 +120,37 @@ class AppExtension extends AbstractExtension
         }
 
         return $this->subjectRepo->findByFaculty($user->getId());
+    }
+
+    /**
+     * Returns open evaluation periods assigned to the current faculty user's loaded subjects.
+     * Each item is ['eval' => EvaluationPeriod, 'read' => bool].
+     */
+    public function getFacultyPendingEvaluations(): array
+    {
+        /** @var \App\Entity\User|null $user */
+        $user = $this->security->getUser();
+        if (!$user || !in_array('ROLE_FACULTY', $user->getRoles())) {
+            return [];
+        }
+
+        $facultyName = $user->getFullName();
+        $allOpen = $this->evalPeriodRepo->findOpen();
+        $readIds = $this->notifReadRepo->findReadEvaluationIds($user->getId());
+        $pending = [];
+
+        foreach ($allOpen as $eval) {
+            if ($eval->getEvaluationType() === 'SUPERIOR') {
+                continue;
+            }
+            if ($eval->getFaculty() === $facultyName) {
+                $pending[] = [
+                    'eval' => $eval,
+                    'read' => in_array($eval->getId(), $readIds),
+                ];
+            }
+        }
+
+        return $pending;
     }
 }

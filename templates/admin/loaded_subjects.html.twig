@@ -514,21 +514,21 @@
                             data-eval-subject="{{ s.evaluation.subject ?? '' }}"
                             data-eval-section="{{ s.evaluation.section ?? '' }}"
                             data-eval-school-year="{{ s.evaluation.schoolYear ?? '' }}">
-                            <i class="bi bi-qr-code me-1"></i>QR
+                            <i class="bi bi-qr-code"></i>
                         </button>
                     {% endif %}
                     {% if s.fslId %}
                     <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
-                            <i class="bi bi-x-circle me-1"></i>Unload
+                            <i class="bi bi-x-circle"></i>
                         </button>
                     </form>
                     {% else %}
                     <form method="post" action="{{ path('faculty_subject_unload', {id: s.subject.id}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — {{ s.subject.subjectName }}?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.subject.id) }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
-                            <i class="bi bi-x-circle me-1"></i>Unload
+                            <i class="bi bi-x-circle"></i>
                         </button>
                     </form>
                     {% endif %}
