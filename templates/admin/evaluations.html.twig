@@ -160,13 +160,11 @@
 }
 @keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-/* ──── Hide SET-only columns (Subject, Year, Schedule) ──── */
+/* ──── Hide SET-only columns (Subject, Schedule) ──── */
 .ev-table.hide-set-cols th:nth-child(6),
 .ev-table.hide-set-cols td:nth-child(6),
 .ev-table.hide-set-cols th:nth-child(7),
-.ev-table.hide-set-cols td:nth-child(7),
-.ev-table.hide-set-cols th:nth-child(8),
-.ev-table.hide-set-cols td:nth-child(8) {
+.ev-table.hide-set-cols td:nth-child(7) {
     display: none;
 }
 
@@ -320,10 +318,9 @@
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',3)">Position <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',6)">Year <i class="bi bi-arrow-down-up"></i></th>
                     <th>Schedule</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',9)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('activeTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -368,7 +365,6 @@
                             {% else %}—{% endif %}
                         {% else %}—{% endif %}
                     </td>
-                    <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
@@ -420,7 +416,7 @@
                 </tr>
                 {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
                 <tr class="ev-detail-row" id="evDetailActive{{ eval.id }}" style="display:none;">
-                    <td colspan="11">
+                    <td colspan="10">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
@@ -428,6 +424,7 @@
                                         <th>Subject</th>
                                         <th>Section</th>
                                         <th>Schedule</th>
+                                        <th class="text-center">Evaluators</th>
                                         <th class="text-center">QR</th>
                                     </tr>
                                 </thead>
@@ -437,6 +434,7 @@
                                         <td>{{ item.subject ?: '—' }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
+                                        <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
                                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
@@ -449,7 +447,7 @@
                 </tr>
                 {% endif %}
                 {% else %}
-                <tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -492,11 +490,10 @@
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',3)">Position <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('previousTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',6)">Year <i class="bi bi-arrow-down-up"></i></th>
                     <th>Schedule</th>
                     <th>Ended</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',10)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
+                    <th class="ev-th-sortable" onclick="sortTable('previousTable',9)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -533,7 +530,6 @@
                             {% else %}—{% endif %}
                         {% else %}—{% endif %}
                     </td>
-                    <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
@@ -600,7 +596,7 @@
                 </tr>
                 {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
                 <tr class="ev-detail-row" id="evDetailPrev{{ eval.id }}" style="display:none;">
-                    <td colspan="12">
+                    <td colspan="11">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
@@ -608,6 +604,7 @@
                                         <th>Subject</th>
                                         <th>Section</th>
                                         <th>Schedule</th>
+                                        <th class="text-center">Evaluators</th>
                                         <th class="text-center">QR</th>
                                     </tr>
                                 </thead>
@@ -617,6 +614,7 @@
                                         <td>{{ item.subject ?: '—' }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
+                                        <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
                                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
@@ -629,7 +627,7 @@
                 </tr>
                 {% endif %}
                 {% else %}
-                <tr><td colspan="12" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
+                <tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -708,15 +706,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label ev-form-label">Year Level</label>
-                                    <select name="yearLevel" class="form-select ev-form-control">
-                                        <option value="">All Year Levels</option>
-                                        {% for yr in ['1st Year','2nd Year','3rd Year','4th Year','5th Year'] %}
-                                            <option value="{{ yr }}" {{ eval.yearLevel == yr ? 'selected' : '' }}>{{ yr }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
+
                                 <div class="col-md-4">
                                     <label class="form-label ev-form-label">College</label>
                                     <select name="college" class="form-select ev-form-control college-select">
@@ -883,17 +873,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label ev-form-label">Year Level</label>
-                            <select name="yearLevel" class="form-select ev-form-control">
-                                <option value="">All Year Levels</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
-                                <option value="5th Year">5th Year</option>
-                            </select>
-                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">College</label>
                             <select name="college" class="form-select ev-form-control college-select">
