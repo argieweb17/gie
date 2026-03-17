@@ -630,17 +630,17 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" style="display:none;">
                                     <label class="form-label ev-form-label">Subject</label>
                                     <select name="subject" id="editSubject{{ eval.id }}" class="form-select ev-form-control subject-select" data-target-time="#editTime{{ eval.id }}" data-target-section="#editSection{{ eval.id }}" data-current-value="{{ eval.subject }}">
                                         <option value="" data-schedule="" data-section="">— Select Subject —</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" style="display:none;">
                                     <label class="form-label ev-form-label">Time</label>
                                     <input type="text" name="time" id="editTime{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.time }}" placeholder="Auto-filled from subject" readonly>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" style="display:none;">
                                     <label class="form-label ev-form-label">Section</label>
                                     <input type="text" name="section" id="editSection{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.section }}" placeholder="Auto-filled from subject" readonly>
                                 </div>
@@ -800,24 +800,25 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Faculty</label>
-                            <select name="faculty" class="form-select ev-form-control faculty-select" data-target-subject="#createSubject">
+                            <select name="faculty" class="form-select ev-form-control faculty-select" data-target-subject="#createSubject" data-target-faculty-id="#createFacultyId">
                                 <option value="" data-faculty-id="" data-department="">— Select Faculty —</option>
                                 {% for f in facultyUsers %}
                                     <option value="{{ f.fullName }}" data-faculty-id="{{ f.id }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
                                 {% endfor %}
                             </select>
+                            <input type="hidden" name="facultyId" id="createFacultyId" value="">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4" style="display:none;">
                             <label class="form-label ev-form-label">Subject</label>
                             <select name="subject" id="createSubject" class="form-select ev-form-control subject-select" data-target-time="#createTime" data-target-section="#createSection" data-current-value="">
                                 <option value="" data-schedule="" data-section="">— Select Faculty first —</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4" style="display:none;">
                             <label class="form-label ev-form-label">Time</label>
                             <input type="text" name="time" id="createTime" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4" style="display:none;">
                             <label class="form-label ev-form-label">Section</label>
                             <input type="text" name="section" id="createSection" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
                         </div>
@@ -1109,11 +1110,27 @@ document.querySelectorAll('.subject-select').forEach(function(sel) {
 });
 
 document.querySelectorAll('.faculty-select').forEach(function(sel) {
-    sel.addEventListener('change', function() { filterSubjectsByFaculty(this, ''); });
+    sel.addEventListener('change', function() {
+        filterSubjectsByFaculty(this, '');
+        /* Update hidden facultyId field */
+        var facIdTarget = this.getAttribute('data-target-faculty-id');
+        if (facIdTarget) {
+            var facIdField = document.querySelector(facIdTarget);
+            var opt = this.options[this.selectedIndex];
+            if (facIdField && opt) facIdField.value = opt.getAttribute('data-faculty-id') || '';
+        }
+    });
     var subjectSel = document.querySelector(sel.getAttribute('data-target-subject'));
     var currentSubjectVal = subjectSel ? subjectSel.getAttribute('data-current-value') : '';
     if (sel.value) {
         filterSubjectsByFaculty(sel, currentSubjectVal);
+        /* Set initial facultyId */
+        var facIdTarget = sel.getAttribute('data-target-faculty-id');
+        if (facIdTarget) {
+            var facIdField = document.querySelector(facIdTarget);
+            var opt = sel.options[sel.selectedIndex];
+            if (facIdField && opt) facIdField.value = opt.getAttribute('data-faculty-id') || '';
+        }
     }
 });
 
@@ -1154,6 +1171,9 @@ document.querySelectorAll('.dept-select').forEach(function(deptSel) {
         var sectionField = modal ? modal.querySelector('[name="section"]') : null;
         if (timeField) timeField.value = '';
         if (sectionField) sectionField.value = '';
+        /* Reset hidden facultyId */
+        var facIdField = modal ? modal.querySelector('[name="facultyId"]') : null;
+        if (facIdField) facIdField.value = '';
     });
 });
 

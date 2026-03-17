@@ -663,6 +663,7 @@ class HomeController extends AbstractController
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         /** @var User $user */
@@ -734,6 +735,37 @@ class HomeController extends AbstractController
         if ($currentAY && $currentAY->getEndDate()) {
             $semesterEnded = new \DateTime() > $currentAY->getEndDate();
         }
+
+        // Find active SET evaluations matching the faculty's subjects
+        $openEvals = $evalRepo->findActive('SET');
+        $facultyName = mb_strtolower(trim($user->getFullName()));
+        $subjectEvalMap = [];
+        foreach ($openEvals as $eval) {
+            $evalFaculty = $eval->getFaculty();
+            if ($evalFaculty && mb_strtolower(trim($evalFaculty)) === $facultyName) {
+                $evalSubjectStr = $eval->getSubject();
+                if ($evalSubjectStr) {
+                    $parts = explode(' — ', $evalSubjectStr, 2);
+                    $code = strtoupper(trim($parts[0]));
+                    $section = strtoupper(trim($eval->getSection() ?? ''));
+                    // Key by code+section for exact match, and code-only as fallback
+                    $subjectEvalMap[$code . '|' . $section] = $eval;
+                    if (!isset($subjectEvalMap[$code . '|'])) {
+                        $subjectEvalMap[$code . '|'] = $eval;
+                    }
+                }
+            }
+        }
+
+        // Attach evaluation to each loaded item (exact section match first, then fallback)
+        foreach ($loadedItems as &$item) {
+            $code = strtoupper(trim($item['subject']->getSubjectCode()));
+            $section = strtoupper(trim($item['section'] ?? ''));
+            $item['evaluation'] = $subjectEvalMap[$code . '|' . $section]
+                ?? $subjectEvalMap[$code . '|']
+                ?? null;
+        }
+        unset($item);
 
         return $this->render('admin/loaded_subjects.html.twig', [
             'subjects' => $loadedItems,
@@ -1435,6 +1467,7 @@ class HomeController extends AbstractController
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -1465,6 +1498,29 @@ class HomeController extends AbstractController
                 ];
             }
         }
+
+        // Find active SET evaluations matching the faculty's subjects
+        $openEvals = $evalRepo->findActive('SET');
+        $facultyName = mb_strtolower(trim($user->getFullName()));
+        $subjectEvalMap = [];
+        foreach ($openEvals as $eval) {
+            $evalFaculty = $eval->getFaculty();
+            if ($evalFaculty && mb_strtolower(trim($evalFaculty)) === $facultyName) {
+                $evalSubjectStr = $eval->getSubject();
+                if ($evalSubjectStr) {
+                    $parts = explode(' — ', $evalSubjectStr, 2);
+                    $code = strtoupper(trim($parts[0]));
+                    $subjectEvalMap[$code] = $eval;
+                }
+            }
+        }
+
+        // Attach evaluation to each schedule item
+        foreach ($scheduleItems as &$item) {
+            $code = strtoupper(trim($item['subject']->getSubjectCode()));
+            $item['evaluation'] = $subjectEvalMap[$code] ?? null;
+        }
+        unset($item);
 
         return $this->render('home/faculty/schedule.html.twig', [
             'subjects' => $scheduleItems,

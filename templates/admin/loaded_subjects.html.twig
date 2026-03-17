@@ -63,13 +63,18 @@
 /* Badges */
 .ls-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
 .ls-dept-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#6366f1;background:#eef2ff;padding:3px 10px;border-radius:6px;}
+.ls-eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:6px;letter-spacing:.02em;}
+.ls-eval-active{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
+.ls-eval-none{background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;}
 
 /* Actions (hidden) */
 .ls-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
 .ls-action-view{color:#059669;}
 .ls-action-view:hover{background:#ecfdf5;color:#047857;transform:scale(1.1);}
+.ls-action-qr{color:#0d9488;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;width:auto;padding:2px 10px;font-size:.72rem;font-weight:600;gap:4px;display:inline-flex;align-items:center;}
+.ls-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;transform:scale(1.05);}
 
-.ls-th-actions{text-align:center;width:60px;}
+.ls-th-actions{text-align:center;width:120px;}
 
 /* Empty */
 .ls-empty-state{padding:20px 0;}
@@ -136,6 +141,41 @@
 @keyframes lsFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 .ls-row{animation:lsRowIn .2s ease backwards;}
 @keyframes lsRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+
+/* QR Code Modal */
+.qr-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);animation:qrSlideUp .3s ease;position:relative;}
+.qr-modal-close{position:absolute;top:12px;right:12px;background:#F1F5F9;border:none;color:#64748B;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s;z-index:2;}
+.qr-modal-close:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-layout{display:flex;min-height:340px;}
+.qr-modal-left{flex:1;padding:1.5rem 1.5rem 1.25rem;display:flex;flex-direction:column;}
+.qr-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#DBEAFE,#EFF6FF);color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:.75rem;box-shadow:0 2px 8px rgba(37,99,235,.1);}
+.qr-modal-title{font-size:1.1rem;font-weight:800;color:#0F172A;margin:0;line-height:1.2;letter-spacing:-.3px;}
+.qr-modal-subtitle{font-size:.74rem;color:#94A3B8;margin:.2rem 0 0;line-height:1.4;}
+.qr-eval-info{margin-top:.85rem;margin-bottom:auto;display:flex;flex-direction:column;gap:.4rem;padding:.65rem .75rem;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:10px;}
+.qr-info-row{display:flex;align-items:center;gap:.5rem;}
+.qr-info-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;flex-shrink:0;}
+.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;}
+.qr-eval-type-badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
+.qr-url-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem;margin-top:.75rem;}
+.qr-url-box{font-size:.6rem;color:#64748B;word-break:break-all;padding:.45rem .65rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:.7rem;font-family:'SF Mono',Monaco,Consolas,monospace;line-height:1.5;}
+.qr-actions{display:flex;gap:.4rem;}
+.qr-action-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.55rem .6rem;border-radius:8px;font-size:.76rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.qr-btn-download{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.2);}
+.qr-btn-download:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px);}
+.qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
+.qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-right{width:235px;background:#F8FAFC;border-left:1px solid #F1F5F9;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;}
+.qr-preview-label{font-size:.64rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:.75rem;}
+.qr-code-frame{padding:.85rem;background:#fff;border:1.5px dashed #D4D9E1;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.03);}
+.qr-code-frame img{width:160px;height:160px;border-radius:8px;display:block;}
+.qr-scan-hint{font-size:.62rem;color:#B0B8C4;margin-top:.75rem;display:flex;align-items:center;}
+@media(max-width:576px){
+    .qr-modal-layout{flex-direction:column-reverse;}
+    .qr-modal-right{width:100%;border-left:none;border-bottom:1px solid #F1F5F9;padding:1.25rem;}
+    .qr-code-frame img{width:140px;height:140px;}
+    .qr-modal-left{padding:1.25rem;}
+}
+@keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
 /* ═══════════════════════════════════════
    PRINT STYLES
@@ -386,6 +426,7 @@
                 <th class="ls-th">Section</th>
                 <th class="ls-th">Schedule/Time</th>
                 <th class="ls-th">Department</th>
+                <th class="ls-th text-center">Status</th>
                 <th class="ls-th text-center">Actions</th>
             </tr>
         </thead>
@@ -456,6 +497,26 @@
                     {% endif %}
                 </td>
                 <td class="text-center">
+                    {% if s.evaluation is defined and s.evaluation is not null %}
+                        <span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Evaluated</span>
+                    {% else %}
+                        <span class="ls-eval-badge ls-eval-none"><i class="bi bi-dash-circle"></i> No Evaluation</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                    {% if s.evaluation is defined and s.evaluation is not null %}
+                        <button type="button" class="ls-action-btn ls-action-qr"
+                            data-bs-toggle="modal"
+                            data-bs-target="#lsQrModal"
+                            data-eval-id="{{ s.evaluation.id }}"
+                            data-eval-faculty="{{ s.evaluation.faculty ?? '' }}"
+                            data-eval-subject="{{ s.evaluation.subject ?? '' }}"
+                            data-eval-section="{{ s.evaluation.section ?? '' }}"
+                            data-eval-school-year="{{ s.evaluation.schoolYear ?? '' }}">
+                            <i class="bi bi-qr-code me-1"></i>QR
+                        </button>
+                    {% endif %}
                     {% if s.fslId %}
                     <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
@@ -471,6 +532,7 @@
                         </button>
                     </form>
                     {% endif %}
+                    </div>
                 </td>
             </tr>
             {% else %}
@@ -546,7 +608,58 @@
     </div>
 </div>
 
-
+{# ═══════════════════════════════════════
+   QR CODE MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="lsQrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
+        <div class="modal-content qr-modal">
+            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="qr-modal-layout">
+                <div class="qr-modal-left">
+                    <div class="qr-modal-icon"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="qr-modal-title">Evaluation QR Code</h5>
+                    <p class="qr-modal-subtitle" id="lsQrSubtitle">Scan to open the evaluation form</p>
+                    <div class="qr-eval-info">
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Type</span>
+                            <span class="qr-eval-type-badge">SET</span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Faculty</span>
+                            <span class="qr-info-value" id="lsQrFaculty"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Subject</span>
+                            <span class="qr-info-value" id="lsQrSubject"></span>
+                        </div>
+                        <div class="qr-info-row" id="lsQrSectionRow">
+                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-value" id="lsQrSection"></span>
+                        </div>
+                    </div>
+                    <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
+                    <div class="qr-url-box" id="lsQrUrl"></div>
+                    <div class="qr-actions">
+                        <button type="button" class="qr-action-btn qr-btn-download" onclick="lsDownloadQR()">
+                            <i class="bi bi-download"></i> Download
+                        </button>
+                        <button type="button" class="qr-action-btn qr-btn-copy" onclick="lsCopyQRLink()">
+                            <i class="bi bi-clipboard"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+                <div class="qr-modal-right">
+                    <div class="qr-preview-label"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div class="qr-code-frame">
+                        <img id="lsQrImage" src="" alt="QR Code">
+                    </div>
+                    <div class="qr-scan-hint"><i class="bi bi-phone me-1"></i>Scan with any camera app</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 {# ═══════════════════════════════════════
@@ -714,5 +827,56 @@ function lsPrint() {
     // Re-hide after print
     setTimeout(function() { printDiv.style.display = 'none'; }, 500);
 }
+
+/* ── QR Code for Evaluations ── */
+(function() {
+    var currentQrUrl = '';
+    var qrModal = document.getElementById('lsQrModal');
+    if (!qrModal) return;
+
+    var baseUrl = window.location.origin;
+
+    qrModal.addEventListener('show.bs.modal', function(e) {
+        var btn = e.relatedTarget;
+        if (!btn) return;
+
+        var evalId = btn.getAttribute('data-eval-id');
+        var faculty = btn.getAttribute('data-eval-faculty');
+        var subject = btn.getAttribute('data-eval-subject');
+        var section = btn.getAttribute('data-eval-section');
+        var schoolYear = btn.getAttribute('data-eval-school-year');
+
+        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+
+        document.getElementById('lsQrSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
+        document.getElementById('lsQrFaculty').textContent = faculty || '—';
+        document.getElementById('lsQrSubject').textContent = subject || '—';
+        document.getElementById('lsQrSection').textContent = section || '—';
+        var sectionRow = document.getElementById('lsQrSectionRow');
+        if (sectionRow) sectionRow.style.display = section ? '' : 'none';
+
+        document.getElementById('lsQrUrl').textContent = currentQrUrl;
+
+        var qrImg = document.getElementById('lsQrImage');
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+    });
+
+    window.lsDownloadQR = function() {
+        var img = document.getElementById('lsQrImage');
+        var link = document.createElement('a');
+        link.download = 'evaluation-qr-code.png';
+        link.href = img.src;
+        link.click();
+    };
+
+    window.lsCopyQRLink = function() {
+        navigator.clipboard.writeText(currentQrUrl).then(function() {
+            var btn = document.querySelector('#lsQrModal .qr-btn-copy');
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            setTimeout(function() { btn.innerHTML = orig; }, 1500);
+        });
+    };
+})();
 </script>
 {% endblock %}

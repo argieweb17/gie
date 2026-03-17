@@ -6,6 +6,48 @@
 {% block page_subtitle %}Your weekly timetable{% endblock %}
 
 {% block page_content %}
+<style>
+/* QR Code Modal */
+.qr-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);animation:qrSlideUp .3s ease;position:relative;}
+.qr-modal-close{position:absolute;top:12px;right:12px;background:#F1F5F9;border:none;color:#64748B;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s;z-index:2;}
+.qr-modal-close:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-layout{display:flex;min-height:340px;}
+.qr-modal-left{flex:1;padding:1.5rem 1.5rem 1.25rem;display:flex;flex-direction:column;}
+.qr-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#DBEAFE,#EFF6FF);color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:.75rem;box-shadow:0 2px 8px rgba(37,99,235,.1);}
+.qr-modal-title{font-size:1.1rem;font-weight:800;color:#0F172A;margin:0;line-height:1.2;letter-spacing:-.3px;}
+.qr-modal-subtitle{font-size:.74rem;color:#94A3B8;margin:.2rem 0 0;line-height:1.4;}
+.qr-eval-info{margin-top:.85rem;margin-bottom:auto;display:flex;flex-direction:column;gap:.4rem;padding:.65rem .75rem;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:10px;}
+.qr-info-row{display:flex;align-items:center;gap:.5rem;}
+.qr-info-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;flex-shrink:0;}
+.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;}
+.qr-eval-type-badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
+.qr-url-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem;margin-top:.75rem;}
+.qr-url-box{font-size:.6rem;color:#64748B;word-break:break-all;padding:.45rem .65rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:.7rem;font-family:'SF Mono',Monaco,Consolas,monospace;line-height:1.5;}
+.qr-actions{display:flex;gap:.4rem;}
+.qr-action-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.55rem .6rem;border-radius:8px;font-size:.76rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.qr-btn-download{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.2);}
+.qr-btn-download:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px);}
+.qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
+.qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-right{width:235px;background:#F8FAFC;border-left:1px solid #F1F5F9;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;}
+.qr-preview-label{font-size:.64rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:.75rem;}
+.qr-code-frame{padding:.85rem;background:#fff;border:1.5px dashed #D4D9E1;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.03);}
+.qr-code-frame img{width:160px;height:160px;border-radius:8px;display:block;}
+.qr-scan-hint{font-size:.62rem;color:#B0B8C4;margin-top:.75rem;display:flex;align-items:center;}
+@media(max-width:576px){
+    .qr-modal-layout{flex-direction:column-reverse;}
+    .qr-modal-right{width:100%;border-left:none;border-bottom:1px solid #F1F5F9;padding:1.25rem;}
+    .qr-code-frame img{width:140px;height:140px;}
+    .qr-modal-left{padding:1.25rem;}
+}
+@keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* QR Action Button */
+.sched-qr-btn{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;padding:5px 12px;border-radius:8px;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .18s ease;box-shadow:0 2px 6px rgba(13,148,136,.2);}
+.sched-qr-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(13,148,136,.3);background:linear-gradient(135deg,#0f766e,#0d9488);}
+.sched-qr-btn:active{transform:translateY(0);}
+</style>
+
 <div class="card border-0 shadow-sm">
     <div class="card-body">
         {% if subjects|length > 0 %}
@@ -21,6 +63,7 @@
                         <th>Section</th>
                         <th>Room</th>
                         <th>Schedule / Time</th>
+                        <th class="text-center">Evaluate</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,6 +95,22 @@
                                 <span class="text-muted fst-italic">Not yet set</span>
                             {% endif %}
                         </td>
+                        <td class="text-center">
+                            {% if item.evaluation is defined and item.evaluation %}
+                                <button type="button" class="sched-qr-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#schedQrModal"
+                                    data-eval-id="{{ item.evaluation.id }}"
+                                    data-eval-faculty="{{ item.evaluation.faculty ?? '' }}"
+                                    data-eval-subject="{{ item.evaluation.subject ?? '' }}"
+                                    data-eval-section="{{ item.evaluation.section ?? '' }}"
+                                    data-eval-school-year="{{ item.evaluation.schoolYear ?? '' }}">
+                                    <i class="bi bi-qr-code"></i> QR Code
+                                </button>
+                            {% else %}
+                                <span class="text-muted" style="font-size:.75rem;">—</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -65,4 +124,111 @@
         {% endif %}
     </div>
 </div>
+
+{# ═══════════════════════════════════════
+   QR CODE MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="schedQrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
+        <div class="modal-content qr-modal">
+            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="qr-modal-layout">
+                <div class="qr-modal-left">
+                    <div class="qr-modal-icon"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="qr-modal-title">Evaluation QR Code</h5>
+                    <p class="qr-modal-subtitle" id="schedQrSubtitle">Scan to open the evaluation form</p>
+
+                    <div class="qr-eval-info">
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Type</span>
+                            <span class="qr-eval-type-badge">SET</span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Faculty</span>
+                            <span class="qr-info-value" id="schedQrFaculty"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Subject</span>
+                            <span class="qr-info-value" id="schedQrSubject"></span>
+                        </div>
+                        <div class="qr-info-row" id="schedQrSectionRow">
+                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-value" id="schedQrSection"></span>
+                        </div>
+                    </div>
+
+                    <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
+                    <div class="qr-url-box" id="schedQrUrl"></div>
+                    <div class="qr-actions">
+                        <button type="button" class="qr-action-btn qr-btn-download" onclick="schedDownloadQR()">
+                            <i class="bi bi-download"></i> Download
+                        </button>
+                        <button type="button" class="qr-action-btn qr-btn-copy" onclick="schedCopyQRLink()">
+                            <i class="bi bi-clipboard"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+                <div class="qr-modal-right">
+                    <div class="qr-preview-label"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div class="qr-code-frame">
+                        <img id="schedQrImage" src="" alt="QR Code">
+                    </div>
+                    <div class="qr-scan-hint"><i class="bi bi-phone me-1"></i>Scan with any camera app</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var currentQrUrl = '';
+    var qrModal = document.getElementById('schedQrModal');
+    if (!qrModal) return;
+
+    var baseUrl = window.location.origin;
+
+    qrModal.addEventListener('show.bs.modal', function(e) {
+        var btn = e.relatedTarget;
+        if (!btn) return;
+
+        var evalId = btn.getAttribute('data-eval-id');
+        var faculty = btn.getAttribute('data-eval-faculty');
+        var subject = btn.getAttribute('data-eval-subject');
+        var section = btn.getAttribute('data-eval-section');
+        var schoolYear = btn.getAttribute('data-eval-school-year');
+
+        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+
+        document.getElementById('schedQrSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
+        document.getElementById('schedQrFaculty').textContent = faculty || '—';
+        document.getElementById('schedQrSubject').textContent = subject || '—';
+        document.getElementById('schedQrSection').textContent = section || '—';
+        var sectionRow = document.getElementById('schedQrSectionRow');
+        sectionRow.style.display = section ? '' : 'none';
+
+        document.getElementById('schedQrUrl').textContent = currentQrUrl;
+
+        var qrImg = document.getElementById('schedQrImage');
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+    });
+
+    window.schedDownloadQR = function() {
+        var img = document.getElementById('schedQrImage');
+        var link = document.createElement('a');
+        link.download = 'evaluation-qr-code.png';
+        link.href = img.src;
+        link.click();
+    };
+
+    window.schedCopyQRLink = function() {
+        navigator.clipboard.writeText(currentQrUrl).then(function() {
+            var btn = document.querySelector('#schedQrModal .qr-btn-copy');
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            setTimeout(function() { btn.innerHTML = orig; }, 1500);
+        });
+    };
+})();
+</script>
 {% endblock %}

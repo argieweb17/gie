@@ -37,6 +37,23 @@ class EvaluationPeriodRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find active (status=true) evaluation periods regardless of date range.
+     * @return EvaluationPeriod[]
+     */
+    public function findActive(?string $type = null): array
+    {
+        $qb = $this->createQueryBuilder('ep')
+            ->where('ep.status = true')
+            ->orderBy('ep.startDate', 'DESC');
+
+        if ($type) {
+            $qb->andWhere('ep.evaluationType = :type')->setParameter('type', $type);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Find the latest open evaluation period for a given type.
      */
     public function findLatestOpen(string $type): ?EvaluationPeriod

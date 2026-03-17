@@ -1161,55 +1161,84 @@ class AdminController extends AbstractController
     }
 
     #[Route('/evaluations/create', name: 'admin_evaluation_create', methods: ['POST'])]
-    public function createEvaluation(Request $request, EntityManagerInterface $em): Response
+    public function createEvaluation(Request $request, EntityManagerInterface $em, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
             $evaluationType = $request->request->get('evaluationType', 'SET');
             $faculty = $request->request->get('faculty');
-            $subject = $request->request->get('subject');
             $schoolYear = $request->request->get('schoolYear');
-            $section = $request->request->get('section');
+
+            // Get the faculty user ID from the form
+            $facultyId = $request->request->get('facultyId');
+            $currentAY = $ayRepo->findCurrent();
 
             $evalRepo = $em->getRepository(EvaluationPeriod::class);
-            $existing = $evalRepo->findDuplicate($evaluationType, $faculty, $subject, $schoolYear, $section);
-            if ($existing) {
-                $this->addFlash('danger', 'An evaluation period already exists for this faculty, subject, section, and school year.');
-                return $this->redirectToRoute('admin_evaluations');
-            }
 
-            $eval = new EvaluationPeriod();
-            $eval->setEvaluationType($evaluationType);
-            $eval->setSchoolYear($schoolYear);
             $sem = $request->request->get('semester');
-            $eval->setSemester($sem !== '' ? $sem : null);
-            $eval->setFaculty($faculty);
-            $eval->setSubject($subject);
-            $eval->setTime($request->request->get('time'));
-            $eval->setSection($section);
-            $eval->setStartDate(new \DateTime($request->request->get('startDate')));
-            $eval->setEndDate(new \DateTime($request->request->get('endDate')));
-            $eval->setStatus($request->request->getBoolean('status', true));
-            $eval->setAnonymousMode($request->request->getBoolean('anonymousMode', true));
-
             $yl = $request->request->get('yearLevel');
-            $eval->setYearLevel($yl !== '' ? $yl : null);
-
             $college = $request->request->get('college');
-            $eval->setCollege($college !== '' ? $college : null);
-
             $deptId = $request->request->get('department');
-            if ($deptId) {
-                $dept = $em->getRepository(Department::class)->find($deptId);
-                $eval->setDepartment($dept);
+            $dept = $deptId ? $em->getRepository(Department::class)->find($deptId) : null;
+            $startDate = new \DateTime($request->request->get('startDate'));
+            $endDate = new \DateTime($request->request->get('endDate'));
+            $status = $request->request->getBoolean('status', true);
+            $anonymousMode = $request->request->getBoolean('anonymousMode', true);
+
+            // Get all loaded subjects for this faculty
+            $loads = $facultyId ? $fslRepo->findByFacultyAndAcademicYear((int) $facultyId, $currentAY ? $currentAY->getId() : null) : [];
+
+            $created = 0;
+            $skipped = 0;
+
+            if (count($loads) > 0) {
+                // Create one evaluation per subject+section (each section gets its own QR)
+                foreach ($loads as $load) {
+                    $s = $load->getSubject();
+                    $subjectStr = $s->getSubjectCode() . ' — ' . $s->getSubjectName();
+                    $section = $load->getSection() ?? '';
+                    $schedule = $load->getSchedule() ?? '';
+
+                    // Check for duplicate
+                    $existing = $evalRepo->findDuplicate($evaluationType, $faculty, $subjectStr, $schoolYear, $section);
+                    if ($existing) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $eval = new EvaluationPeriod();
+                    $eval->setEvaluationType($evaluationType);
+                    $eval->setSchoolYear($schoolYear);
+                    $eval->setSemester($sem !== '' ? $sem : null);
+                    $eval->setFaculty($faculty);
+                    $eval->setSubject($subjectStr);
+                    $eval->setTime($schedule);
+                    $eval->setSection($section);
+                    $eval->setStartDate(clone $startDate);
+                    $eval->setEndDate(clone $endDate);
+                    $eval->setStatus($status);
+                    $eval->setAnonymousMode($anonymousMode);
+                    $eval->setYearLevel($yl !== '' ? $yl : null);
+                    $eval->setCollege($college !== '' ? $college : null);
+                    if ($dept) {
+                        $eval->setDepartment($dept);
+                    }
+
+                    $em->persist($eval);
+                    $created++;
+                }
+
+                $em->flush();
+
+                if ($created > 0) {
+                    $this->audit->log(AuditLog::ACTION_CREATE_EVALUATION, 'EvaluationPeriod', 0,
+                        'Created ' . $created . ' ' . $evaluationType . ' evaluation(s) for ' . $faculty . ' (' . $schoolYear . ')');
+                    $this->addFlash('success', $created . ' evaluation(s) created for all loaded subjects.' . ($skipped > 0 ? ' ' . $skipped . ' skipped (already exist).' : ''));
+                } else {
+                    $this->addFlash('warning', 'All evaluations already exist for this faculty\'s subjects.');
+                }
+            } else {
+                $this->addFlash('danger', 'No loaded subjects found for the selected faculty.');
             }
-
-            $em->persist($eval);
-            $em->flush();
-
-            $this->audit->log(AuditLog::ACTION_CREATE_EVALUATION, 'EvaluationPeriod', $eval->getId(),
-                'Created ' . $eval->getEvaluationType() . ' evaluation for ' . $eval->getSchoolYear());
-
-            $this->addFlash('success', 'Evaluation period created.');
         }
         return $this->redirectToRoute('admin_evaluations');
     }

@@ -62,6 +62,28 @@
     </div>
     <div class="rl-filter-form">
         <div class="rl-filter-group">
+            <i class="bi bi-building rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlCollege" style="min-width:160px;">
+                <option value="">All Colleges</option>
+                {% set colleges = [] %}
+                {% for dept in departments %}
+                    {% if dept.collegeName and dept.collegeName not in colleges %}
+                        {% set colleges = colleges|merge([dept.collegeName]) %}
+                        <option value="{{ dept.collegeName }}">{{ dept.collegeName }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="rl-filter-group">
+            <i class="bi bi-diagram-3 rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlDepartment" style="min-width:180px;">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.departmentName }}" data-college="{{ dept.collegeName }}">{{ dept.departmentName }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="rl-filter-group">
             <i class="bi bi-circle-half rl-filter-icon"></i>
             <select class="rl-filter-select" id="rlStatus" style="min-width:150px;">
                 <option value="">All Statuses</option>
@@ -115,7 +137,9 @@
                     data-name="{{ user.fullName|lower }}"
                     data-email="{{ user.email|lower }}"
                     data-status="{% if user.accountStatus == 'active' %}Active{% elseif user.accountStatus == 'pending' %}Pending{% else %}Inactive{% endif %}"
-                    data-date="{{ user.createdAt|date('Y-m-d') }}">
+                    data-date="{{ user.createdAt|date('Y-m-d') }}"
+                    data-college="{{ user.department ? user.department.collegeName : '' }}"
+                    data-department="{{ user.department ? user.department.departmentName : '' }}">
                     <td class="ps-3"><span class="fw-bold text-muted rl-num">{{ loop.index }}</span></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
@@ -169,12 +193,34 @@
 <script>
 (function(){
     var search=document.getElementById('rlSearch'),status=document.getElementById('rlStatus'),sort=document.getElementById('rlSort'),reset=document.getElementById('rlReset'),countEl=document.getElementById('rlCount');
+    var college=document.getElementById('rlCollege'),department=document.getElementById('rlDepartment');
     if(!search)return;
+
+    // Store all department options for dynamic filtering
+    var deptSelect=department,allDeptOpts=[];
+    Array.from(deptSelect.options).forEach(function(o,i){if(i>0)allDeptOpts.push({value:o.value,text:o.text,college:o.getAttribute('data-college')});});
+
+    function updateDeptOptions(){
+        var cv=college.value;
+        var current=deptSelect.value;
+        while(deptSelect.options.length>1)deptSelect.remove(1);
+        allDeptOpts.forEach(function(o){
+            if(!cv||o.college===cv){var opt=document.createElement('option');opt.value=o.value;opt.text=o.text;opt.setAttribute('data-college',o.college);deptSelect.appendChild(opt);}
+        });
+        // Keep selection if still valid
+        var found=false;
+        Array.from(deptSelect.options).forEach(function(o){if(o.value===current)found=true;});
+        deptSelect.value=found?current:'';
+    }
+
     function applyFilters(){
-        var q=search.value.trim().toLowerCase(),sv=status.value,rows=document.querySelectorAll('.rl-row'),vis=0;
+        var q=search.value.trim().toLowerCase(),sv=status.value,cv=college.value,dv=department.value;
+        var rows=document.querySelectorAll('.rl-row'),vis=0;
         rows.forEach(function(r){var show=true;
             if(q){var n=r.getAttribute('data-name'),e=r.getAttribute('data-email');if(n.indexOf(q)===-1&&e.indexOf(q)===-1)show=false;}
             if(sv&&r.getAttribute('data-status')!==sv)show=false;
+            if(cv&&r.getAttribute('data-college')!==cv)show=false;
+            if(dv&&r.getAttribute('data-department')!==dv)show=false;
             r.style.display=show?'':'none';if(show)vis++;
         });
         if(countEl)countEl.textContent='Showing '+vis+' of '+rows.length+' students';
@@ -193,7 +239,9 @@
         var num=0;rows.forEach(function(r){if(r.style.display==='none')return;num++;var c=r.querySelector('.rl-num');if(c)c.textContent=num;});
     }
     search.addEventListener('input',applyFilters);status.addEventListener('change',applyFilters);sort.addEventListener('change',function(){applySort();});
-    reset.addEventListener('click',function(){search.value='';status.value='';sort.value='name-asc';applyFilters();});
+    college.addEventListener('change',function(){updateDeptOptions();applyFilters();});
+    department.addEventListener('change',applyFilters);
+    reset.addEventListener('click',function(){search.value='';status.value='';college.value='';updateDeptOptions();department.value='';sort.value='name-asc';applyFilters();});
     applyFilters();
 })();
 </script>
