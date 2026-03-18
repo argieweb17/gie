@@ -217,6 +217,37 @@ class HomeController extends AbstractController
             ];
         }
 
+        // ── Monthly Evaluation Trends (for chart) ──
+        $currentYear = (int) date('Y');
+        $monthlyTrends = ['SET' => array_fill(0, 12, 0), 'SEF' => array_fill(0, 12, 0)];
+
+        // Fetch all submissions for current year and group in PHP
+        $yearStart = new \DateTime("$currentYear-01-01 00:00:00");
+        $yearEnd = new \DateTime("$currentYear-12-31 23:59:59");
+
+        $trendData = $responseRepo->createQueryBuilder('r')
+            ->select('r.submittedAt', 'ep.evaluationType as type', 'IDENTITY(r.evaluator) as evaluatorId', 'IDENTITY(r.faculty) as facultyId', 'IDENTITY(r.evaluationPeriod) as epId')
+            ->join('r.evaluationPeriod', 'ep')
+            ->where('r.isDraft = false')
+            ->andWhere('r.submittedAt BETWEEN :start AND :end')
+            ->setParameter('start', $yearStart)
+            ->setParameter('end', $yearEnd)
+            ->getQuery()
+            ->getResult();
+
+        // Group by month and type, counting unique evaluator+faculty+period combinations
+        $seen = [];
+        foreach ($trendData as $row) {
+            $type = $row['type'] ?? 'SET';
+            $month = (int) $row['submittedAt']->format('n') - 1; // 0-indexed
+            $key = $type . '-' . $month . '-' . ($row['evaluatorId'] ?? 'anon') . '-' . $row['facultyId'] . '-' . $row['epId'];
+
+            if (!isset($seen[$key]) && $month >= 0 && $month < 12 && isset($monthlyTrends[$type])) {
+                $monthlyTrends[$type][$month]++;
+                $seen[$key] = true;
+            }
+        }
+
         return $this->render('home/admin_dashboard.html.twig', [
             'totalUsers'      => $totalUsers,
             'openEvaluations' => $openEvals,
@@ -232,6 +263,11 @@ class HomeController extends AbstractController
             'allEvals'        => $allEvals,
             'completedEvals'  => $completedEvals,
             'recentLogs'      => $recentLogs,
+            'monthlyTrends'   => $monthlyTrends,
+            'studentCount'    => $roleCounts['student'],
+            'facultyCount'    => $roleCounts['faculty'],
+            'staffCount'      => $roleCounts['staff'],
+            'adminCount'      => $roleCounts['admin'],
         ]);
     }
 

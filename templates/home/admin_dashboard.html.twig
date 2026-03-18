@@ -35,6 +35,161 @@
 }
 .ev-table-wrap,.ev-search-bar{animation:evFadeIn .25s ease;}
 @keyframes evFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Dashboard Charts Styles */
+.charts-section{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+.chart-card{
+    background:#fff;
+    border:1px solid #e8ecf1;
+    border-radius:12px;
+    padding:1rem;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+    animation:evFadeIn .3s ease;
+    transition:all .3s ease;
+    position:relative;
+    overflow:hidden;
+}
+.chart-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+    border-color:#d1d5db;
+}
+.chart-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:.75rem;
+    padding-bottom:.6rem;
+    border-bottom:1px solid #f1f5f9;
+}
+.chart-title{
+    font-size:.85rem;
+    font-weight:600;
+    color:#1e293b;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+}
+.chart-title i{
+    width:28px;height:28px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#EFF6FF,#DBEAFE);
+    color:#2563EB;
+    border-radius:8px;
+    font-size:.85rem;
+}
+.chart-subtitle{font-size:.7rem;color:#64748b;margin-top:2px;}
+.chart-container{position:relative;width:100%;height:200px;}
+.chart-container canvas{width:100%!important;height:100%!important;}
+
+/* Chart center text for doughnut */
+.chart-center-text{
+    position:absolute;
+    top:50%;left:35%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    pointer-events:none;
+}
+.chart-center-value{
+    font-size:1.5rem;
+    font-weight:700;
+    color:#1e293b;
+    line-height:1;
+}
+.chart-center-label{
+    font-size:.65rem;
+    color:#64748b;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+}
+
+/* Interactive legend pills */
+.chart-legend-pills{
+    display:flex;
+    gap:.4rem;
+    flex-wrap:wrap;
+    margin-top:.5rem;
+}
+.legend-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:.3rem;
+    padding:3px 8px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:20px;
+    font-size:.65rem;
+    color:#475569;
+    cursor:pointer;
+    transition:all .2s ease;
+}
+.legend-pill:hover{
+    background:#EFF6FF;
+    border-color:#93c5fd;
+    color:#2563EB;
+}
+.legend-pill .dot{
+    width:8px;height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+}
+.legend-pill.active{opacity:1;}
+.legend-pill.inactive{opacity:.4;}
+
+/* Role stats row */
+.role-stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.4rem;
+    margin-top:.6rem;
+    justify-content:center;
+}
+.role-stat-item{
+    display:flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.35rem .6rem;
+    background:#f8fafc;
+    border-radius:20px;
+    transition:all .2s ease;
+    font-size:.7rem;
+}
+.role-stat-item:hover{
+    background:#f1f5f9;
+}
+.role-stat-dot{
+    width:8px;height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+}
+.role-stat-info{
+    display:flex;
+    align-items:center;
+    gap:.25rem;
+}
+.role-stat-label{
+    color:#475569;
+    font-weight:500;
+}
+.role-stat-value{
+    font-weight:700;
+    color:#1e293b;
+}
+.role-stat-pct{
+    font-weight:600;
+    color:#94a3b8;
+}
+
+@media(max-width:992px){
+    .charts-section{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+    .charts-section{grid-template-columns:1fr;}
+    .chart-container{height:180px;}
+    .chart-card{padding:.85rem;}
+    .chart-title{font-size:.8rem;}
+    .chart-center-text{left:40%;}
+}
 </style>
 {% endblock %}
 
@@ -123,99 +278,350 @@
     </div>
 </div>
 
-{# ═══════ EVALUATION SCHEDULE TABLE ═══════ #}
-<div class="ev-search-bar">
-    <div class="ev-search-inner">
-        <i class="bi bi-search ev-search-ico"></i>
-        <input type="text" id="evSearchInput" class="ev-search-input" placeholder="Search evaluations..." oninput="evFilter()">
+{# ═══════ CHARTS SECTION ═══════ #}
+<div class="charts-section">
+    {# Line Chart - Evaluation Trends #}
+    <div class="chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="bi bi-graph-up-arrow"></i> Evaluation Trends</div>
+                <div class="chart-subtitle">{{ 'now'|date('Y') }} monthly submissions</div>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="evaluationTrendsChart"></canvas>
+        </div>
+        <div class="chart-legend-pills" id="trendsLegend"></div>
+    </div>
+
+    {# Bar Chart - Department Statistics #}
+    <div class="chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="bi bi-bar-chart-line-fill"></i> Top Departments</div>
+                <div class="chart-subtitle">Users by department</div>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="departmentChart"></canvas>
+        </div>
+    </div>
+
+    {# Doughnut Chart - User Distribution #}
+    <div class="chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title"><i class="bi bi-people-fill"></i> User Roles</div>
+                <div class="chart-subtitle">Distribution by role type</div>
+            </div>
+        </div>
+        <div class="chart-container" style="height:140px;">
+            <canvas id="userDistributionChart"></canvas>
+        </div>
+        <div class="role-stats" id="roleStats"></div>
     </div>
 </div>
-<div class="ev-table-wrap">
-    <table class="ev-table" id="evTable">
-        <thead>
-            <tr>
-                <th><span class="ev-sort-label" onclick="evSort('subject')">Subject <i class="bi bi-arrow-down-up ev-sort-icon" data-col="subject"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('faculty')">Faculty <i class="bi bi-arrow-down-up ev-sort-icon" data-col="faculty"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('time')">Time <i class="bi bi-arrow-down-up ev-sort-icon" data-col="time"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('section')">Section <i class="bi bi-arrow-down-up ev-sort-icon" data-col="section"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('evaltime')">Evaluation Time <i class="bi bi-arrow-down-up ev-sort-icon" data-col="evaltime"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('college')">College <i class="bi bi-arrow-down-up ev-sort-icon" data-col="college"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('department')">Department <i class="bi bi-arrow-down-up ev-sort-icon" data-col="department"></i></span></th>
-                <th><span class="ev-sort-label" onclick="evSort('responses')">Evaluator <i class="bi bi-arrow-down-up ev-sort-icon" data-col="responses"></i></span></th>
-                <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-        <tbody id="evTableBody">
-            {% for row in completedEvals %}
-            <tr class="ev-row"
-                data-search="{{ row.subject|lower }} {{ row.faculty|lower }} {{ row.section|lower }} {{ row.college|lower }} {{ row.department|lower }}"
-                data-sort-subject="{{ row.subject|lower }}"
-                data-sort-faculty="{{ row.faculty|lower }}"
-                data-sort-time="{{ row.time|lower }}"
-                data-sort-section="{{ row.section|lower }}"
-                data-sort-evaltime="{{ row.submittedAt }}"
-                data-sort-college="{{ row.college|lower }}"
-                data-sort-department="{{ row.department|lower }}"
-                data-sort-responses="{{ row.responseCount }}">
-                <td class="ev-td-subject">{{ row.subject }}</td>
-                <td class="ev-td-meta">{{ row.faculty }}</td>
-                <td class="ev-td-meta">{{ row.time }}</td>
-                <td class="ev-td-meta">{{ row.section }}</td>
-                <td class="ev-td-meta">{{ row.submittedAt|date('M d, Y') }}</td>
-                <td class="ev-td-meta">{{ row.college }}</td>
-                <td class="ev-td-meta">{{ row.department }}</td>
-                <td class="ev-td-response"><span class="ev-response-badge">{{ row.responseCount }}</span></td>
-                <td class="text-center">
-                    <a href="{{ path('admin_results', {evaluation: row.evalId}) }}" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.85rem;color:#3b82f6;background:#eff6ff;border:1px solid #bfdbfe;text-decoration:none;transition:all .2s;" title="View Results">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% if completedEvals|length == 0 %}
-    <div class="text-center text-muted py-5">
-        <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-25"></i>
-        No completed evaluations yet.
-    </div>
-    {% endif %}
-</div>
 
-{# ─── Inline Styles ─── #}
-
-{# ─── Sort & Search Script ─── #}
+{# Chart.js CDN #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-function evFilter(){
-    const q=(document.getElementById('evSearchInput').value||'').toLowerCase();
-    document.querySelectorAll('#evTableBody .ev-row').forEach(r=>{
-        r.style.display=r.dataset.search.includes(q)?'':'none';
-    });
-}
-function evSort(col){
-    const tb=document.getElementById('evTableBody');
-    if(!tb)return;
-    const rows=Array.from(tb.querySelectorAll('.ev-row'));
-    const key='sort-'+col;
-    const dir=tb.dataset.sortDir===col?'desc':'asc';
-    tb.dataset.sortDir=dir==='asc'?col:'';
-    const isNum=col==='responses';
-    rows.sort((a,b)=>{
-        let va=a.dataset[key]||'',vb=b.dataset[key]||'';
-        if(isNum)return dir==='asc'?Number(va)-Number(vb):Number(vb)-Number(va);
-        return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
-    });
-    rows.forEach(r=>tb.appendChild(r));
-    document.querySelectorAll('.ev-sort-icon').forEach(i=>{
-        i.className='bi bi-arrow-down-up ev-sort-icon';
-        i.style.opacity='.35';
-    });
-    const icon=document.querySelector('.ev-sort-icon[data-col="'+col+'"]');
-    if(icon){
-        icon.className='bi '+(dir==='asc'?'bi-arrow-up':'bi-arrow-down')+' ev-sort-icon';
-        icon.style.opacity='.85';
+document.addEventListener('DOMContentLoaded', function() {
+    // Color palette with gradients
+    const colors = {
+        primary: '#2563EB',
+        primaryDark: '#1d4ed8',
+        success: '#16A34A',
+        successDark: '#15803d',
+        warning: '#EA580C',
+        purple: '#A855F7',
+        danger: '#DC2626',
+        teal: '#059669',
+        pink: '#EC4899',
+        indigo: '#6366F1'
+    };
+
+    // Create gradient function
+    const createGradient = (ctx, color1, color2, vertical = true) => {
+        const gradient = vertical
+            ? ctx.createLinearGradient(0, 0, 0, 200)
+            : ctx.createLinearGradient(0, 0, 200, 0);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(1, color2);
+        return gradient;
+    };
+
+    // Common tooltip config
+    const tooltipConfig = {
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        titleColor: '#fff',
+        bodyColor: '#e2e8f0',
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        boxPadding: 6,
+        titleFont: { size: 13, weight: '600' },
+        bodyFont: { size: 12 },
+        callbacks: {
+            labelTextColor: () => '#e2e8f0'
+        }
+    };
+
+    // 1. Evaluation Trends Line Chart with Gradient
+    const trendsCtx = document.getElementById('evaluationTrendsChart');
+    if (trendsCtx) {
+        const ctx = trendsCtx.getContext('2d');
+        const setGradient = createGradient(ctx, 'rgba(37, 99, 235, 0.3)', 'rgba(37, 99, 235, 0.02)');
+        const sefGradient = createGradient(ctx, 'rgba(22, 163, 74, 0.3)', 'rgba(22, 163, 74, 0.02)');
+
+        const setData = {{ monthlyTrends.SET|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
+        const sefData = {{ monthlyTrends.SEF|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
+
+        const trendsChart = new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'SET Evaluations',
+                    data: setData,
+                    borderColor: colors.primary,
+                    backgroundColor: setGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: colors.primary,
+                    pointBorderWidth: 2,
+                    pointHoverBorderWidth: 3,
+                    borderWidth: 2.5
+                }, {
+                    label: 'SEF Evaluations',
+                    data: sefData,
+                    borderColor: colors.success,
+                    backgroundColor: sefGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: colors.success,
+                    pointBorderWidth: 2,
+                    pointHoverBorderWidth: 3,
+                    borderWidth: 2.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 }, color: '#64748b' },
+                        border: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { font: { size: 10 }, color: '#64748b', maxTicksLimit: 5, padding: 8 },
+                        border: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { ...tooltipConfig }
+                }
+            }
+        });
+
+        // Custom legend pills
+        const legendContainer = document.getElementById('trendsLegend');
+        if (legendContainer) {
+            const items = [
+                { label: 'SET', color: colors.primary, idx: 0 },
+                { label: 'SEF', color: colors.success, idx: 1 }
+            ];
+            items.forEach(item => {
+                const pill = document.createElement('span');
+                pill.className = 'legend-pill active';
+                pill.innerHTML = `<span class="dot" style="background:${item.color}"></span>${item.label}`;
+                pill.onclick = () => {
+                    const meta = trendsChart.getDatasetMeta(item.idx);
+                    meta.hidden = !meta.hidden;
+                    pill.classList.toggle('inactive', meta.hidden);
+                    pill.classList.toggle('active', !meta.hidden);
+                    trendsChart.update();
+                };
+                legendContainer.appendChild(pill);
+            });
+        }
     }
-}
+
+    // 2. Department Bar Chart - Vertical with values on top
+    const deptCtx = document.getElementById('departmentChart');
+    if (deptCtx) {
+        // Get department data and filter out zeros, then sort by count
+        let deptRaw = [
+            {% for dept in departments %}
+            { label: '{{ dept.departmentName }}', value: {{ dept.users|length }} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Filter departments with users and sort descending, take top 8
+        deptRaw = deptRaw.filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
+
+        // If no data, show placeholder
+        if (deptRaw.length === 0) {
+            deptRaw = [{ label: 'No data', value: 0 }];
+        }
+
+        const deptLabels = deptRaw.map(d => d.label.length > 8 ? d.label.slice(0, 8) + '..' : d.label);
+        const deptData = deptRaw.map(d => d.value);
+
+        new Chart(deptCtx, {
+            type: 'bar',
+            data: {
+                labels: deptLabels,
+                datasets: [{
+                    label: 'Users',
+                    data: deptData,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 20 } },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 9 },
+                            color: '#64748b',
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        border: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#94a3b8',
+                            maxTicksLimit: 5,
+                            padding: 8
+                        },
+                        border: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: (items) => deptRaw[items[0].dataIndex]?.label || items[0].label,
+                            label: (ctx) => ` ${ctx.raw} users`
+                        }
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                }
+            },
+            plugins: [{
+                id: 'valueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const value = dataset.data[index];
+                            if (value > 0) {
+                                ctx.save();
+                                ctx.fillStyle = '#475569';
+                                ctx.font = 'bold 10px Inter, sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillText(value, bar.x, bar.y - 4);
+                                ctx.restore();
+                            }
+                        });
+                    });
+                }
+            }]
+        });
+    }
+
+    // 3. User Distribution Doughnut Chart - Redesigned
+    const userCtx = document.getElementById('userDistributionChart');
+    if (userCtx) {
+        const roleData = [
+            { label: 'Students', value: {{ studentCount|default(0) }}, color: '#3b82f6' },
+            { label: 'Faculty', value: {{ facultyCount|default(0) }}, color: '#10b981' },
+            { label: 'Staff', value: {{ staffCount|default(0) }}, color: '#f59e0b' },
+            { label: 'Admins', value: {{ adminCount|default(0) }}, color: '#8b5cf6' }
+        ];
+
+        const total = roleData.reduce((sum, r) => sum + r.value, 0);
+
+        new Chart(userCtx, {
+            type: 'doughnut',
+            data: {
+                labels: roleData.map(r => r.label),
+                datasets: [{
+                    data: roleData.map(r => r.value),
+                    backgroundColor: roleData.map(r => r.color),
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    hoverOffset: 6,
+                    hoverBorderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                                return ` ${ctx.raw} users (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                }
+            }
+        });
+
+        // Create custom stats below chart
+        const statsContainer = document.getElementById('roleStats');
+        if (statsContainer) {
+            roleData.forEach(role => {
+                const pct = total > 0 ? ((role.value / total) * 100).toFixed(0) : 0;
+                const item = document.createElement('div');
+                item.className = 'role-stat-item';
+                item.innerHTML = `
+                    <span class="role-stat-dot" style="background:${role.color}"></span>
+                    <span class="role-stat-label">${role.label}</span>
+                    <span class="role-stat-value">${role.value}</span>
+                    <span class="role-stat-pct">(${pct}%)</span>
+                `;
+                statsContainer.appendChild(item);
+            });
+        }
+    }
+});
 </script>
 
 {% endblock %}

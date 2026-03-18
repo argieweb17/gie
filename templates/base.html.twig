@@ -327,7 +327,7 @@
             </div>
             {% endif %}
             <div class="topbar-right">
-                {% if is_granted('ROLE_FACULTY') %}
+                {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
                 {% set pendingEvals = faculty_pending_evaluations() %}
                 {% set unreadCount = pendingEvals|filter(n => not n.read)|length %}
                 <div class="topbar-notif-wrap" id="topbarNotifWrap" style="position:relative;">
