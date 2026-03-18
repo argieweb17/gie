@@ -29,6 +29,20 @@ class EvaluationMessageRepository extends ServiceEntityRepository
     }
 
     /** @return EvaluationMessage[] */
+    public function findBySenderRecentActivity(int $userId): array
+    {
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.sender = :uid')
+            ->andWhere('m.parentMessage IS NULL')
+            ->setParameter('uid', $userId)
+            ->addSelect('(SELECT MAX(r.createdAt) FROM App\\Entity\\EvaluationMessage r WHERE r.parentMessage = m) AS HIDDEN lastReplyAt')
+            ->addOrderBy('lastReplyAt', 'DESC')
+            ->addOrderBy('m.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return EvaluationMessage[] */
     public function findAllMessages(): array
     {
         return $this->createQueryBuilder('m')

@@ -193,7 +193,7 @@
 
 .fm-conv-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     padding: 16px;
     border-radius: var(--msg-radius-md);
@@ -239,15 +239,39 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
-.fm-conv-subject {
-    font-size: .88rem;
+.fm-conv-name {
+    font-size: .98rem;
     font-weight: 700;
     color: var(--msg-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.fm-conv-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.fm-conv-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.fm-conv-item.active .fm-conv-count {
+    display: none;
 }
 .fm-conv-time {
     font-size: .7rem;
@@ -872,6 +896,11 @@
 
         <div class="fm-conv-list" id="convList">
             {% for msg in messages %}
+            {% set threadCount = 1 + (msg.adminReply ? 1 : 0) + (repliesMap[msg.id] is defined ? repliesMap[msg.id]|length : 0) %}
+            {% set latestActivityAt = msg.createdAt %}
+            {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
+                {% set latestActivityAt = (repliesMap[msg.id]|last).createdAt %}
+            {% endif %}
             <div class="fm-conv-item{% if loop.first %} active{% endif %}"
                  data-msg-id="{{ msg.id }}"
                  data-search="{{ msg.subject|lower }} {{ msg.message|lower }}"
@@ -881,21 +910,12 @@
                 </div>
                 <div class="fm-conv-info">
                     <div class="fm-conv-header">
-                        <span class="fm-conv-subject">{{ msg.subject|length > 28 ? msg.subject|slice(0,28) ~ '...' : msg.subject }}</span>
-                        <span class="fm-conv-time">{{ msg.createdAt|date('M d') }}</span>
+                        <span class="fm-conv-name">SET-SEF Administration</span>
+                        <div class="fm-conv-meta">
+                            <span class="fm-conv-count" title="Messages in conversation">{{ threadCount }}</span>
+                            <span class="fm-conv-time">{{ latestActivityAt|date('M d') }}</span>
+                        </div>
                     </div>
-                    <div class="fm-conv-preview">
-                        {% if msg.adminReply %}
-                            <i class="bi bi-reply-fill"></i> {{ msg.adminReply|slice(0,35) }}...
-                        {% else %}
-                            {{ msg.message|slice(0,40) }}{% if msg.message|length > 40 %}...{% endif %}
-                        {% endif %}
-                    </div>
-                    <span class="fm-status-badge fm-status-{{ msg.status }}">
-                        {% if msg.status == 'pending' %}<i class="bi bi-clock"></i> Pending
-                        {% elseif msg.status == 'reviewed' %}<i class="bi bi-eye"></i> Reviewed
-                        {% else %}<i class="bi bi-check-circle"></i> Resolved{% endif %}
-                    </span>
                 </div>
             </div>
             {% else %}
@@ -1140,7 +1160,7 @@ function selectConversation(el, msgId) {
     document.querySelectorAll('.fm-compose').forEach(c => c.style.display = 'none');
     const thread = document.getElementById('thread-' + msgId);
     const compose = document.getElementById('compose-' + msgId);
-    if (thread) thread.style.display = 'block';
+    if (thread) thread.style.display = 'flex';
     if (compose) compose.style.display = 'block';
 
     const msg = messagesData[msgId];

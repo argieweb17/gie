@@ -2180,7 +2180,7 @@ class HomeController extends AbstractController
             }
         }
 
-        $myMessages = $msgRepo->findBySender($user->getId());
+        $myMessages = $msgRepo->findBySenderRecentActivity($user->getId());
         $repliesMap = [];
         foreach ($myMessages as $msg) {
             $repliesMap[$msg->getId()] = $msgRepo->findRepliesForMessage($msg->getId());

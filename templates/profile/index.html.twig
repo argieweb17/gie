@@ -17,15 +17,9 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm text-center">
             <div class="card-body py-5">
-                {% if user.profilePicture %}
-                    <img src="{{ asset('images/profiles/' ~ user.profilePicture) }}"
-                         alt="{{ user.fullName }}" class="rounded-circle mb-3"
-                         style="width:90px;height:90px;object-fit:cover">
-                {% else %}
-                    <div class="mx-auto mb-3" style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--norsu-blue),var(--norsu-green));display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:700;color:#fff">
-                        {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
-                    </div>
-                {% endif %}
+                <img src="{{ asset('images/' ~ user.profilePictureOrDefault) }}"
+                     alt="{{ user.fullName }}" class="rounded-circle mb-3"
+                     style="width:90px;height:90px;object-fit:cover">
                 <h5 class="fw-bold mb-1">{{ user.fullName }}</h5>
                 <p class="text-muted mb-2">{{ user.email }}</p>
                 {% if 'ROLE_ADMIN' in user.roles %}

@@ -250,7 +250,7 @@
 
 .fm-conv-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     padding: 16px;
     border-radius: var(--msg-radius-md);
@@ -318,15 +318,39 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 .fm-conv-name {
-    font-size: .9rem;
+    font-size: .98rem;
     font-weight: 700;
     color: var(--msg-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.fm-conv-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.fm-conv-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.fm-conv-item.active .fm-conv-count {
+    display: none;
 }
 .fm-conv-time {
     font-size: .7rem;
@@ -990,35 +1014,22 @@
 
         <div class="fm-conv-list" id="convList">
             {% for msg in messages %}
+            {% set threadCount = 1 + (msg.adminReply ? 1 : 0) + (repliesMap[msg.id] is defined ? repliesMap[msg.id]|length : 0) %}
             <div class="fm-conv-item{% if loop.first %} active{% endif %}{% if msg.status == 'pending' %} unread{% endif %}"
                  data-msg-id="{{ msg.id }}"
                  data-status="{{ msg.status }}"
                  data-search="{{ msg.sender.fullName|lower }} {{ msg.sender.department ? msg.sender.department.departmentName|lower : '' }} {{ msg.subject|lower }}"
                  onclick="selectConversation(this, {{ msg.id }})">
                 <div class="fm-avatar">
-                    {% if msg.sender.profilePicture %}
-                        <img src="{{ asset('images/profiles/' ~ msg.sender.profilePicture) }}" alt="">
-                    {% else %}
-                        {{ msg.sender.firstName|first }}{{ msg.sender.lastName|first }}
-                    {% endif %}
+                    <img src="{{ asset('images/' ~ msg.sender.profilePictureOrDefault) }}" alt="">
                 </div>
                 <div class="fm-conv-info">
                     <div class="fm-conv-header">
                         <span class="fm-conv-name">{{ msg.sender.fullName }}</span>
-                        <span class="fm-conv-time">{{ msg.createdAt|date('M d') }}</span>
-                    </div>
-                    {% if msg.sender.department %}
-                    <div class="fm-conv-dept">
-                        <i class="bi bi-building"></i> {{ msg.sender.department.departmentName }}
-                    </div>
-                    {% endif %}
-                    <div class="fm-conv-subject">{{ msg.subject }}</div>
-                    <div class="fm-conv-footer">
-                        <span class="fm-status-badge fm-status-{{ msg.status }}">
-                            {% if msg.status == 'pending' %}<i class="bi bi-clock"></i> Pending
-                            {% elseif msg.status == 'reviewed' %}<i class="bi bi-eye"></i> Reviewed
-                            {% else %}<i class="bi bi-check-circle"></i> Resolved{% endif %}
-                        </span>
+                        <div class="fm-conv-meta">
+                            <span class="fm-conv-count" title="Messages in conversation">{{ threadCount }}</span>
+                            <span class="fm-conv-time">{{ msg.createdAt|date('M d') }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1044,11 +1055,7 @@
         <header class="fm-chat-header" id="chatHeader">
             <div class="fm-chat-user">
                 <div class="fm-chat-avatar" id="chatAvatar">
-                    {% if firstMsg.sender.profilePicture %}
-                        <img src="{{ asset('images/profiles/' ~ firstMsg.sender.profilePicture) }}" alt="">
-                    {% else %}
-                        {{ firstMsg.sender.firstName|first }}{{ firstMsg.sender.lastName|first }}
-                    {% endif %}
+                    <img src="{{ asset('images/' ~ firstMsg.sender.profilePictureOrDefault) }}" alt="">
                 </div>
                 <div class="fm-chat-details">
                     <h5 id="chatName">{{ firstMsg.sender.fullName }}</h5>
@@ -1271,7 +1278,7 @@ const messagesData = {
         id: {{ msg.id }},
         senderName: "{{ msg.sender.fullName|e('js') }}",
         senderInitials: "{{ msg.sender.firstName|first }}{{ msg.sender.lastName|first }}",
-        senderPhoto: {% if msg.sender.profilePicture %}"{{ asset('images/profiles/' ~ msg.sender.profilePicture) }}"{% else %}null{% endif %},
+        senderPhoto: "{{ asset('images/' ~ msg.sender.profilePictureOrDefault) }}",
         department: {% if msg.sender.department %}"{{ msg.sender.department.departmentName|e('js') }}"{% else %}null{% endif %},
         subject: "{{ msg.subject|e('js') }}",
         status: "{{ msg.status }}",
@@ -1296,7 +1303,7 @@ function selectConversation(el, msgId) {
 
     const thread = document.getElementById('thread-' + msgId);
     const compose = document.getElementById('compose-' + msgId);
-    if (thread) thread.style.display = 'block';
+    if (thread) thread.style.display = 'flex';
     if (compose) compose.style.display = 'block';
 
     const msg = messagesData[msgId];

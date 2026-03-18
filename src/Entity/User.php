@@ -113,6 +113,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getProfilePicture(): ?string { return $this->profilePicture; }
     public function setProfilePicture(?string $v): static { $this->profilePicture = $v; return $this; }
+    public function getProfilePictureOrDefault(): string { return $this->profilePicture ? 'profiles/' . ltrim($this->profilePicture, '/') : 'default-profile.svg'; }
 
     public function getCreatedAt(): \DateTimeInterface { return $this->createdAt; }
     public function setCreatedAt(\DateTimeInterface $v): static { $this->createdAt = $v; return $this; }
