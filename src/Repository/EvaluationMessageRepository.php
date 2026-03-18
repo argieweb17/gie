@@ -21,6 +21,7 @@ class EvaluationMessageRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('m')
             ->andWhere('m.sender = :uid')
+            ->andWhere('m.parentMessage IS NULL')
             ->setParameter('uid', $userId)
             ->orderBy('m.createdAt', 'DESC')
             ->getQuery()

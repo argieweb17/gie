@@ -1122,6 +1122,30 @@
                 {# Conversation thread replies #}
                 {% if repliesMap[msg.id] is defined %}
                 {% for reply in repliesMap[msg.id] %}
+                {% if reply.senderType == 'faculty' %}
+                {# Faculty's reply (incoming - left side) #}
+                <div class="fm-message incoming">
+                    <div class="fm-message-sender">
+                        <i class="bi bi-person-fill"></i> {{ reply.sender.fullName }}
+                    </div>
+                    <div class="fm-bubble">
+                        {{- reply.message|trim -}}
+                        {%- if reply.attachment %}
+                        <div class="fm-attachment">
+                            <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" target="_blank" class="fm-attachment-link">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                {{ reply.attachmentOriginalName }}
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                        {%- endif %}
+                    </div>
+                    <div class="fm-message-time">
+                        <i class="bi bi-clock"></i> {{ reply.createdAt|date('h:i A') }}
+                    </div>
+                </div>
+                {% else %}
+                {# Admin/Staff reply (outgoing - right side) #}
                 <div class="fm-message outgoing">
                     <div class="fm-bubble">
                         {{- reply.message|trim -}}
@@ -1140,6 +1164,7 @@
                         <i class="bi bi-check2-all read-icon"></i>
                     </div>
                 </div>
+                {% endif %}
                 {% endfor %}
                 {% endif %}
             </div>

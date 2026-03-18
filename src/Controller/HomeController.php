@@ -2050,6 +2050,7 @@ class HomeController extends AbstractController
                 $msg->setSender($user);
                 $msg->setSubject($subject);
                 $msg->setMessage($body);
+                $msg->setSenderType('faculty');
 
                 if ($evalId) {
                     $eval = $evalRepo->find($evalId);
@@ -2064,6 +2065,32 @@ class HomeController extends AbstractController
                 $this->addFlash('success', 'Your message has been sent to the administrator.');
             } else {
                 $this->addFlash('error', 'Please fill in all required fields.');
+            }
+
+            return $this->redirectToRoute('faculty_eval_request');
+        }
+
+        // Handle reply to conversation
+        if ($request->isMethod('POST') && $request->request->get('_action') === 'reply_message') {
+            $parentId = $request->request->get('parent_message_id');
+            $body = trim($request->request->get('msg_body', ''));
+
+            $parentMsg = $msgRepo->find($parentId);
+            if ($parentMsg && $parentMsg->getSender() === $user && $body) {
+                $reply = new EvaluationMessage();
+                $reply->setSender($user);
+                $reply->setSubject('Re: ' . $parentMsg->getSubject());
+                $reply->setMessage($body);
+                $reply->setSenderType('faculty');
+                $reply->setParentMessage($parentMsg);
+                $reply->setCreatedAt(new \DateTime());
+
+                $em->persist($reply);
+                $em->flush();
+
+                $this->addFlash('success', 'Your reply has been sent.');
+            } else {
+                $this->addFlash('error', 'Unable to send reply.');
             }
 
             return $this->redirectToRoute('faculty_eval_request');
@@ -2154,10 +2181,15 @@ class HomeController extends AbstractController
         }
 
         $myMessages = $msgRepo->findBySender($user->getId());
+        $repliesMap = [];
+        foreach ($myMessages as $msg) {
+            $repliesMap[$msg->getId()] = $msgRepo->findRepliesForMessage($msg->getId());
+        }
 
         return $this->render('home/faculty/eval_request.html.twig', [
             'periods' => $periods,
             'messages' => $myMessages,
+            'repliesMap' => $repliesMap,
             'evaluations' => $evaluations,
         ]);
     }

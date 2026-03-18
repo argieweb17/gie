@@ -957,7 +957,7 @@
                     </div>
                 </div>
 
-                {# Admin's reply (received) #}
+                {# Old Admin's reply (backward compatibility) #}
                 {% if msg.adminReply %}
                 <div class="fm-message incoming">
                     <div class="fm-message-sender">
@@ -968,7 +968,45 @@
                         {% if msg.repliedAt %}{{ msg.repliedAt|date('h:i A') }}{% endif %}
                     </div>
                 </div>
+                {% endif %}
+
+                {# Conversation thread replies #}
+                {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
+                {% for reply in repliesMap[msg.id] %}
+                {% if reply.senderType == 'faculty' %}
+                {# Faculty's reply (outgoing - right side) #}
+                <div class="fm-message outgoing">
+                    <div class="fm-bubble">{{- reply.message|trim -}}</div>
+                    <div class="fm-message-time">
+                        {{ reply.createdAt|date('h:i A') }}
+                        <i class="bi bi-check2-all read-icon"></i>
+                    </div>
+                </div>
                 {% else %}
+                {# Admin's reply (incoming - left side) #}
+                <div class="fm-message incoming">
+                    <div class="fm-message-sender">
+                        <i class="bi bi-shield-check"></i> Admin ({{ reply.sender.fullName }})
+                    </div>
+                    <div class="fm-bubble">
+                        {{- reply.message|trim -}}
+                        {%- if reply.attachment %}
+                        <div class="fm-attachment">
+                            <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" target="_blank" class="fm-attachment-link">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                {{ reply.attachmentOriginalName }}
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                        {%- endif %}
+                    </div>
+                    <div class="fm-message-time">
+                        {{ reply.createdAt|date('h:i A') }}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% elseif not msg.adminReply %}
                 <div class="fm-message fm-waiting">
                     <div class="fm-bubble">
                         <i class="bi bi-hourglass-split"></i>
@@ -983,9 +1021,8 @@
         {% for msg in messages %}
         <div class="fm-compose" id="compose-{{ msg.id }}"{% if not loop.first %} style="display:none"{% endif %}>
             <form method="post" action="{{ path('faculty_eval_request') }}">
-                <input type="hidden" name="_action" value="send_message">
-                <input type="hidden" name="msg_subject" value="{{ msg.subject }}">
-                <input type="hidden" name="msg_evaluation" value="{{ msg.evaluationPeriod ? msg.evaluationPeriod.id : '' }}">
+                <input type="hidden" name="_action" value="reply_message">
+                <input type="hidden" name="parent_message_id" value="{{ msg.id }}">
                 <div class="fm-compose-inner">
                     <div class="fm-compose-header">
                         <i class="bi bi-reply-fill"></i>
