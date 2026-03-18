@@ -149,29 +149,6 @@
 
             {# ── Staff: Management ── #}
             {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
-            <div class="sidebar-header">Management</div>
-            <nav class="nav flex-column">
-                <a class="nav-link {% if 'staff_department' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('staff_departments') }}">
-                    <i class="bi bi-building sidebar-icon"></i> Departments
-                </a>
-                <a class="nav-link {% if 'staff_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('staff_curricula') }}">
-                    <i class="bi bi-file-earmark-text sidebar-icon"></i> Curriculum
-                    <span class="sidebar-count">{{ sc.curricula }}</span>
-                </a>
-                <a class="nav-link {% if 'staff_subject' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('staff_subjects') }}">
-                    <i class="bi bi-book-fill sidebar-icon"></i> Subjects
-                    <span class="sidebar-count">{{ sc.subjects }}</span>
-                </a>
-                <a class="nav-link {% if 'staff_academic_year' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('staff_academic_years') }}">
-                    <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
-                    <span class="sidebar-count">{{ sc.academic_years }}</span>
-                </a>
-            </nav>
-
             <div class="sidebar-header">Evaluation</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'staff_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
@@ -276,43 +253,12 @@
                 </a>
             </nav>
 
-            <div class="sidebar-header">Evaluation</div>
+            <div class="sidebar-header">SYSTEM LOGS</div>
             <nav class="nav flex-column">
-                <a class="nav-link {% if 'admin_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('admin_evaluations') }}">
-                    <i class="bi bi-calendar-event sidebar-icon"></i> Evaluation Periods
-                    <span class="sidebar-count">{{ sc.eval_periods }}</span>
-                </a>
-                <a class="nav-link {% if 'admin_question' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('admin_questions') }}">
-                    <i class="bi bi-list-check sidebar-icon"></i> Questionnaire
-                    <span class="sidebar-count">{{ sc.questions }}</span>
-                </a>
-                <div class="sidebar-dropdown {% if app.request.attributes.get('_route')|default('') in ['admin_results','admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}open{% endif %}">
-                    <a class="nav-link sidebar-dropdown-toggle {% if app.request.attributes.get('_route')|default('') in ['admin_results','admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}active{% endif %}" href="#">
-                        <i class="bi bi-clipboard-data sidebar-icon"></i> Results
-                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
-                    </a>
-                    <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
-                        <a class="sidebar-sub-link {% if app.request.attributes.get('_route')|default('') == 'admin_results' %}active{% endif %}"
-                           href="{{ path('admin_results') }}">
-                            <i class="bi bi-mortarboard me-1"></i> SET Results
-                        </a>
-                        <a class="sidebar-sub-link {% if app.request.attributes.get('_route')|default('') in ['admin_results_superior','admin_results_superior_print','admin_results_superior_print_comments','admin_results_superior_print_all','admin_results_superior_faculty_detail','admin_results_superior_faculty_evaluations'] %}active{% endif %}"
-                           href="{{ path('admin_results_superior') }}">
-                            <i class="bi bi-person-badge me-1"></i> SEF Results
-                        </a>
-                    </div>
-                </div>
                 <a class="nav-link {% if 'admin_audit_log' == app.request.attributes.get('_route') %}active{% endif %}"
                    href="{{ path('admin_audit_log') }}">
                     <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
                     <span class="sidebar-count">{{ sc.audit_logs }}</span>
-                </a>
-                <a class="nav-link {% if 'admin_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('admin_faculty_messages') }}">
-                    <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
-                    {% if sc.faculty_messages > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.faculty_messages }}</span>{% endif %}
                 </a>
             </nav>
             {% endif %}
@@ -320,7 +266,17 @@
             <div class="sidebar-bottom">
                 <div class="sidebar-header">Account</div>
                 <div class="sidebar-user-card">
-                    <div class="sidebar-user-initials">{{ app.user.firstName|first }}{{ app.user.lastName|first }}</div>
+                    <div class="sidebar-user-initials" style="width:36px;height:36px;min-width:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                        <img
+                            src="{{ asset('images/' ~ app.user.profilePictureOrDefault) }}"
+                            alt="Profile"
+                            class="sidebar-user-avatar-img"
+                            width="36"
+                            height="36"
+                            style="width:36px;height:36px;display:block;object-fit:cover;border-radius:50%;"
+                            onerror="this.onerror=null;this.src='{{ asset('images/default-profile.svg') }}';"
+                        >
+                    </div>
                     <div class="sidebar-user-info">
                         <span class="sidebar-user-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
                         <span class="sidebar-user-role">
