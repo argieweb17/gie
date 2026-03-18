@@ -73,9 +73,13 @@ class AppExtension extends AbstractExtension
         $staff = 0;
         $superiors = 0;
         $admins = 0;
+        $pendingApprovals = 0;
 
         foreach ($allUsers as $u) {
             $roles = $u->getRoles();
+            if ($u->getAccountStatus() === 'pending') {
+                $pendingApprovals++;
+            }
             if (in_array('ROLE_ADMIN', $roles)) {
                 $admins++;
             } elseif (in_array('ROLE_SUPERIOR', $roles)) {
@@ -91,6 +95,7 @@ class AppExtension extends AbstractExtension
 
         $this->cachedCounts = [
             'users' => count($allUsers),
+            'pending_approvals' => $pendingApprovals,
             'students' => $students,
             'faculty' => $faculty,
             'staff' => $staff,

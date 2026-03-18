@@ -62,21 +62,25 @@
     </div>
     <div class="rl-filter-form">
         <div class="rl-filter-group">
-            <i class="bi bi-building rl-filter-icon"></i>
-            <select class="rl-filter-select" id="rlDept" style="min-width:180px;">
-                <option value="">All Departments</option>
+            <i class="bi bi-bank rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlCollege" style="min-width:160px;">
+                <option value="">All Colleges</option>
+                {% set colleges = [] %}
                 {% for dept in departments %}
-                <option value="{{ dept.departmentName|lower }}">{{ dept.departmentName }}</option>
+                    {% if dept.collegeName and dept.collegeName not in colleges %}
+                        {% set colleges = colleges|merge([dept.collegeName]) %}
+                        <option value="{{ dept.collegeName|lower }}">{{ dept.collegeName }}</option>
+                    {% endif %}
                 {% endfor %}
             </select>
         </div>
         <div class="rl-filter-group">
-            <i class="bi bi-sort-down rl-filter-icon"></i>
-            <select class="rl-filter-select" id="rlSort" style="min-width:150px;">
-                <option value="name-asc">Name (A–Z)</option>
-                <option value="name-desc">Name (Z–A)</option>
-                <option value="date-desc">Newest First</option>
-                <option value="date-asc">Oldest First</option>
+            <i class="bi bi-building rl-filter-icon"></i>
+            <select class="rl-filter-select" id="rlDept" style="min-width:180px;">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.departmentName|lower }}" data-college="{{ dept.collegeName|lower }}">{{ dept.departmentName }}</option>
+                {% endfor %}
             </select>
         </div>
         <button type="button" class="rl-clear-btn" id="rlReset" title="Reset all filters">
@@ -90,7 +94,7 @@
 
 {# ── Faculty Table ── #}
 <div class="rl-table-card">
-    <div class="rl-table-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6 60%,#60a5fa);">
+    <div class="rl-table-header" style="background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);">
         <span><i class="bi bi-mortarboard-fill me-2"></i>Faculty</span>
         <span class="rl-table-badge">{{ totalFaculty }} member{{ totalFaculty != 1 ? 's' : '' }}</span>
     </div>
@@ -113,13 +117,14 @@
                 <tr class="rl-row"
                     data-name="{{ user.fullName|lower }}"
                     data-email="{{ user.email|lower }}"
+                    data-college="{{ user.department and user.department.collegeName ? user.department.collegeName|lower : '' }}"
                     data-dept="{{ user.department ? user.department.departmentName|lower : '' }}"
                     data-status="{% if user.accountStatus == 'active' %}Active{% elseif user.accountStatus == 'pending' %}Pending{% else %}Inactive{% endif %}"
                     data-date="{{ user.createdAt|date('Y-m-d') }}">
                     <td class="ps-3"><span class="fw-bold text-muted rl-num">{{ loop.index }}</span></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <div class="rl-avatar" style="background:linear-gradient(135deg,rgba(29,78,216,.12),rgba(96,165,250,.12));color:#1d4ed8;">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</div>
+                            <div class="rl-avatar" style="background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(167,139,250,.12));color:#7c3aed;">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</div>
                             <div class="fw-semibold small">{{ user.fullName }}</div>
                         </div>
                     </td>
@@ -167,32 +172,47 @@
 
 <script>
 (function(){
-    var search=document.getElementById('rlSearch'),dept=document.getElementById('rlDept'),sort=document.getElementById('rlSort'),reset=document.getElementById('rlReset'),countEl=document.getElementById('rlCount');
+    var search=document.getElementById('rlSearch'),college=document.getElementById('rlCollege'),dept=document.getElementById('rlDept'),reset=document.getElementById('rlReset'),countEl=document.getElementById('rlCount');
     if(!search)return;
+
+    // Keep department options in sync with selected college.
+    var deptSelect=dept,allDeptOpts=[];
+    Array.from(deptSelect.options).forEach(function(o,i){if(i>0)allDeptOpts.push({value:o.value,text:o.text,college:o.getAttribute('data-college')});});
+
+    function updateDeptOptions(){
+        var cv=college.value;
+        var current=deptSelect.value;
+        while(deptSelect.options.length>1)deptSelect.remove(1);
+        allDeptOpts.forEach(function(o){
+            if(!cv||o.college===cv){
+                var opt=document.createElement('option');
+                opt.value=o.value;
+                opt.text=o.text;
+                opt.setAttribute('data-college',o.college);
+                deptSelect.appendChild(opt);
+            }
+        });
+        var found=false;
+        Array.from(deptSelect.options).forEach(function(o){if(o.value===current)found=true;});
+        deptSelect.value=found?current:'';
+    }
+
     function applyFilters(){
-        var q=search.value.trim().toLowerCase(),dv=dept.value,rows=document.querySelectorAll('.rl-row'),vis=0;
+        var q=search.value.trim().toLowerCase(),cv=college.value,dv=dept.value,rows=document.querySelectorAll('.rl-row'),vis=0;
         rows.forEach(function(r){var show=true;
             if(q){var n=r.getAttribute('data-name'),e=r.getAttribute('data-email');if(n.indexOf(q)===-1&&e.indexOf(q)===-1)show=false;}
+            if(cv&&r.getAttribute('data-college')!==cv)show=false;
             if(dv&&r.getAttribute('data-dept')!==dv)show=false;
             r.style.display=show?'':'none';if(show)vis++;
         });
         if(countEl)countEl.textContent='Showing '+vis+' of '+rows.length+' faculty';
-        applySort();
-    }
-    function applySort(){
-        var val=sort.value,tb=document.querySelector('#rlTable tbody');if(!tb)return;
-        var rows=Array.from(tb.querySelectorAll('.rl-row'));
-        rows.sort(function(a,b){switch(val){
-            case'name-asc':return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
-            case'name-desc':return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
-            case'date-desc':return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
-            case'date-asc':return a.getAttribute('data-date').localeCompare(b.getAttribute('data-date'));
-            default:return 0;}});
-        rows.forEach(function(r){tb.appendChild(r);});
+        var rows=Array.from(document.querySelectorAll('.rl-row'));
         var num=0;rows.forEach(function(r){if(r.style.display==='none')return;num++;var c=r.querySelector('.rl-num');if(c)c.textContent=num;});
     }
-    search.addEventListener('input',applyFilters);dept.addEventListener('change',applyFilters);sort.addEventListener('change',function(){applySort();});
-    reset.addEventListener('click',function(){search.value='';dept.value='';sort.value='name-asc';applyFilters();});
+    search.addEventListener('input',applyFilters);
+    college.addEventListener('change',function(){updateDeptOptions();applyFilters();});
+    dept.addEventListener('change',applyFilters);
+    reset.addEventListener('click',function(){search.value='';college.value='';updateDeptOptions();dept.value='';applyFilters();});
     applyFilters();
 })();
 </script>

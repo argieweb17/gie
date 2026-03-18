@@ -188,8 +188,7 @@
 </div>
 
 {# ── Pending Approvals Section ── #}
-{% if pendingUsers|length > 0 %}
-<div class="mu-table-card mb-3">
+<div class="mu-table-card mb-3" id="pending-approvals">
     <div class="mu-table-header" style="background:linear-gradient(135deg,#b45309,#d97706 60%,#eab308);">
         <span><i class="bi bi-hourglass-split me-2"></i>Pending Approvals</span>
         <span class="mu-table-badge">{{ pendingUsers|length }} pending</span>
@@ -240,12 +239,17 @@
                         </div>
                     </td>
                 </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <i class="bi bi-check2-circle me-1"></i>No pending approvals.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-{% endif %}
 
 {# ── All Users Table ── #}
 <div class="mu-table-card">

@@ -205,10 +205,14 @@
             {% if is_granted('ROLE_ADMIN') %}
             <div class="sidebar-header">Management</div>
             <nav class="nav flex-column">
-                <a class="nav-link {% if 'admin_users' in app.request.attributes.get('_route')|default('') or 'admin_user_' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('admin_users') }}">
-                    <i class="bi bi-people-fill sidebar-icon"></i> Users
-                    <span class="sidebar-count">{{ sc.users }}</span>
+                <a class="nav-link {% if 'admin_users' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_users') }}#pending-approvals">
+                    <i class="bi bi-person-check-fill sidebar-icon"></i> Approval
+                    {% if sc.pending_approvals > 0 %}
+                        <span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.pending_approvals }}</span>
+                    {% else %}
+                        <span class="sidebar-count">0</span>
+                    {% endif %}
                 </a>
                 <a class="nav-link {% if 'admin_students' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_students') }}">
@@ -230,11 +234,10 @@
                     <i class="bi bi-star-fill sidebar-icon"></i> Superiors
                     <span class="sidebar-count">{{ sc.superiors }}</span>
                 </a>
-                <a class="nav-link {% if 'admin_admin_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('admin_admin_list') }}">
-                    <i class="bi bi-shield-fill sidebar-icon"></i> Admins
-                    <span class="sidebar-count">{{ sc.admins }}</span>
-                </a>
+            </nav>
+
+            <div class="sidebar-header">Subject Management</div>
+            <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_curricula') }}">
                     <i class="bi bi-file-earmark-text sidebar-icon"></i> Curriculum
