@@ -317,8 +317,10 @@
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',2)">Faculty <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',3)">Position <i class="bi bi-arrow-down-up"></i></th>
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',4)">Department <i class="bi bi-arrow-down-up"></i></th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
-                    <th>Schedule</th>
+                    {% if not staffMode %}
+                        <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
+                        <th>Schedule</th>
+                    {% endif %}
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -355,6 +357,7 @@
                     <td>
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
+                    {% if not staffMode %}
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             {% if row.subjects and row.subjects|length > 0 %}
@@ -395,6 +398,7 @@
                             </div>
                         {% else %}—{% endif %}
                     </td>
+                    {% endif %}
                     <td>
                         {% if isActive %}
                             <span class="ev-status-pill ev-status-active"><span class="ev-dot ev-dot-success"></span>Active</span>
@@ -427,7 +431,7 @@
                     </td>
                 </tr>
                 <tr class="ev-detail-row" id="evDetailActive{{ eval.id }}" style="display:none;">
-                    <td colspan="10">
+                    <td colspan="{{ staffMode ? 8 : 10 }}">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
@@ -530,6 +534,7 @@
                     <td>
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
+                    {% if not staffMode %}
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             {% if row.subjects and row.subjects|length > 0 %}
@@ -570,6 +575,7 @@
                             </div>
                         {% else %}—{% endif %}
                     </td>
+                    {% endif %}
                     <td><small class="text-muted">{{ eval.endDate|date('M d, Y g:i A') }}</small></td>
                     <td>
                         {% if not eval.status %}
@@ -616,7 +622,7 @@
                     </td>
                 </tr>
                 <tr class="ev-detail-row" id="evDetailPrev{{ eval.id }}" style="display:none;">
-                    <td colspan="11">
+                    <td colspan="{{ staffMode ? 8 : 11 }}">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
