@@ -414,7 +414,7 @@
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
                             {% if staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
-                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {% endif %}
                             <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
@@ -455,7 +455,7 @@
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
-                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-schedule="{{ item.schedule ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -603,7 +603,7 @@
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailPrev{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
                             {% if staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
-                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {% endif %}
                             {# View Results #}
                             <a href="{{ path(prefix ~ '_results', {evaluation: eval.id}) }}" class="ev-action-btn ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
@@ -650,7 +650,7 @@
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
-                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-schedule="{{ item.schedule ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -1438,6 +1438,7 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
         var section = btn.getAttribute('data-eval-section');
+        var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
         // Build the evaluation URL
@@ -1453,9 +1454,13 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         document.getElementById('qrEvalFaculty').textContent = faculty || '';
         document.getElementById('qrEvalSubject').textContent = subject || '';
 
-        document.getElementById('qrEvalDetails').textContent = section || '';
+        // Show section and schedule
+        var detailsText = [];
+        if (section) detailsText.push(section);
+        if (schedule) detailsText.push(schedule);
+        document.getElementById('qrEvalDetails').textContent = detailsText.join(' | ') || '';
         var detailsRow = document.getElementById('qrEvalDetailsRow');
-        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
+        if (detailsRow) detailsRow.style.display = detailsText.length > 0 ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
 
         // Generate QR code via API
