@@ -6,6 +6,7 @@ use App\Entity\Enrollment;
 use App\Entity\EvaluationMessage;
 use App\Entity\FacultyNotificationRead;
 use App\Entity\FacultySubjectLoad;
+use App\Entity\MessageNotification;
 use App\Entity\Subject;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
@@ -18,6 +19,7 @@ use App\Repository\DepartmentRepository;
 use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
+use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\SuperiorEvaluationRepository;
@@ -2070,6 +2072,8 @@ class HomeController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         EvaluationMessageRepository $msgRepo,
+        MessageNotificationRepository $notifRepo,
+        UserRepository $userRepo,
         EntityManagerInterface $em,
     ): Response {
         /** @var User $user */
@@ -2098,6 +2102,16 @@ class HomeController extends AbstractController
                 $em->persist($msg);
                 $em->flush();
 
+                // Notify all admins and staff
+                $adminsAndStaff = $userRepo->findAdminsAndStaff();
+                foreach ($adminsAndStaff as $recipient) {
+                    $notif = new MessageNotification();
+                    $notif->setNotifiedUser($recipient);
+                    $notif->setMessage($msg);
+                    $em->persist($notif);
+                }
+                $em->flush();
+
                 $this->addFlash('success', 'Your message has been sent to the administrator.');
             } else {
                 $this->addFlash('error', 'Please fill in all required fields.');
@@ -2122,6 +2136,16 @@ class HomeController extends AbstractController
                 $reply->setCreatedAt(new \DateTime());
 
                 $em->persist($reply);
+                $em->flush();
+
+                // Notify all admins and staff
+                $adminsAndStaff = $userRepo->findAdminsAndStaff();
+                foreach ($adminsAndStaff as $recipient) {
+                    $notif = new MessageNotification();
+                    $notif->setNotifiedUser($recipient);
+                    $notif->setMessage($reply);
+                    $em->persist($notif);
+                }
                 $em->flush();
 
                 $this->addFlash('success', 'Your reply has been sent.');

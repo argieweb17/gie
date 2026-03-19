@@ -8,6 +8,7 @@ use App\Entity\Curriculum;
 use App\Entity\Department;
 use App\Entity\EvaluationMessage;
 use App\Entity\EvaluationPeriod;
+use App\Entity\MessageNotification;
 use App\Entity\Question;
 use App\Entity\QuestionCategoryDescription;
 use App\Entity\Subject;
@@ -19,6 +20,7 @@ use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
+use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
@@ -1349,6 +1351,7 @@ class ReportController extends AbstractController
         int $id,
         Request $request,
         EvaluationMessageRepository $msgRepo,
+        MessageNotificationRepository $notifRepo,
         EntityManagerInterface $em,
         SluggerInterface $slugger,
     ): Response {
@@ -1393,6 +1396,16 @@ class ReportController extends AbstractController
         }
 
         $em->flush();
+
+        // Notify the faculty member who sent the original message
+        if (isset($newMsg) && $parentMsg->getSender()) {
+            $notif = new MessageNotification();
+            $notif->setNotifiedUser($parentMsg->getSender());
+            $notif->setMessage($newMsg);
+            $em->persist($notif);
+            $em->flush();
+        }
+
         $this->addFlash('success', 'Reply sent successfully.');
 
         return $this->redirectToRoute('staff_faculty_messages');
