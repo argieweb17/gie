@@ -5,28 +5,21 @@
 {% block stylesheets %}
 <style>
 /* ═══════════════════════════════════════
-   CSS VARIABLES
+   CSS VARIABLES - Modern Chat Style
    ═══════════════════════════════════════ */
 :root {
-    --msg-primary: #1f3f8f;
-    --msg-primary-dark: #162d66;
-    --msg-primary-light: #e8eefc;
-    --msg-success: #0f766e;
-    --msg-success-light: #ecfeff;
-    --msg-warning: #b45309;
-    --msg-warning-light: #fffbeb;
-    --msg-sidebar-bg: #f5f7fb;
-    --msg-border: #dde3ee;
-    --msg-text-primary: #0f172a;
-    --msg-text-secondary: #475569;
-    --msg-text-muted: #64748b;
-    --msg-shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-    --msg-shadow-md: 0 6px 18px rgba(15,23,42,.08);
-    --msg-shadow-lg: 0 16px 36px rgba(15,23,42,.12);
-    --msg-radius-sm: 8px;
-    --msg-radius-md: 12px;
-    --msg-radius-lg: 14px;
-    --msg-radius-xl: 16px;
+    --chat-blue: #2563eb;
+    --chat-blue-light: #3b82f6;
+    --chat-bg: #f8f9fa;
+    --chat-sidebar-bg: #ffffff;
+    --chat-border: #e5e7eb;
+    --chat-text-primary: #1f2937;
+    --chat-text-secondary: #6b7280;
+    --chat-text-muted: #9ca3af;
+    --chat-bubble-out: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --chat-bubble-in: #ffffff;
+    --chat-radius: 20px;
+    --chat-radius-sm: 12px;
 }
 
 /* ═══════════════════════════════════════
@@ -36,111 +29,28 @@
     display: flex;
     height: calc(100vh - 100px);
     min-height: 600px;
-    background: #fff;
-    border-radius: var(--msg-radius-xl);
+    background: var(--chat-bg);
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: var(--msg-shadow-lg);
-    border: 1px solid var(--msg-border);
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
 }
 
 /* ═══════════════════════════════════════
-   SIDEBAR
+   SIDEBAR - Clean Contact List
    ═══════════════════════════════════════ */
 .fm-sidebar {
-    width: 360px;
-    min-width: 320px;
-    background: var(--msg-sidebar-bg);
-    border-right: 1px solid var(--msg-border);
+    width: 320px;
+    min-width: 280px;
+    background: var(--chat-sidebar-bg);
+    border-right: 1px solid var(--chat-border);
     display: flex;
     flex-direction: column;
 }
 
-/* Sidebar Header */
-.fm-sidebar-header {
-    padding: 24px;
-    background: linear-gradient(165deg, #1b2f69 0%, #1f3f8f 100%);
-    position: relative;
-    overflow: hidden;
-}
-.fm-sidebar-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,.1) 0%, transparent 60%);
-    pointer-events: none;
-}
-.fm-sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    position: relative;
-    z-index: 1;
-}
-.fm-sidebar-logo {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,.12);
-    border-radius: var(--msg-radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    color: #fff;
-    backdrop-filter: blur(8px);
-}
-.fm-sidebar-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 0 2px;
-    letter-spacing: -0.3px;
-}
-.fm-sidebar-subtitle {
-    font-size: .78rem;
-    color: rgba(255,255,255,.75);
-    margin: 0;
-}
-
-/* New Message Button */
-.fm-new-msg-wrap {
-    padding: 16px 20px;
-    background: #fff;
-    border-bottom: 1px solid var(--msg-border);
-}
-.fm-new-msg-btn {
-    width: 100%;
-    padding: 14px 20px;
-    border: 1px solid var(--msg-border);
-    border-radius: var(--msg-radius-md);
-    background: var(--msg-sidebar-bg);
-    color: var(--msg-text-secondary);
-    font-size: .88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all .2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-.fm-new-msg-btn:hover {
-    border-color: var(--msg-primary);
-    color: var(--msg-primary);
-    background: var(--msg-primary-light);
-    box-shadow: 0 4px 12px rgba(31,63,143,.12);
-}
-.fm-new-msg-btn i {
-    font-size: 1.1rem;
-}
-
-/* Search */
+/* Search Section */
 .fm-search-section {
-    padding: 12px 20px 16px;
-    background: #fff;
-    border-bottom: 1px solid var(--msg-border);
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--chat-border);
 }
 .fm-search-wrap {
     position: relative;
@@ -150,83 +60,80 @@
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--msg-text-muted);
+    color: var(--chat-text-muted);
     font-size: .9rem;
     pointer-events: none;
 }
 .fm-search-input {
     width: 100%;
     padding: 12px 16px 12px 42px;
-    border: 2px solid var(--msg-border);
-    border-radius: var(--msg-radius-md);
-    font-size: .84rem;
-    color: var(--msg-text-primary);
-    background: var(--msg-sidebar-bg);
+    border: none;
+    border-radius: 24px;
+    font-size: .9rem;
+    color: var(--chat-text-primary);
+    background: var(--chat-bg);
     outline: none;
     transition: all .2s ease;
 }
 .fm-search-input:focus {
-    border-color: var(--msg-primary);
-    background: #fff;
-    box-shadow: 0 0 0 4px rgba(30,64,175,.08);
+    box-shadow: 0 0 0 2px var(--chat-blue);
 }
 .fm-search-input::placeholder {
-    color: var(--msg-text-muted);
+    color: var(--chat-text-muted);
 }
 
 /* Conversation List */
 .fm-conv-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 12px;
+    padding: 8px 0;
 }
 .fm-conv-list::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 .fm-conv-list::-webkit-scrollbar-track {
     background: transparent;
 }
 .fm-conv-list::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
+    background: #ddd;
+    border-radius: 2px;
 }
 
 .fm-conv-item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 16px;
-    border-radius: var(--msg-radius-md);
+    gap: 12px;
+    padding: 14px 16px;
     cursor: pointer;
-    transition: all .15s ease;
-    margin-bottom: 4px;
-    position: relative;
-    border: 2px solid transparent;
+    transition: background .15s ease;
+    border-left: 3px solid transparent;
 }
 .fm-conv-item:hover {
-    background: #fff;
-    border-color: var(--msg-border);
-    box-shadow: var(--msg-shadow-sm);
+    background: var(--chat-bg);
 }
 .fm-conv-item.active {
-    background: #fff;
-    border-color: var(--msg-primary);
-    box-shadow: 0 0 0 3px rgba(31,63,143,.08);
+    background: #eff6ff;
+    border-left-color: var(--chat-blue);
 }
 
-/* Avatar */
+/* Avatar - Round with image */
 .fm-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: var(--msg-radius-md);
-    background: linear-gradient(135deg, var(--msg-success), #10b981);
-    color: #fff;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
     flex-shrink: 0;
-    box-shadow: var(--msg-shadow-sm);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    border: 2px solid #eff6ff;
+}
+.fm-avatar img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
 }
 
 /* Conversation Info */
@@ -238,199 +145,157 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 0;
+    margin-bottom: 4px;
 }
 .fm-conv-name {
-    font-size: .98rem;
-    font-weight: 700;
-    color: var(--msg-text-primary);
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--chat-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-.fm-conv-meta {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-}
-.fm-conv-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: #fef2f2;
-    color: #dc2626;
-    font-size: .68rem;
-    font-weight: 700;
-    line-height: 1;
-    flex-shrink: 0;
-}
-.fm-conv-item.active .fm-conv-count {
-    display: none;
 }
 .fm-conv-time {
-    font-size: .7rem;
-    color: var(--msg-text-muted);
+    font-size: .75rem;
+    color: var(--chat-text-muted);
     flex-shrink: 0;
-    font-weight: 500;
 }
 .fm-conv-preview {
-    font-size: .78rem;
-    color: var(--msg-text-secondary);
+    font-size: .85rem;
+    color: var(--chat-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 8px;
 }
-.fm-status-badge {
-    display: inline-flex;
+.fm-conv-item.active .fm-conv-preview {
+    color: var(--chat-blue);
+}
+
+/* New Message Button */
+.fm-new-msg-wrap {
+    padding: 16px;
+    border-top: 1px solid var(--chat-border);
+}
+.fm-new-msg-btn {
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 24px;
+    background: var(--chat-bubble-out);
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+    display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: .68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .3px;
+    justify-content: center;
+    gap: 8px;
 }
-.fm-status-pending {
-    background: var(--msg-warning-light);
-    color: var(--msg-warning);
+.fm-new-msg-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124,58,237,.3);
 }
-.fm-status-reviewed {
-    background: var(--msg-primary-light);
-    color: var(--msg-primary);
-}
-.fm-status-resolved {
-    background: var(--msg-success-light);
-    color: var(--msg-success);
+.fm-new-msg-btn i {
+    font-size: 1rem;
 }
 
 /* ═══════════════════════════════════════
-   CHAT PANEL
+   CHAT PANEL - Clean Modern Style
    ═══════════════════════════════════════ */
 .fm-chat {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--chat-bg);
 }
 
-/* Chat Header */
+/* Chat Header - Simple */
 .fm-chat-header {
-    padding: 20px 28px;
+    padding: 16px 24px;
     background: #fff;
-    border-bottom: 1px solid var(--msg-border);
+    border-bottom: 1px solid var(--chat-border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-}
-.fm-chat-user {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 .fm-chat-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--msg-radius-md);
-    background: linear-gradient(160deg, #1f3f8f, #2a4fa8);
-    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: var(--msg-shadow-md);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    border: 2px solid #eff6ff;
+}
+.fm-chat-avatar img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
 }
 .fm-chat-details h5 {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--msg-text-primary);
-    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--chat-text-primary);
+    margin: 0;
 }
 .fm-chat-status {
     font-size: .8rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.fm-chat-status.pending { color: var(--msg-warning); }
-.fm-chat-status.reviewed { color: var(--msg-primary); }
-.fm-chat-status.resolved { color: var(--msg-success); }
-.fm-chat-status i { font-size: .5rem; }
-.fm-chat-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.fm-header-badge {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: .75rem;
-    font-weight: 700;
+    color: var(--chat-text-secondary);
 }
 
 /* Chat Body */
 .fm-chat-body {
     flex: 1;
     overflow-y: auto;
-    padding: 22px;
-    background: #f8fafd;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
 }
 .fm-thread {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 .fm-chat-body::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 .fm-chat-body::-webkit-scrollbar-track {
     background: transparent;
 }
 .fm-chat-body::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 3px;
+    background: #ddd;
+    border-radius: 2px;
 }
 
 /* Date Separator */
 .fm-date-sep {
     display: flex;
     align-items: center;
-    gap: 20px;
-    margin: 8px 0;
-}
-.fm-date-sep::before,
-.fm-date-sep::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--msg-border), transparent);
+    justify-content: center;
+    margin: 16px 0;
 }
 .fm-date-sep span {
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--msg-text-muted);
-    padding: 6px 16px;
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--chat-text-muted);
+    padding: 6px 14px;
     background: #fff;
-    border-radius: 20px;
-    border: 1px solid var(--msg-border);
-    white-space: nowrap;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
 
-/* Message Bubbles */
+/* Message Bubbles - Clean Style */
 .fm-message {
     display: flex;
     flex-direction: column;
-    max-width: 72%;
+    max-width: 70%;
+    width: fit-content;
+    margin-bottom: 4px;
 }
 .fm-message.incoming {
     align-self: flex-start;
@@ -440,69 +305,56 @@
     align-self: flex-end;
     align-items: flex-end;
 }
-.fm-message-sender {
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--msg-text-secondary);
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.fm-message-sender i {
-    color: var(--msg-success);
-}
+
 .fm-bubble {
-    padding: 9px 13px;
-    border-radius: 12px;
-    font-size: .82rem;
-    line-height: 1.45;
-    white-space: pre-wrap;
-    word-break: break-word;
-    display: inline-flex;
+    display: inline-block;
     width: max-content;
     max-width: 100%;
-    align-self: flex-start;
-    box-shadow: var(--msg-shadow-sm);
+    padding: 10px 14px;
+    font-size: .9rem;
+    line-height: 1.5;
+    white-space: pre-line;
+    word-break: break-word;
 }
+
+/* Outgoing - Purple bubble */
 .fm-message.outgoing .fm-bubble {
-    background: linear-gradient(160deg, var(--msg-primary-dark), var(--msg-primary));
+    background: var(--chat-bubble-out);
     color: #fff;
-    border-bottom-right-radius: 4px;
-    align-self: flex-end;
+    border-radius: var(--chat-radius) var(--chat-radius) 6px var(--chat-radius);
 }
+
+/* Incoming - White bubble */
 .fm-message.incoming .fm-bubble {
-    background: #ffffff;
-    color: var(--msg-text-primary);
-    border: 1px solid var(--msg-border);
-    border-bottom-left-radius: 4px;
+    background: var(--chat-bubble-in);
+    color: var(--chat-text-primary);
+    border-radius: var(--chat-radius) var(--chat-radius) var(--chat-radius) 6px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
 }
-.fm-bubble-subject {
-    font-weight: 700;
-    margin-bottom: 8px;
-    padding: 4px 10px;
-    border: none;
-    border-radius: 999px;
-    font-size: .74rem;
+
+.fm-message-sender {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--chat-text-secondary);
+    margin-bottom: 4px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,.18);
+    gap: 4px;
+    width: max-content;
 }
-.fm-message.incoming .fm-bubble-subject {
-    color: var(--msg-text-secondary);
-    background: var(--msg-primary-light);
+.fm-message-sender i {
+    color: var(--chat-blue);
+    font-size: .7rem;
 }
-.fm-bubble-subject i {
-    font-size: .78rem;
-}
+
 .fm-message-time {
-    font-size: .68rem;
-    color: var(--msg-text-muted);
-    margin-top: 5px;
-    display: flex;
+    font-size: .7rem;
+    color: var(--chat-text-muted);
+    margin-top: 4px;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    width: max-content;
 }
 .fm-message.outgoing .fm-message-time {
     justify-content: flex-end;
@@ -511,99 +363,157 @@
     color: #60a5fa;
 }
 
+/* Typing Indicator */
+.fm-typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: var(--chat-radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    width: fit-content;
+}
+.fm-typing-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--chat-text-muted);
+    border-radius: 50%;
+    animation: typing-bounce 1.4s infinite ease-in-out both;
+}
+.fm-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.fm-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typing-bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
 /* Waiting Message */
 .fm-waiting {
     align-self: flex-start;
 }
 .fm-waiting .fm-bubble {
-    background: #fff9eb;
-    border: 1px solid #f8dba2;
-    color: #9a3412;
+    background: #fff;
+    color: var(--chat-text-secondary);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    border-radius: var(--chat-radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
 }
 .fm-waiting .fm-bubble i {
     animation: fm-spin 2s linear infinite;
+    color: var(--chat-blue);
 }
 @keyframes fm-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
-/* Compose Area */
-.fm-compose {
-    padding: 12px 20px;
-    background: #fff;
-    border-top: 1px solid var(--msg-border);
-}
-.fm-compose-inner {
-    background: var(--msg-sidebar-bg);
-    border-radius: var(--msg-radius-md);
-    border: 2px solid var(--msg-border);
-    overflow: hidden;
-    transition: all .2s ease;
-}
-.fm-compose-inner:focus-within {
-    border-color: var(--msg-success);
-    box-shadow: 0 0 0 4px rgba(15,118,110,.1);
-}
-.fm-compose-header {
-    padding: 10px 14px;
-    background: #fff;
-    border-bottom: 1px solid var(--msg-border);
+/* Attachment Display */
+.fm-attachment {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,.03);
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: .78rem;
-    font-weight: 600;
-    color: var(--msg-text-secondary);
+    gap: 10px;
 }
-.fm-compose-header i {
-    color: var(--msg-success);
+.fm-attachment-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--chat-blue);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1rem;
+}
+.fm-attachment-info {
+    flex: 1;
+    min-width: 0;
+}
+.fm-attachment-name {
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--chat-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fm-attachment-size {
+    font-size: .75rem;
+    color: var(--chat-text-muted);
+}
+.fm-attachment-download {
+    width: 32px;
+    height: 32px;
+    background: var(--chat-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    font-size: .9rem;
+    transition: all .2s ease;
+}
+.fm-attachment-download:hover {
+    background: var(--chat-blue-light);
+    transform: scale(1.05);
+}
+
+/* Compose Area - Simple */
+.fm-compose {
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 1px solid var(--chat-border);
+}
+.fm-compose-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--chat-bg);
+    border-radius: 24px;
+    padding: 8px 8px 8px 20px;
 }
 .fm-textarea {
-    width: 100%;
-    padding: 12px 14px;
+    flex: 1;
+    padding: 8px 0;
     border: none;
-    font-size: .88rem;
-    color: var(--msg-text-primary);
+    font-size: .9rem;
+    color: var(--chat-text-primary);
     background: transparent;
     outline: none;
     resize: none;
-    min-height: 56px;
+    min-height: 24px;
     max-height: 120px;
     font-family: inherit;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 .fm-textarea::placeholder {
-    color: var(--msg-text-muted);
-}
-.fm-compose-footer {
-    padding: 10px 14px;
-    background: #fff;
-    border-top: 1px solid var(--msg-border);
-    display: flex;
-    justify-content: flex-end;
+    color: var(--chat-text-muted);
 }
 .fm-send-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: var(--msg-radius-md);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
     border: none;
-    background: linear-gradient(135deg, var(--msg-success) 0%, #10b981 100%);
+    background: var(--chat-bubble-out);
     color: #fff;
-    font-size: .84rem;
-    font-weight: 700;
+    font-size: 1.1rem;
     cursor: pointer;
     transition: all .2s ease;
-    box-shadow: 0 4px 12px rgba(15,118,110,.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 .fm-send-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(15,118,110,.3);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(124,58,237,.3);
 }
 
 /* Empty State */
@@ -617,126 +527,105 @@
     text-align: center;
 }
 .fm-empty-icon {
-    width: 100px;
-    height: 100px;
-    border-radius: 28px;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
-    color: var(--msg-text-muted);
-    margin-bottom: 24px;
+    font-size: 2rem;
+    color: var(--chat-blue);
+    margin-bottom: 20px;
 }
 .fm-empty-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--msg-text-secondary);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--chat-text-primary);
     margin: 0 0 8px;
 }
 .fm-empty-text {
     font-size: .9rem;
-    color: var(--msg-text-muted);
-    max-width: 320px;
-    line-height: 1.6;
+    color: var(--chat-text-secondary);
+    max-width: 280px;
+    line-height: 1.5;
     margin: 0 0 20px;
 }
 .fm-empty-btn {
-    padding: 14px 28px;
-    border-radius: var(--msg-radius-md);
+    padding: 12px 28px;
+    border-radius: 24px;
     border: none;
-    background: linear-gradient(160deg, var(--msg-primary-dark), var(--msg-primary));
+    background: var(--chat-bubble-out);
     color: #fff;
     font-size: .9rem;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     transition: all .2s ease;
-    box-shadow: 0 4px 12px rgba(30,64,175,.25);
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 .fm-empty-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(31,63,143,.3);
+    box-shadow: 0 4px 12px rgba(124,58,237,.3);
 }
 
 /* ═══════════════════════════════════════
-   NEW MESSAGE MODAL
+   NEW MESSAGE MODAL - Clean Style
    ═══════════════════════════════════════ */
 .fm-modal-header {
-    background: linear-gradient(165deg, #1b2f69 0%, #1f3f8f 100%);
+    background: var(--chat-bubble-out);
     padding: 20px 24px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    position: relative;
-    overflow: hidden;
-}
-.fm-modal-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -30%;
-    width: 80%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,.1) 0%, transparent 60%);
-    pointer-events: none;
+    gap: 12px;
 }
 .fm-modal-icon {
-    width: 46px;
-    height: 46px;
-    background: rgba(255,255,255,.15);
-    border-radius: var(--msg-radius-md);
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,.2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    font-size: 1.2rem;
-    backdrop-filter: blur(4px);
-    position: relative;
-    z-index: 1;
+    font-size: 1.1rem;
 }
 .fm-modal-title {
     color: #fff;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.1rem;
     margin: 0;
-    position: relative;
-    z-index: 1;
 }
 .fm-modal-body {
-    padding: 28px;
+    padding: 24px;
 }
 .fm-form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 .fm-form-group:last-child {
     margin-bottom: 0;
 }
 .fm-form-label {
     display: block;
-    font-size: .78rem;
-    font-weight: 700;
-    color: var(--msg-text-secondary);
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--chat-text-primary);
     margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: .5px;
 }
 .fm-form-label .optional {
-    font-weight: 500;
-    text-transform: none;
-    color: var(--msg-text-muted);
+    font-weight: 400;
+    color: var(--chat-text-muted);
 }
 .fm-form-input,
 .fm-form-select,
 .fm-form-textarea {
     width: 100%;
-    padding: 14px 18px;
-    border: 2px solid var(--msg-border);
-    border-radius: var(--msg-radius-md);
-    font-size: .88rem;
-    color: var(--msg-text-primary);
+    padding: 12px 16px;
+    border: 1px solid var(--chat-border);
+    border-radius: var(--chat-radius-sm);
+    font-size: .9rem;
+    color: var(--chat-text-primary);
     background: #fff;
     outline: none;
     transition: all .2s ease;
@@ -745,31 +634,31 @@
 .fm-form-input:focus,
 .fm-form-select:focus,
 .fm-form-textarea:focus {
-    border-color: var(--msg-primary);
-    box-shadow: 0 0 0 4px rgba(30,64,175,.08);
+    border-color: var(--chat-blue);
+    box-shadow: 0 0 0 3px rgba(124,58,237,.1);
 }
 .fm-form-input::placeholder,
 .fm-form-textarea::placeholder {
-    color: var(--msg-text-muted);
+    color: var(--chat-text-muted);
 }
 .fm-form-textarea {
     resize: vertical;
-    min-height: 120px;
-    line-height: 1.6;
+    min-height: 100px;
+    line-height: 1.5;
 }
 .fm-modal-footer {
-    padding: 20px 28px;
-    background: var(--msg-sidebar-bg);
-    border-top: 1px solid var(--msg-border);
+    padding: 16px 24px;
+    background: var(--chat-bg);
+    border-top: 1px solid var(--chat-border);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
 }
 .fm-btn {
-    padding: 12px 24px;
-    border-radius: var(--msg-radius-md);
-    font-size: .88rem;
-    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: .9rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all .2s ease;
     border: none;
@@ -779,21 +668,19 @@
 }
 .fm-btn-secondary {
     background: #fff;
-    color: var(--msg-text-secondary);
-    border: 2px solid var(--msg-border);
+    color: var(--chat-text-secondary);
+    border: 1px solid var(--chat-border);
 }
 .fm-btn-secondary:hover {
-    background: var(--msg-sidebar-bg);
-    border-color: #cbd5e1;
+    background: var(--chat-bg);
 }
 .fm-btn-primary {
-    background: linear-gradient(160deg, var(--msg-primary-dark), var(--msg-primary));
+    background: var(--chat-bubble-out);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(30,64,175,.25);
 }
 .fm-btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(31,63,143,.3);
+    box-shadow: 0 4px 12px rgba(124,58,237,.3);
 }
 
 /* ═══════════════════════════════════════
@@ -808,12 +695,12 @@
     .fm-sidebar {
         width: 100%;
         min-width: 100%;
-        max-height: 400px;
+        max-height: 350px;
         border-right: none;
-        border-bottom: 1px solid var(--msg-border);
+        border-bottom: 1px solid var(--chat-border);
     }
     .fm-conv-list {
-        max-height: 250px;
+        max-height: 200px;
     }
     .fm-chat-body {
         min-height: 400px;
@@ -823,41 +710,33 @@
     }
 }
 @media (max-width: 576px) {
-    .fm-sidebar-header {
-        padding: 18px;
-    }
     .fm-chat-header {
-        padding: 16px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        padding: 12px 16px;
     }
-    .fm-chat-actions {
-        width: 100%;
-        justify-content: flex-end;
+    .fm-chat-body {
+        padding: 16px;
     }
     .fm-compose {
-        padding: 10px;
+        padding: 12px 16px;
     }
-    .fm-send-btn {
-        width: 100%;
-        justify-content: center;
+    .fm-message {
+        max-width: 90%;
     }
 }
 
 /* Animations */
 .fm-conv-item {
-    animation: fm-slide-in .25s ease;
+    animation: fm-slide-in .2s ease;
 }
 @keyframes fm-slide-in {
-    from { opacity: 0; transform: translateX(-10px); }
+    from { opacity: 0; transform: translateX(-8px); }
     to { opacity: 1; transform: translateX(0); }
 }
 .fm-message {
-    animation: fm-fade-up .3s ease;
+    animation: fm-fade-up .2s ease;
 }
 @keyframes fm-fade-up {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 </style>
@@ -866,37 +745,25 @@
 {% block body %}
 <div class="fm-app">
     {# ═══════════════════════════════════════
-       SIDEBAR
+       SIDEBAR - Clean Contact List
        ═══════════════════════════════════════ #}
     <aside class="fm-sidebar">
-        <div class="fm-sidebar-header">
-            <div class="fm-sidebar-brand">
-                <div class="fm-sidebar-logo">
-                    <i class="bi bi-chat-dots-fill"></i>
-                </div>
-                <div>
-                    <h4 class="fm-sidebar-title">My Messages</h4>
-                    <p class="fm-sidebar-subtitle">{{ messages|length }} conversation{{ messages|length != 1 ? 's' : '' }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="fm-new-msg-wrap">
-            <button class="fm-new-msg-btn" data-bs-toggle="modal" data-bs-target="#newMessageModal">
-                <i class="bi bi-plus-lg"></i> New Message
-            </button>
-        </div>
-
         <div class="fm-search-section">
             <div class="fm-search-wrap">
                 <i class="bi bi-search fm-search-icon"></i>
-                <input type="text" class="fm-search-input" id="searchInput" placeholder="Search messages..." oninput="searchMessages()">
+                <input type="text" class="fm-search-input" id="searchInput" placeholder="Search..." oninput="searchMessages()">
             </div>
         </div>
 
         <div class="fm-conv-list" id="convList">
             {% for msg in messages %}
-            {% set threadCount = 1 + (msg.adminReply ? 1 : 0) + (repliesMap[msg.id] is defined ? repliesMap[msg.id]|length : 0) %}
+            {% set lastMessage = msg.message %}
+            {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
+                {% set lastReply = repliesMap[msg.id]|last %}
+                {% set lastMessage = lastReply.message %}
+            {% elseif msg.adminReply %}
+                {% set lastMessage = msg.adminReply %}
+            {% endif %}
             {% set latestActivityAt = msg.createdAt %}
             {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
                 {% set latestActivityAt = (repliesMap[msg.id]|last).createdAt %}
@@ -906,58 +773,48 @@
                  data-search="{{ msg.subject|lower }} {{ msg.message|lower }}"
                  onclick="selectConversation(this, {{ msg.id }})">
                 <div class="fm-avatar">
-                    <i class="bi bi-shield-check"></i>
+                    <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC">
                 </div>
                 <div class="fm-conv-info">
                     <div class="fm-conv-header">
-                        <span class="fm-conv-name">SET-SEF Administration</span>
-                        <div class="fm-conv-meta">
-                            <span class="fm-conv-count" title="Messages in conversation">{{ threadCount }}</span>
-                            <span class="fm-conv-time">{{ latestActivityAt|date('M d') }}</span>
-                        </div>
+                        <span class="fm-conv-name">Administration</span>
+                        <span class="fm-conv-time">{{ latestActivityAt|date('M d') }}</span>
                     </div>
+                    <div class="fm-conv-preview">{{ lastMessage|slice(0, 40) }}{% if lastMessage|length > 40 %}...{% endif %}</div>
                 </div>
             </div>
             {% else %}
-            <div class="fm-empty-state" style="padding:50px 24px;">
-                <div class="fm-empty-icon" style="width:70px;height:70px;font-size:1.8rem;margin-bottom:16px;">
-                    <i class="bi bi-chat-square-dots"></i>
+            <div class="fm-empty-state" style="padding:40px 20px;">
+                <div class="fm-empty-icon" style="width:60px;height:60px;font-size:1.5rem;margin-bottom:14px;">
+                    <i class="bi bi-chat-dots"></i>
                 </div>
-                <h5 class="fm-empty-title" style="font-size:1rem;">No messages yet</h5>
-                <p class="fm-empty-text" style="font-size:.82rem;margin-bottom:0;">Start a new conversation</p>
+                <h5 class="fm-empty-title" style="font-size:.95rem;">No messages</h5>
+                <p class="fm-empty-text" style="font-size:.8rem;margin-bottom:0;">Start a conversation</p>
             </div>
             {% endfor %}
+        </div>
+
+        <div class="fm-new-msg-wrap">
+            <button class="fm-new-msg-btn" data-bs-toggle="modal" data-bs-target="#newMessageModal">
+                <i class="bi bi-plus-lg"></i> New Message
+            </button>
         </div>
     </aside>
 
     {# ═══════════════════════════════════════
-       CHAT PANEL
+       CHAT PANEL - Clean Style
        ═══════════════════════════════════════ #}
     <main class="fm-chat">
         {% if messages|length > 0 %}
         {% set firstMsg = messages|first %}
 
         <header class="fm-chat-header" id="chatHeader">
-            <div class="fm-chat-user">
-                <div class="fm-chat-avatar">
-                    <i class="bi bi-shield-check"></i>
-                </div>
-                <div class="fm-chat-details">
-                    <h5 id="chatTitle">{{ firstMsg.subject }}</h5>
-                    <div class="fm-chat-status {{ firstMsg.status }}" id="chatStatus">
-                        <i class="bi bi-circle-fill"></i>
-                        {% if firstMsg.status == 'resolved' %}Resolved
-                        {% elseif firstMsg.status == 'reviewed' %}Reviewed
-                        {% else %}Awaiting Response{% endif %}
-                    </div>
-                </div>
+            <div class="fm-chat-avatar" id="chatAvatar">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC">
             </div>
-            <div class="fm-chat-actions">
-                {% if firstMsg.evaluationPeriod %}
-                <span class="fm-header-badge fm-status-reviewed" id="chatEval">
-                    <i class="bi bi-clipboard2-check me-1"></i>{{ firstMsg.evaluationPeriod.evaluationType }} - {{ firstMsg.evaluationPeriod.semester ?? '' }} {{ firstMsg.evaluationPeriod.schoolYear ?? '' }}
-                </span>
-                {% endif %}
+            <div class="fm-chat-details">
+                <h5 id="chatTitle">Administration</h5>
+                <div class="fm-chat-status" id="chatStatus">{{ firstMsg.subject }}</div>
             </div>
         </header>
 
@@ -965,10 +822,10 @@
             {% for msg in messages %}
             <div class="fm-thread" id="thread-{{ msg.id }}"{% if not loop.first %} style="display:none"{% endif %}>
                 <div class="fm-date-sep">
-                    <span>{{ msg.createdAt|date('l, F d, Y') }}</span>
+                    <span>{{ msg.createdAt|date('M d, Y') }}</span>
                 </div>
 
-                {# Faculty's message (sent) #}
+                {# Faculty's message (sent - purple) #}
                 <div class="fm-message outgoing">
                     <div class="fm-bubble">{{- msg.message|trim -}}</div>
                     <div class="fm-message-time">
@@ -981,9 +838,9 @@
                 {% if msg.adminReply %}
                 <div class="fm-message incoming">
                     <div class="fm-message-sender">
-                        <i class="bi bi-shield-check"></i> Admin{% if msg.repliedBy %} ({{ msg.repliedBy.fullName }}){% endif %}
+                        <i class="bi bi-circle-fill"></i> {% if msg.repliedBy and msg.repliedBy.isAdmin %}Admin{% else %}Staff{% endif %}
                     </div>
-                    <div class="fm-bubble">{{ msg.adminReply|trim }}</div>
+                    <div class="fm-bubble">{{- msg.adminReply|trim -}}</div>
                     <div class="fm-message-time">
                         {% if msg.repliedAt %}{{ msg.repliedAt|date('h:i A') }}{% endif %}
                     </div>
@@ -994,7 +851,7 @@
                 {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
                 {% for reply in repliesMap[msg.id] %}
                 {% if reply.senderType == 'faculty' %}
-                {# Faculty's reply (outgoing - right side) #}
+                {# Faculty's reply (outgoing - purple) #}
                 <div class="fm-message outgoing">
                     <div class="fm-bubble">{{- reply.message|trim -}}</div>
                     <div class="fm-message-time">
@@ -1003,23 +860,26 @@
                     </div>
                 </div>
                 {% else %}
-                {# Admin's reply (incoming - left side) #}
+                {# Admin/Staff reply (incoming - white) #}
                 <div class="fm-message incoming">
                     <div class="fm-message-sender">
-                        <i class="bi bi-shield-check"></i> Admin ({{ reply.sender.fullName }})
+                        <i class="bi bi-circle-fill"></i> {% if reply.sender.isAdmin %}Admin{% else %}Staff{% endif %}
                     </div>
-                    <div class="fm-bubble">
-                        {{- reply.message|trim -}}
-                        {%- if reply.attachment %}
-                        <div class="fm-attachment">
-                            <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" target="_blank" class="fm-attachment-link">
-                                <i class="bi bi-file-earmark-pdf-fill"></i>
-                                {{ reply.attachmentOriginalName }}
-                                <i class="bi bi-download"></i>
-                            </a>
+                    <div class="fm-bubble">{{- reply.message|trim -}}</div>
+                    {%- if reply.attachment %}
+                    <div class="fm-attachment">
+                        <div class="fm-attachment-icon">
+                            <i class="bi bi-file-earmark-text"></i>
                         </div>
-                        {%- endif %}
+                        <div class="fm-attachment-info">
+                            <div class="fm-attachment-name">{{ reply.attachmentOriginalName }}</div>
+                            <div class="fm-attachment-size">Click to download</div>
+                        </div>
+                        <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" download="{{ reply.attachmentOriginalName }}" class="fm-attachment-download" title="Download">
+                            <i class="bi bi-download"></i>
+                        </a>
                     </div>
+                    {%- endif %}
                     <div class="fm-message-time">
                         {{ reply.createdAt|date('h:i A') }}
                     </div>
@@ -1027,10 +887,12 @@
                 {% endif %}
                 {% endfor %}
                 {% elseif not msg.adminReply %}
-                <div class="fm-message fm-waiting">
-                    <div class="fm-bubble">
-                        <i class="bi bi-hourglass-split"></i>
-                        Waiting for admin response...
+                {# Typing indicator style waiting #}
+                <div class="fm-message incoming fm-waiting">
+                    <div class="fm-typing">
+                        <span class="fm-typing-dot"></span>
+                        <span class="fm-typing-dot"></span>
+                        <span class="fm-typing-dot"></span>
                     </div>
                 </div>
                 {% endif %}
@@ -1044,16 +906,10 @@
                 <input type="hidden" name="_action" value="reply_message">
                 <input type="hidden" name="parent_message_id" value="{{ msg.id }}">
                 <div class="fm-compose-inner">
-                    <div class="fm-compose-header">
-                        <i class="bi bi-reply-fill"></i>
-                        Write a reply
-                    </div>
-                    <textarea name="msg_body" class="fm-textarea" placeholder="Type your response here..." required></textarea>
-                    <div class="fm-compose-footer">
-                        <button type="submit" class="fm-send-btn">
-                            <i class="bi bi-send-fill"></i> Send Reply
-                        </button>
-                    </div>
+                    <textarea name="msg_body" class="fm-textarea" placeholder="Type a message..." required></textarea>
+                    <button type="submit" class="fm-send-btn">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
                 </div>
             </form>
         </div>
@@ -1062,12 +918,12 @@
         {% else %}
         <div class="fm-empty-state">
             <div class="fm-empty-icon">
-                <i class="bi bi-chat-square-dots"></i>
+                <i class="bi bi-chat-dots"></i>
             </div>
-            <h5 class="fm-empty-title">No conversations yet</h5>
-            <p class="fm-empty-text">Send a message to the administration to get started with your inquiry or request.</p>
+            <h5 class="fm-empty-title">No messages yet</h5>
+            <p class="fm-empty-text">Start a conversation with the administration.</p>
             <button class="fm-empty-btn" data-bs-toggle="modal" data-bs-target="#newMessageModal">
-                <i class="bi bi-plus-lg"></i> Start Conversation
+                <i class="bi bi-plus-lg"></i> New Message
             </button>
         </div>
         {% endif %}
@@ -1075,11 +931,11 @@
 </div>
 
 {# ═══════════════════════════════════════
-   NEW MESSAGE MODAL
+   NEW MESSAGE MODAL - Clean Style
    ═══════════════════════════════════════ #}
 <div class="modal fade" id="newMessageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:var(--msg-radius-xl);overflow:hidden;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
             <form method="post" action="{{ path('faculty_eval_request') }}">
                 <input type="hidden" name="_action" value="send_message">
 
@@ -1088,7 +944,7 @@
                         <i class="bi bi-pencil-square"></i>
                     </div>
                     <h5 class="fm-modal-title">New Message</h5>
-                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" style="position:relative;z-index:1;"></button>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="fm-modal-body">
@@ -1104,19 +960,19 @@
 
                     <div class="fm-form-group">
                         <label class="fm-form-label">Subject <span class="text-danger">*</span></label>
-                        <input type="text" name="msg_subject" class="fm-form-input" placeholder="e.g., Request for schedule change" required maxlength="255">
+                        <input type="text" name="msg_subject" class="fm-form-input" placeholder="What's this about?" required maxlength="255">
                     </div>
 
                     <div class="fm-form-group">
                         <label class="fm-form-label">Message <span class="text-danger">*</span></label>
-                        <textarea name="msg_body" class="fm-form-textarea" placeholder="Type your message here..." required></textarea>
+                        <textarea name="msg_body" class="fm-form-textarea" placeholder="Type your message..." required></textarea>
                     </div>
                 </div>
 
                 <div class="fm-modal-footer">
                     <button type="button" class="fm-btn fm-btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="fm-btn fm-btn-primary">
-                        <i class="bi bi-send-fill"></i> Send Message
+                        <i class="bi bi-send-fill"></i> Send
                     </button>
                 </div>
             </form>
@@ -1127,7 +983,7 @@
 {# Flash Messages #}
 {% for label, msgs in app.flashes %}
 <div class="position-fixed top-0 end-0 p-3" style="z-index:9999;">
-    <div class="toast show align-items-center text-white bg-{{ label == 'error' ? 'danger' : label }}" role="alert" style="border-radius:var(--msg-radius-md);">
+    <div class="toast show align-items-center text-white bg-{{ label == 'error' ? 'danger' : label }}" role="alert" style="border-radius:12px;">
         <div class="d-flex">
             <div class="toast-body fw-semibold">{% for m in msgs %}{{ m }}{% endfor %}</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -1144,10 +1000,7 @@ const messagesData = {
         subject: "{{ msg.subject|e('js') }}",
         message: "{{ msg.message|e('js')|replace({"\n": "\\n", "\r": ""}) }}",
         status: "{{ msg.status }}",
-        createdAt: "{{ msg.createdAt|date('M d, Y h:i A') }}",
-        adminReply: {% if msg.adminReply %}"{{ msg.adminReply|e('js')|replace({"\n": "\\n", "\r": ""}) }}"{% else %}null{% endif %},
-        evalId: {% if msg.evaluationPeriod %}{{ msg.evaluationPeriod.id }}{% else %}null{% endif %},
-        evalLabel: {% if msg.evaluationPeriod %}"{{ msg.evaluationPeriod.evaluationType }} - {{ msg.evaluationPeriod.semester ?? '' }} {{ msg.evaluationPeriod.schoolYear ?? '' }}"{% else %}null{% endif %}
+        createdAt: "{{ msg.createdAt|date('M d, Y') }}"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 };
@@ -1165,26 +1018,8 @@ function selectConversation(el, msgId) {
 
     const msg = messagesData[msgId];
     if (msg) {
-        document.getElementById('chatTitle').textContent = msg.subject;
-
-        const statusEl = document.getElementById('chatStatus');
-        statusEl.className = 'fm-chat-status ' + msg.status;
-        const statusLabels = {
-            pending: '<i class="bi bi-circle-fill"></i> Awaiting Response',
-            reviewed: '<i class="bi bi-circle-fill"></i> Reviewed',
-            resolved: '<i class="bi bi-circle-fill"></i> Resolved'
-        };
-        statusEl.innerHTML = statusLabels[msg.status] || statusLabels.pending;
-
-        const evalBadge = document.getElementById('chatEval');
-        if (evalBadge) {
-            if (msg.evalLabel) {
-                evalBadge.innerHTML = '<i class="bi bi-clipboard2-check me-1"></i>' + msg.evalLabel;
-                evalBadge.style.display = '';
-            } else {
-                evalBadge.style.display = 'none';
-            }
-        }
+        document.getElementById('chatTitle').textContent = 'Administration';
+        document.getElementById('chatStatus').textContent = msg.subject;
     }
 
     const chatBody = document.getElementById('chatBody');
@@ -1206,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.fm-textarea').forEach(textarea => {
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
     });
 
@@ -1215,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toast.style.opacity = '0';
             toast.style.transition = 'opacity .3s';
             setTimeout(() => toast.remove(), 300);
-        }, 4000);
+        }, 3000);
     });
 });
 </script>

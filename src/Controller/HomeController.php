@@ -2268,20 +2268,15 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // Get logs performed by this faculty or related to this faculty
+        // Get logs performed by this faculty only
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        // Get logs where the faculty is the performer or the target
+        // Get logs where the faculty is the performer
         $qb = $auditRepo->createQueryBuilder('a')
             ->where('a.performedBy = :user')
-            ->orWhere('a.entityType = :userType AND a.entityId = :userId')
-            ->orWhere('a.details LIKE :userName')
             ->setParameter('user', $user)
-            ->setParameter('userType', 'User')
-            ->setParameter('userId', $user->getId())
-            ->setParameter('userName', '%' . $user->getFullName() . '%')
             ->orderBy('a.createdAt', 'DESC');
 
         $totalLogs = (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
@@ -2306,20 +2301,15 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // Get logs performed by this staff or related to this staff
+        // Get logs performed by this staff only
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        // Get logs where the staff is the performer or the target
+        // Get logs where the staff is the performer
         $qb = $auditRepo->createQueryBuilder('a')
             ->where('a.performedBy = :user')
-            ->orWhere('a.entityType = :userType AND a.entityId = :userId')
-            ->orWhere('a.details LIKE :userName')
             ->setParameter('user', $user)
-            ->setParameter('userType', 'User')
-            ->setParameter('userId', $user->getId())
-            ->setParameter('userName', '%' . $user->getFullName() . '%')
             ->orderBy('a.createdAt', 'DESC');
 
         $totalLogs = (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
