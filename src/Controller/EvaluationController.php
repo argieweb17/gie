@@ -45,8 +45,10 @@ class EvaluationController extends AbstractController
     }
 
     #[Route('/qr/{id}', name: 'evaluation_qr_redirect', methods: ['GET', 'POST'])]
+    #[Route('/qr/{id}/{subjectId}', name: 'evaluation_qr_redirect_with_subject', methods: ['GET', 'POST'])]
     public function qrRedirect(
         int $id,
+        ?int $subjectId = null,
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SubjectRepository $subjectRepo,
@@ -63,14 +65,22 @@ class EvaluationController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // Resolve subject from evaluation's subject string ("CODE — Name")
+        // If subject ID is provided, use it directly
         $subject = null;
-        $subjectStr = $eval->getSubject();
-        if ($subjectStr) {
-            $parts = explode(' — ', $subjectStr, 2);
-            $code = trim($parts[0]);
-            $subject = $subjectRepo->findOneBy(['subjectCode' => $code]);
+        if ($subjectId) {
+            $subject = $subjectRepo->find($subjectId);
         }
+
+        // Otherwise, resolve subject from evaluation's subject string ("CODE — Name")
+        if (!$subject) {
+            $subjectStr = $eval->getSubject();
+            if ($subjectStr) {
+                $parts = explode(' — ', $subjectStr, 2);
+                $code = trim($parts[0]);
+                $subject = $subjectRepo->findOneBy(['subjectCode' => $code]);
+            }
+        }
+
         if (!$subject) {
             $this->addFlash('danger', 'Subject not found for this evaluation.');
             return $this->redirectToRoute('app_login');

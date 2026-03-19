@@ -1438,13 +1438,18 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var evalType = btn.getAttribute('data-eval-type');
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
+        var subjectId = btn.getAttribute('data-eval-subject-id');
         var section = btn.getAttribute('data-eval-section');
         var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
-        // Build the evaluation URL
+        // Build the evaluation URL with subject ID
         var baseUrl = window.location.origin;
-        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        if (subjectId) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId;
+        } else {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        }
 
         // Update modal info
         var typeBadge = document.getElementById('qrEvalType');
