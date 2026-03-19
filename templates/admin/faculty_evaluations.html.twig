@@ -615,19 +615,19 @@
             {% endif %}
             {% if item.subjectDetails %}
                 {% for subj in item.subjectDetails %}
-                <tr class="subject-details-row fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" style="background:#f8f9fa;">
+                <tr class="subject-details-row fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}">
                     <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
-                    <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}" style="opacity:0.6;">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
+                    <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
                     <td>
-                        <div class="fw-semibold" style="font-size:.85rem; opacity:0.6;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
+                        <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
                     </td>
                     <td>
-                        <span style="padding-left:1rem;"><strong>{{ subj.subjectCode }}</strong></span>
+                        <span><strong>{{ subj.subjectCode }}</strong></span>
                     </td>
                     <td>
-                        <span style="background:#e7f3ff;padding:2px 8px;border-radius:4px;font-size:0.85rem;">{{ subj.section }}</span>
+                        <span>{{ subj.section }}</span>
                     </td>
-                    <td><small>{{ subj.schedule }}</small></td>
+                    <td>{{ subj.schedule }}</td>
                     <td class="text-center">
                         <span class="fe-rating-num">{{ subj.average|number_format(2) }}</span>
                         <span class="fe-rating-of">/ 5</span>
