@@ -2155,6 +2155,8 @@ class AdminController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
@@ -2163,6 +2165,7 @@ class AdminController extends AbstractController
             throw $this->createNotFoundException('Faculty not found.');
         }
 
+        $currentAY = $ayRepo->findCurrent();
         $evalData = $responseRepo->getEvaluationsByFaculty($facultyId);
         $results = [];
         $totalEvaluators = 0;
@@ -2182,10 +2185,25 @@ class AdminController extends AbstractController
             $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
             foreach ($allSubjects as $subj) {
                 if ((int) $subj['evaluationPeriodId'] === (int) $row['evaluationPeriodId']) {
+                    // Fetch schedule from FacultySubjectLoad
+                    $schedule = '—';
+                    if ($subj['subjectId']) {
+                        $load = $fslRepo->findOneBy([
+                            'faculty' => $faculty,
+                            'subject' => $subj['subjectId'],
+                            'section' => $subj['section'],
+                            'academicYear' => $currentAY
+                        ]);
+                        if ($load) {
+                            $schedule = $load->getSchedule() ?? '—';
+                        }
+                    }
+
                     $subjectDetails[] = [
                         'subjectCode' => $subj['subjectCode'] ?? 'N/A',
                         'subjectName' => $subj['subjectName'] ?? '',
                         'section' => $subj['section'] ?? '—',
+                        'schedule' => $schedule,
                         'average' => round((float) ($subj['avgRating'] ?? 0), 2),
                         'evaluators' => (int) $subj['evaluatorCount'],
                     ];

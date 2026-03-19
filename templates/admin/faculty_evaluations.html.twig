@@ -557,6 +557,7 @@
                 <th>Period</th>
                 <th>Subject</th>
                 <th>Section</th>
+                <th>Schedule</th>
                 <th class="text-center">Rating</th>
                 <th class="text-center" style="width:100px">Progress</th>
                 <th class="text-center">Evaluators</th>
@@ -568,6 +569,7 @@
             {% for item in evaluations %}
             {% set ev = item.evaluation %}
             {% set pct = (item.average / 5 * 100)|round(0) %}
+            {% if not item.subjectDetails or item.subjectDetails|length == 0 %}
             <tr class="fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" data-search="{{ ev.evaluationType }} {{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }} {{ ev.subject ?? '' }} {{ ev.section ?? '' }}">
                 <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
                 <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
@@ -580,6 +582,7 @@
                 <td>
                     {% if ev.section %}<span class="fe-info-badge"><i class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}—{% endif %}
                 </td>
+                <td></td>
                 <td class="text-center">
                     <span class="fe-rating-num">{{ item.average|number_format(2) }}</span>
                     <span class="fe-rating-of">/ 5</span>
@@ -605,28 +608,53 @@
                 </td>
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-1">
-                        {% if item.subjectDetails %}
-                        <button class="btn btn-sm btn-outline-primary collapse-subjects" type="button" title="Collapse subjects" data-eval-id="{{ ev.id }}">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-                        {% endif %}
                         <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
                     </div>
                 </td>
             </tr>
+            {% endif %}
             {% if item.subjectDetails %}
                 {% for subj in item.subjectDetails %}
-                <tr class="subject-details-row" data-eval-id="{{ ev.id }}" style="background:#f8f9fa;">
-                    <td style="display:none;"></td>
-                    <td></td>
-                    <td></td>
-                    <td style="padding-left:2rem;"><i class="bi bi-chevron-right" style="color:#999;"></i> <strong>{{ subj.subjectCode }}</strong></td>
-                    <td>{{ subj.subjectName }}</td>
-                    <td class="text-center"><span style="background:#e7f3ff;padding:2px 8px;border-radius:4px;font-size:0.85rem;">{{ subj.section }}</span></td>
-                    <td class="text-center"><strong>{{ subj.average|number_format(2) }}/5</strong></td>
-                    <td class="text-center">{{ subj.evaluators }}</td>
-                    <td></td>
-                    <td></td>
+                <tr class="subject-details-row fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" style="background:#f8f9fa;">
+                    <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
+                    <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}" style="opacity:0.6;">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
+                    <td>
+                        <div class="fw-semibold" style="font-size:.85rem; opacity:0.6;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
+                    </td>
+                    <td>
+                        <span style="padding-left:1rem;"><i class="bi bi-chevron-right" style="color:#999;"></i> <strong>{{ subj.subjectCode }}</strong></span>
+                    </td>
+                    <td>
+                        <span style="background:#e7f3ff;padding:2px 8px;border-radius:4px;font-size:0.85rem;">{{ subj.section }}</span>
+                    </td>
+                    <td><small>{{ subj.schedule }}</small></td>
+                    <td class="text-center">
+                        <span class="fe-rating-num">{{ subj.average|number_format(2) }}</span>
+                        <span class="fe-rating-of">/ 5</span>
+                    </td>
+                    <td class="text-center">
+                        {% set pct_subj = (subj.average / 5 * 100)|round(0) %}
+                        <div class="fe-bar mx-auto">
+                            <div class="fe-bar-fill {% if subj.average >= 4.5 %}bar-green{% elseif subj.average >= 3.5 %}bar-blue{% elseif subj.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct_subj }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center"><span class="fw-semibold">{{ subj.evaluators }}</span></td>
+                    <td class="text-center">
+                        {% if subj.average >= 4.5 %}
+                            <span class="fe-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> Always manifested</span>
+                        {% elseif subj.average >= 3.5 %}
+                            <span class="fe-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> Often manifested</span>
+                        {% elseif subj.average >= 2.5 %}
+                            <span class="fe-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> Sometimes manifested</span>
+                        {% else %}
+                            <span class="fe-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> Seldom manifested</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1">
+                            <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             {% endif %}
