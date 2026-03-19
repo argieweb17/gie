@@ -1220,14 +1220,7 @@ class AdminController extends AbstractController
                     $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($facultyUser->getId());
                     foreach ($evaluatedSubjects as $subjEval) {
                         if ($subjEval['evaluationPeriodId'] == $eval->getId()) {
-                            // For each subject+section combination in FacultySubjectLoad,
-                            // store the evaluator count keyed by subject-section
-                            foreach ($allSubjectLoads as $load) {
-                                if ($load->getSubject()->getId() == $subjEval['subjectId']) {
-                                    $countKey = $subjEval['subjectId'] . '-' . strtoupper(trim((string) $load->getSection() ?? ''));
-                                    $subjectEvaluatorCounts[$countKey] = (int) $subjEval['evaluatorCount'];
-                                }
-                            }
+                            $subjectEvaluatorCounts[$subjEval['subjectId']] = (int) $subjEval['evaluatorCount'];
                         }
                     }
 
@@ -1258,9 +1251,8 @@ class AdminController extends AbstractController
                             $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                             $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                            // Get evaluator count for this specific subject+section
-                            $countKey = $subj->getId() . '-' . $loadSection;
-                            $subjCount = $subjectEvaluatorCounts[$countKey] ?? 0;
+                            // Get evaluator count for this subject (same for all sections)
+                            $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                             $items[] = [
                                 'eval' => $eval,
                                 'subject' => $subjName,
@@ -1306,9 +1298,8 @@ class AdminController extends AbstractController
                         $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                        // Get evaluator count for this specific subject+section
-                        $countKey = $subj->getId() . '-' . $loadSection;
-                        $subjCount = $subjectEvaluatorCounts[$countKey] ?? 0;
+                        // Get evaluator count for this subject (same for all sections)
+                        $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
