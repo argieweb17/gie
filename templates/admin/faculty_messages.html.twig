@@ -982,7 +982,7 @@
                         <div class="fm-compose-tools">
                             <label class="fm-tool-btn" title="Attach file">
                                 <i class="bi bi-paperclip"></i>
-                                <input type="file" name="attachment" accept=".pdf" class="d-none" onchange="updateFileName(this, {{ msg.id }})">
+                                <input type="file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png" class="d-none" onchange="updateFileName(this, {{ msg.id }})">
                             </label>
                             <select name="status" class="fm-status-select">
                                 <option value="pending" {% if msg.status == 'pending' %}selected{% endif %}>Pending</option>
