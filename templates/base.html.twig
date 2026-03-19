@@ -23,7 +23,24 @@
                     <i class="bi bi-list fs-4"></i>
                 </button>
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
-                <div class="d-flex align-items-center ms-auto">
+                <div class="d-flex align-items-center ms-auto gap-2">
+                    {% if is_granted('ROLE_FACULTY') %}
+                    <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative" title="Messages">
+                        <i class="bi bi-bell fs-5"></i>
+                        {% set notifCount = unread_message_notifications() %}
+                        {% if notifCount > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        {% endif %}
+                    </a>
+                    {% elseif is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative" title="Messages">
+                        <i class="bi bi-bell fs-5"></i>
+                        {% set notifCount = unread_message_notifications() %}
+                        {% if notifCount > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
                     <span class="user-initials-sm">{{ app.user.firstName|first }}{{ app.user.lastName|first }}</span>
                 </div>
             </div>
@@ -381,6 +398,36 @@
                     </div>
                 </div>
                 {% endif %}
+                {# ── Message Notifications Bell ── #}
+                {% if is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+                {% set messageNotifCount = unread_message_notifications() %}
+                <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
+                    <button class="topbar-notif-btn" id="topbarMessageNotifBtn" type="button" title="Messages" style="position:relative;background:none;border:none;font-size:1.25rem;color:{% if messageNotifCount > 0 %}#DC2626{% else %}#64748B{% endif %};cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-envelope{% if messageNotifCount > 0 %}-fill{% endif %}"></i>
+                        {% if messageNotifCount > 0 %}
+                            <span class="topbar-notif-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;background:#EF4444;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">{{ messageNotifCount }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="topbar-notif-dropdown" id="topbarMessageNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
+                        <div class="topbar-notif-header" style="padding:12px 16px;font-weight:600;font-size:.85rem;color:#1E293B;border-bottom:1px solid #F1F5F9;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;">
+                            <span><i class="bi bi-envelope-fill me-1"></i> Messages</span>
+                            <a href="{% if is_granted('ROLE_FACULTY') %}{{ path('faculty_eval_request') }}{% else %}{{ path('staff_faculty_messages') }}{% endif %}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
+                        </div>
+                        {% if messageNotifCount > 0 %}
+                            <div class="topbar-notif-list" style="max-height:300px;overflow-y:auto;padding:12px 16px;">
+                                <div style="text-align:center;color:#64748B;font-size:.85rem;">
+                                    <i class="bi bi-envelope-exclamation"></i> You have {{ messageNotifCount }} new message{{ messageNotifCount > 1 ? 's' : '' }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="topbar-notif-empty" style="padding:20px;text-align:center;color:#94A3B8;font-size:.85rem;">
+                                <i class="bi bi-check-circle"></i>
+                                <div style="margin-top:8px;">No new messages</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="topbar-profile">
                     <div class="topbar-profile-avatar">
                         <img src="{{ asset('images/' ~ app.user.profilePictureOrDefault) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
@@ -462,6 +509,22 @@
                 document.addEventListener('click',function(e){
                     if(notifDrop&&!notifDrop.contains(e.target)&&!notifBtn.contains(e.target)){
                         notifDrop.style.display='none';
+                    }
+                });
+            }
+
+            // Message notification bell toggle
+            var msgNotifBtn=document.getElementById('topbarMessageNotifBtn');
+            var msgNotifDrop=document.getElementById('topbarMessageNotifDropdown');
+            if(msgNotifBtn&&msgNotifDrop){
+                msgNotifBtn.addEventListener('click',function(e){
+                    e.stopPropagation();
+                    var isOpen=msgNotifDrop.style.display==='block';
+                    msgNotifDrop.style.display=isOpen?'none':'block';
+                });
+                document.addEventListener('click',function(e){
+                    if(msgNotifDrop&&!msgNotifDrop.contains(e.target)&&!msgNotifBtn.contains(e.target)){
+                        msgNotifDrop.style.display='none';
                     }
                 });
             }
