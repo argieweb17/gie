@@ -20,6 +20,7 @@ use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
+use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
@@ -170,7 +171,7 @@ class ReportController extends AbstractController
     // ════════════════════════════════════════════════
 
     #[Route('/evaluations', name: 'staff_evaluations', methods: ['GET'])]
-    public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo): Response
+    public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo, FacultySubjectLoadRepository $fslRepo): Response
     {
         $evaluations = $repo->findAllOrdered();
 
@@ -197,7 +198,7 @@ class ReportController extends AbstractController
             $facultyPositionMap[$fu->getFullName()] = $fu->getEmploymentStatus() ?? '';
         }
 
-        $scheduleRows = $this->buildScheduleMergedRows($evaluations, $evaluatorCounts);
+        $scheduleRows = $this->buildScheduleMergedRows($evaluations, $evaluatorCounts, $userRepo, $fslRepo, $ayRepo);
         $activeScheduleRows = [];
         $expiredScheduleRows = [];
         $nowTs = (new \DateTimeImmutable())->getTimestamp();
@@ -228,10 +229,11 @@ class ReportController extends AbstractController
         ]);
     }
 
-    private function buildScheduleMergedRows(array $evaluations, array $evaluatorCounts): array
+    private function buildScheduleMergedRows(array $evaluations, array $evaluatorCounts, UserRepository $userRepo, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo): array
     {
         $rows = [];
         $indexByKey = [];
+        $currentAY = $ayRepo->findCurrent();
 
         foreach ($evaluations as $eval) {
             if (!$eval instanceof EvaluationPeriod) {
@@ -243,6 +245,34 @@ class ReportController extends AbstractController
             $subject = trim((string) ($eval->getSubject() ?? ''));
             $section = strtoupper(trim((string) ($eval->getSection() ?? '')));
             $baseCount = (int) ($evaluatorCounts[$eval->getId()] ?? 0);
+
+            // If subject is empty, try to fetch from faculty's subject load
+            if (empty($subject) && $eval->getFaculty()) {
+                $facultyName = $eval->getFaculty();
+                // Try to find faculty by full name (last, first)
+                $facultyUsers = $userRepo->createQueryBuilder('u')
+                    ->where('CONCAT(u.lastName, \', \', u.firstName) = :fullName')
+                    ->orWhere('CONCAT(u.firstName, \' \', u.lastName) = :fullName')
+                    ->setParameter('fullName', $facultyName)
+                    ->getQuery()->getResult();
+
+                if (!empty($facultyUsers)) {
+                    $facultyUser = $facultyUsers[0];
+                    $subjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
+                    if (!empty($subjectLoads)) {
+                        $subjectNames = [];
+                        foreach ($subjectLoads as $load) {
+                            $subj = $load->getSubject();
+                            if ($subj) {
+                                $subjectNames[] = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
+                            }
+                        }
+                        if (!empty($subjectNames)) {
+                            $subject = $subjectNames[0]; // Use first subject if multiple
+                        }
+                    }
+                }
+            }
 
             if (!isset($indexByKey[$key])) {
                 $rows[] = [
