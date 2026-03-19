@@ -8,6 +8,7 @@ use App\Repository\CurriculumRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\FacultyNotificationReadRepository;
+use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\UserRepository;
@@ -30,6 +31,7 @@ class AppExtension extends AbstractExtension
         private AuditLogRepository $auditLogRepo,
         private EvaluationMessageRepository $evalMessageRepo,
         private FacultyNotificationReadRepository $notifReadRepo,
+        private MessageNotificationRepository $messageNotifRepo,
     ) {}
 
     public function getFunctions(): array
@@ -39,6 +41,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('sidebar_counts', [$this, 'getSidebarCounts']),
             new TwigFunction('current_academic_year', [$this, 'getCurrentAcademicYear']),
             new TwigFunction('faculty_pending_evaluations', [$this, 'getFacultyPendingEvaluations']),
+            new TwigFunction('unread_message_notifications', [$this, 'getUnreadMessageNotifications']),
         ];
     }
 
@@ -157,5 +160,19 @@ class AppExtension extends AbstractExtension
         }
 
         return $pending;
+    }
+
+    /**
+     * Returns the count of unread message notifications for the current user.
+     */
+    public function getUnreadMessageNotifications(): int
+    {
+        /** @var \App\Entity\User|null $user */
+        $user = $this->security->getUser();
+        if (!$user) {
+            return 0;
+        }
+
+        return $this->messageNotifRepo->countUnreadForUser($user->getId());
     }
 }

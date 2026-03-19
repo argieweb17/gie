@@ -127,6 +127,7 @@
                 <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_eval_request') }}">
                     <i class="bi bi-send sidebar-icon"></i> Request
+                    {% if unread_message_notifications() > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ unread_message_notifications() }}</span>{% endif %}
                 </a>
                 <a class="nav-link {% if 'faculty_eval_results' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_eval_results') }}">
@@ -181,7 +182,8 @@
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">
                     <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
-                    {% if sc.faculty_messages > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.faculty_messages }}</span>{% endif %}
+                    {% set notifCount = unread_message_notifications() %}
+                    {% if sc.faculty_messages > 0 or notifCount > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ (sc.faculty_messages + notifCount) }}</span>{% endif %}
                 </a>
             </nav>
 
