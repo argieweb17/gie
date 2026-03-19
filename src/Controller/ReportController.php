@@ -198,7 +198,7 @@ class ReportController extends AbstractController
             $facultyPositionMap[$fu->getFullName()] = $fu->getEmploymentStatus() ?? '';
         }
 
-        $scheduleRows = $this->buildScheduleMergedRows($evaluations, $evaluatorCounts, $userRepo, $fslRepo, $ayRepo);
+        $scheduleRows = $this->buildScheduleMergedRows($evaluations, $evaluatorCounts, $userRepo, $fslRepo, $ayRepo, $responseRepo);
         $activeScheduleRows = [];
         $expiredScheduleRows = [];
         $nowTs = (new \DateTimeImmutable())->getTimestamp();
@@ -229,7 +229,7 @@ class ReportController extends AbstractController
         ]);
     }
 
-    private function buildScheduleMergedRows(array $evaluations, array $evaluatorCounts, UserRepository $userRepo, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo): array
+    private function buildScheduleMergedRows(array $evaluations, array $evaluatorCounts, UserRepository $userRepo, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo, EvaluationResponseRepository $responseRepo): array
     {
         $rows = [];
         $indexByKey = [];
@@ -248,6 +248,7 @@ class ReportController extends AbstractController
 
             // If subject is empty, try to fetch from faculty's subject load
             $allSubjectLoads = [];
+            $subjectEvaluatorCounts = [];
             if (empty($subject) && $eval->getFaculty()) {
                 $facultyName = $eval->getFaculty();
                 // Try to find faculty by full name (last, first)
@@ -260,6 +261,15 @@ class ReportController extends AbstractController
                 if (!empty($facultyUsers)) {
                     $facultyUser = $facultyUsers[0];
                     $allSubjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
+
+                    // Get evaluator counts per subject for this faculty
+                    $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($facultyUser->getId());
+                    foreach ($evaluatedSubjects as $subjEval) {
+                        if ($subjEval['evaluationPeriodId'] == $eval->getId()) {
+                            $subjectEvaluatorCounts[$subjEval['subjectId']] = (int) $subjEval['evaluatorCount'];
+                        }
+                    }
+
                     if (!empty($allSubjectLoads)) {
                         // Use first subject's info for main display
                         $firstLoad = $allSubjectLoads[0];
@@ -287,13 +297,15 @@ class ReportController extends AbstractController
                             $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                             $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                            // Get evaluator count for this specific subject
+                            $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                             $items[] = [
                                 'eval' => $eval,
                                 'subject' => $subjName,
                                 'subjectId' => $subj->getId(),
                                 'section' => $loadSection ?: $section,
                                 'schedule' => $loadSchedule ?: $schedule,
-                                'evaluatorCount' => $baseCount,
+                                'evaluatorCount' => $subjCount,
                             ];
                         }
                     }
@@ -332,13 +344,15 @@ class ReportController extends AbstractController
                         $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                        // Get evaluator count for this specific subject
+                        $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
                             'subjectId' => $subj->getId(),
                             'section' => $loadSection ?: $section,
                             'schedule' => $loadSchedule ?: $schedule,
-                            'evaluatorCount' => $baseCount,
+                            'evaluatorCount' => $subjCount,
                         ];
                     }
                 }

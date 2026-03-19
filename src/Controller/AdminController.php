@@ -1202,6 +1202,7 @@ class AdminController extends AbstractController
 
             // If subject is empty, try to fetch from faculty's subject load
             $allSubjectLoads = [];
+            $subjectEvaluatorCounts = [];
             if (empty($subject) && $eval->getFaculty()) {
                 $facultyName = $eval->getFaculty();
                 // Try to find faculty by full name (last, first)
@@ -1214,6 +1215,15 @@ class AdminController extends AbstractController
                 if (!empty($facultyUsers)) {
                     $facultyUser = $facultyUsers[0];
                     $allSubjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
+
+                    // Get evaluator counts per subject for this faculty
+                    $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($facultyUser->getId());
+                    foreach ($evaluatedSubjects as $subjEval) {
+                        if ($subjEval['evaluationPeriodId'] == $eval->getId()) {
+                            $subjectEvaluatorCounts[$subjEval['subjectId']] = (int) $subjEval['evaluatorCount'];
+                        }
+                    }
+
                     if (!empty($allSubjectLoads)) {
                         // Use first subject's info for main display
                         $firstLoad = $allSubjectLoads[0];
@@ -1241,13 +1251,15 @@ class AdminController extends AbstractController
                             $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                             $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                            // Get evaluator count for this specific subject
+                            $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                             $items[] = [
                                 'eval' => $eval,
                                 'subject' => $subjName,
                                 'subjectId' => $subj->getId(),
                                 'section' => $loadSection ?: $section,
                                 'schedule' => $loadSchedule ?: $schedule,
-                                'evaluatorCount' => $baseCount,
+                                'evaluatorCount' => $subjCount,
                             ];
                         }
                     }
@@ -1286,13 +1298,15 @@ class AdminController extends AbstractController
                         $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                        // Get evaluator count for this specific subject
+                        $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
                             'subjectId' => $subj->getId(),
                             'section' => $loadSection ?: $section,
                             'schedule' => $loadSchedule ?: $schedule,
-                            'evaluatorCount' => $baseCount,
+                            'evaluatorCount' => $subjCount,
                         ];
                     }
                 }
