@@ -829,13 +829,20 @@
                             <span class="qr-info-value" id="qrEvalSubject"></span>
                         </div>
                         <div class="qr-info-row" id="qrEvalDetailsRow">
-                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-label">Details</span>
                             <span class="qr-info-value" id="qrEvalDetails"></span>
                         </div>
                     </div>
 
                     <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
                     <div class="qr-url-box" id="qrUrl"></div>
+
+                    <div class="qr-questionnaire-link" style="margin-top: 1rem; padding: 0.75rem; background-color: #f8f9fa; border-radius: 0.5rem; text-align: center;">
+                        <a id="qrQuestionnaireLink" href="#" target="_blank" style="text-decoration: none; color: #0d6efd; font-weight: 500;">
+                            <i class="bi bi-file-text me-2"></i>View Questionnaire
+                        </a>
+                    </div>
+
                     <div class="qr-actions">
                         <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
                             <i class="bi bi-download"></i> Download
@@ -1462,6 +1469,12 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var detailsRow = document.getElementById('qrEvalDetailsRow');
         if (detailsRow) detailsRow.style.display = detailsText.length > 0 ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
+
+        // Set questionnaire link to the same evaluation URL
+        var questionnaireLink = document.getElementById('qrQuestionnaireLink');
+        if (questionnaireLink) {
+            questionnaireLink.href = currentQrUrl;
+        }
 
         // Generate QR code via API
         var qrImg = document.getElementById('qrImage');
