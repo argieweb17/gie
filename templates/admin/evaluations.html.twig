@@ -377,9 +377,15 @@
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
                                 {% if row.mergedCount > 1 %}
-                                    <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
-                                    <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
-                                    <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                    {% if row.schedules|length > 0 %}
+                                        <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
+                                    {% endif %}
+                                    {% if row.sections|length > 0 %}
+                                        <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
+                                    {% endif %}
+                                    {% if row.items|length > 0 %}
+                                        <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                    {% endif %}
                                 {% else %}
                                     {% for sched in row.schedules %}
                                         <small><i class="bi bi-clock me-1"></i>{{ sched }}</small>
@@ -546,9 +552,15 @@
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
                                 {% if row.mergedCount > 1 %}
-                                    <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
-                                    <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
-                                    <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                    {% if row.schedules|length > 0 %}
+                                        <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
+                                    {% endif %}
+                                    {% if row.sections|length > 0 %}
+                                        <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
+                                    {% endif %}
+                                    {% if row.items|length > 0 %}
+                                        <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                    {% endif %}
                                 {% else %}
                                     {% for sched in row.schedules %}
                                         <small><i class="bi bi-clock me-1"></i>{{ sched }}</small>
