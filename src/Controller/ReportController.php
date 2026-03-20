@@ -2089,7 +2089,7 @@ class ReportController extends AbstractController
             $compositeGrandTotal += $wRating;
             $compositeCategories[] = [
                 'name' => $name,
-                'mean' => $wMean,
+                'weightedMean' => $wMean,
                 'weightPct' => $weightPct,
                 'weightedRating' => $wRating,
             ];
@@ -2282,7 +2282,7 @@ class ReportController extends AbstractController
             $compositeGrandTotal += $wRating;
             $compositeCategories[] = [
                 'name' => $name,
-                'mean' => $wMean,
+                'weightedMean' => $wMean,
                 'weightPct' => $weightPct,
                 'weightedRating' => $wRating,
             ];
