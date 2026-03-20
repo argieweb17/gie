@@ -364,7 +364,7 @@
        TITLE
        ═══════════════════════════════════════════ #}
     <div class="title-block">
-        <h2>RESULT OF {{ allEvaluations[0].evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }}</h2>
+        <h2>RESULT OF {{ evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }}</h2>
     </div>
 
     {# ═══════════════════════════════════════════
@@ -379,7 +379,7 @@
             <td class="lbl">Course:</td>
             <td class="val">{{ faculty.department ? faculty.department.departmentName : 'N/A' }}</td>
             <td class="lbl">Sem/SY:</td>
-            <td class="val">{{ allEvaluations[0].evaluation.semester ?? current_academic_year().semester ?? '' }} {{ allEvaluations[0].evaluation.schoolYear ?? '' }}</td>
+            <td class="val">{{ semester ?? current_academic_year().semester ?? '' }} {{ schoolYear ?? '' }}</td>
             <td class="lbl" style="text-align:right;">Employment<br>Status:</td>
             <td class="val">{{ faculty.employmentStatus ?? 'N/A' }}</td>
         </tr>

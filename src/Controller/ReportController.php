@@ -1882,10 +1882,20 @@ class ReportController extends AbstractController
         // For each course, calculate average ratings per category
         $categoryNames = [];
         $allCoursesSummary = []; // course# => [roman+name => mean, ...]
+        $evaluationType = 'SET'; // Default, will be overwritten if we find evaluations
+        $semester = '';
+        $schoolYear = '';
 
         foreach (array_unique($courseEvals) as $courseNum => $evalId) {
             $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
+
+            // Capture evaluation type, semester, and school year from first evaluation found
+            if ($evaluationType === 'SET' && $eval->getEvaluationType() !== null) {
+                $evaluationType = $eval->getEvaluationType();
+                $semester = $eval->getSemester() ?? '';
+                $schoolYear = $eval->getSchoolYear() ?? '';
+            }
 
             // Get questions for this evaluation type
             $questions = $questionRepo->findByType($eval->getEvaluationType());
@@ -2002,6 +2012,9 @@ class ReportController extends AbstractController
             'compositeCategories' => $compositeCategories,
             'compositeGrandTotal' => round($compositeGrandTotal, 2),
             'compositeLevel' => $this->performanceLevel(round($compositeGrandTotal, 2)),
+            'evaluationType' => $evaluationType,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear,
         ]);
     }
 }
