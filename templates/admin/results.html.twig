@@ -90,61 +90,14 @@
 }
 .rs-btn-white:hover { background: #f0f4ff; color: #1e3a5f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
 
-/* ── Stats ── */
-.rs-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: .75rem;
-    margin-bottom: 1.25rem;
-}
-.rs-stat-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all .2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04);
-}
-.rs-stat-card:hover { border-color: #c7d2fe; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
-.rs-stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-.si-blue   { background: #eff6ff; color: #2563eb; }
-.si-green  { background: #f0fdf4; color: #16a34a; }
-.si-purple { background: #faf5ff; color: #7c3aed; }
-.si-amber  { background: #fffbeb; color: #d97706; }
-.rs-stat-num {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.2;
-}
-.rs-stat-label {
-    font-size: .7rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    font-weight: 500;
-}
-
 /* ── Toolbar ── */
 .rs-toolbar {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: transparent;
+    border: none;
     border-radius: 14px;
     padding: .75rem 1rem;
     margin-bottom: 1.25rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    box-shadow: none;
 }
 .rs-toolbar-row {
     display: flex;
@@ -157,7 +110,7 @@
     padding: 7px 12px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    background: #f8fafc;
+    background: transparent;
     color: #475569;
     cursor: pointer;
     min-width: 200px;
@@ -183,12 +136,12 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: .8rem;
-    background: #f8fafc;
+    background: transparent;
     transition: border-color .2s, box-shadow .2s;
 }
-.rs-search-input:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.rs-search-input:focus { outline: none; border-color: #3b82f6; background: transparent; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
 .rs-reset-btn {
-    background: #fff;
+    background: transparent;
     color: #64748b;
     border: 1px solid #d1d5db;
     border-radius: 8px;
@@ -429,20 +382,15 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
-.rs-stat-card, .rs-toolbar, .rs-table-wrap {
+.rs-toolbar, .rs-table-wrap {
     animation: rsSlideIn .3s ease forwards;
     opacity: 0;
 }
-.rs-stat-card:nth-child(1) { animation-delay: .05s; }
-.rs-stat-card:nth-child(2) { animation-delay: .1s; }
-.rs-stat-card:nth-child(3) { animation-delay: .15s; }
-.rs-stat-card:nth-child(4) { animation-delay: .2s; }
 .rs-toolbar { animation-delay: .15s; }
 .rs-table-wrap { animation-delay: .25s; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-    .rs-stats { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 {% endblock %}
@@ -497,41 +445,6 @@
         </div>
     </div>
 </div>
-
-{# ── Stats Row ── #}
-{% if totalFaculty > 0 %}
-<div class="rs-stats no-print">
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-blue"><i class="bi bi-people-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ totalFaculty }}</div>
-            <div class="rs-stat-label">Faculty Evaluated</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-purple"><i class="bi bi-person-check-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ totalEvaluators }}</div>
-            <div class="rs-stat-label">Total Evaluators</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-green"><i class="bi bi-graph-up-arrow"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ overallAvg|number_format(2) }}</div>
-            <div class="rs-stat-label">Overall Average</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-amber"><i class="bi bi-trophy-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ alwaysCount }}</div>
-            <div class="rs-stat-label">Always Manifested</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
 {# ── Filter Toolbar ── #}
 <div class="rs-toolbar no-print">
     <div class="rs-toolbar-row">
