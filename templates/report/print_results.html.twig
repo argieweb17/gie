@@ -465,7 +465,10 @@
        COMMENTS (PAGE 2)
        ═══════════════════════════════════════════ #}
     <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}{% if printSection %} ({{ printSection }}){% endif %} ({{ comments|length }})</h3>
+        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
+        <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
+            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
+        </div>
         {% if comments|length > 0 %}
         <ol>
             {% for c in comments %}

@@ -1791,6 +1791,59 @@ class ReportController extends AbstractController
     }
 
     // ════════════════════════════════════════════════
+    //  RESULTS: PRINT COMMENTS (Staff)
+    // ════════════════════════════════════════════════
+
+    #[Route('/results/print-comments', name: 'staff_results_print_comments', methods: ['GET'])]
+    public function resultsPrintComments(
+        Request $request,
+        EvaluationPeriodRepository $evalRepo,
+        EvaluationResponseRepository $responseRepo,
+        UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
+    ): Response {
+        $evalId = (int) $request->query->get('evaluation', 0);
+        $facultyId = (int) $request->query->get('faculty', 0);
+        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
+        $section = $request->query->get('section');
+
+        $evaluation = $evalRepo->find($evalId);
+        $faculty = $userRepo->find($facultyId);
+
+        if (!$evaluation || !$faculty) {
+            throw $this->createNotFoundException('Evaluation or faculty not found.');
+        }
+
+        // Get comments filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+        }
+        $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
+
+        // Get subject info if specific subject is being printed
+        $subjectCode = null;
+        if ($subjectId !== null) {
+            $subject = $subjectRepo->find($subjectId);
+            if ($subject) {
+                $subjectCode = $subject->getSubjectCode();
+            }
+        }
+
+        return $this->render('report/print_comments.html.twig', [
+            'faculty' => $faculty,
+            'evaluation' => $evaluation,
+            'comments' => $filteredComments,
+            'evaluatorCount' => $evaluatorCount,
+            'printSubjectCode' => $subjectCode,
+            'printSection' => $section,
+        ]);
+    }
+
+    // ════════════════════════════════════════════════
     //  RESULTS: PRINT ALL (Staff)
     // ════════════════════════════════════════════════
 
@@ -1899,9 +1952,100 @@ class ReportController extends AbstractController
             ];
         }
 
+        // Build category names from all evaluations
+        $categoryNames = [];
+        foreach ($allEvaluations as $eval) {
+            foreach ($eval['categorySummary'] as $cat) {
+                if (!in_array($cat['name'], $categoryNames)) {
+                    $categoryNames[] = $cat['name'];
+                }
+            }
+        }
+
+        // Split into Baccalaureate vs Graduate (no padding, keep all)
+        $baccEvaluations = [];
+        $gradEvaluations = [];
+
+        foreach ($allEvaluations as $item) {
+            $college = $item['evaluation']->getCollege() ?? '';
+            if (stripos($college, 'Graduate') !== false) {
+                $gradEvaluations[] = $item;
+            } else {
+                $baccEvaluations[] = $item;
+            }
+        }
+
+        // Pad to 7 courses each for grid display (Courses 1-7, 8-14)
+        while (count($baccEvaluations) < 7) {
+            $baccEvaluations[] = [
+                'evaluation' => null,
+                'average' => 0,
+                'evaluators' => 0,
+                'level' => 'N/A',
+                'categorySummary' => [],
+                'compositeTotal' => 0.0,
+                'comments' => [],
+                'subjectComments' => [],
+            ];
+        }
+        while (count($gradEvaluations) < 7) {
+            $gradEvaluations[] = [
+                'evaluation' => null,
+                'average' => 0,
+                'evaluators' => 0,
+                'level' => 'N/A',
+                'categorySummary' => [],
+                'compositeTotal' => 0.0,
+                'comments' => [],
+                'subjectComments' => [],
+            ];
+        }
+
+        // Build composite averages across all courses per category
+        $compositeSums = [];
+        $compositeCounts = [];
+
+        foreach ($allEvaluations as $item) {
+            foreach ($item['categorySummary'] as $cat) {
+                $name = $cat['name'];
+                if (!isset($compositeSums[$name])) {
+                    $compositeSums[$name] = 0.0;
+                    $compositeCounts[$name] = 0;
+                }
+                $compositeSums[$name] += $cat['mean'];
+                $compositeCounts[$name]++;
+            }
+        }
+
+        $catCount = count($categoryNames);
+        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+        $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
+        $compositeCategories = [];
+        $compositeGrandTotal = 0.0;
+
+        foreach ($categoryNames as $name) {
+            $wMean = $compositeCounts[$name] > 0
+                ? round($compositeSums[$name] / $compositeCounts[$name], 2)
+                : 0;
+            $wRating = round($wMean * $weightFrac, 2);
+            $compositeGrandTotal += $wRating;
+            $compositeCategories[] = [
+                'name' => $name,
+                'weightedMean' => $wMean,
+                'weightPct' => $weightPct,
+                'weightedRating' => $wRating,
+            ];
+        }
+
         return $this->render('report/print_all_results.html.twig', [
             'faculty' => $faculty,
             'allEvaluations' => $allEvaluations,
+            'baccEvaluations' => $baccEvaluations,
+            'gradEvaluations' => $gradEvaluations,
+            'categoryNames' => $categoryNames,
+            'compositeCategories' => $compositeCategories,
+            'compositeGrandTotal' => round($compositeGrandTotal, 2),
+            'compositeLevel' => $this->performanceLevel(round($compositeGrandTotal, 2)),
         ]);
     }
 }

@@ -2459,6 +2459,7 @@ class AdminController extends AbstractController
             'categorySummary' => $emptyCategories,
             'compositeTotal' => 0.00,
             'comments' => [],
+            'subjectComments' => [],
         ];
 
         // Pad each group to exactly 7 slots
@@ -2671,6 +2672,8 @@ class AdminController extends AbstractController
             'evaluation' => $evaluation,
             'comments' => $filteredComments,
             'evaluatorCount' => $evaluatorCount,
+            'printSubjectCode' => null,
+            'printSection' => null,
         ]);
     }
 
@@ -2881,6 +2884,7 @@ class AdminController extends AbstractController
             'categorySummary' => $emptyCategories,
             'compositeTotal' => 0.00,
             'comments' => [],
+            'subjectComments' => [],
         ];
 
         while (count($baccEvaluations) < 7) {
