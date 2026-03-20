@@ -414,22 +414,12 @@
                     {% for catName in categoryNames %}
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
-                        {% for item in baccEvaluations %}
-                            {% if item.categorySummary is not empty %}
-                                {% set found = false %}
-                                {% for cat in item.categorySummary %}
-                                    {% if cat.name == catName and not found %}
-                                        <td>{{ cat.mean|number_format(2) }}</td>
-                                        <td>{{ cat.weightPct }}%</td>
-                                        <td>{{ cat.weightedRating|number_format(2) }}</td>
-                                        {% set found = true %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if not found %}
-                                    <td>0.00</td>
-                                    <td>0%</td>
-                                    <td>0.00</td>
-                                {% endif %}
+                        {% for courseNum in 1..7 %}
+                            {% if baccCourseData[courseNum][catName] is defined %}
+                                {% set data = baccCourseData[courseNum][catName] %}
+                                <td>{{ data.mean|number_format(2) }}</td>
+                                <td>{{ data.weightPct }}%</td>
+                                <td>{{ data.weightedRating|number_format(2) }}</td>
                             {% else %}
                                 <td class="empty-cell">0.00</td>
                                 <td class="empty-cell">0%</td>
@@ -441,11 +431,11 @@
 
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
-                        {% for item in baccEvaluations %}
-                            {% if item.categorySummary is not empty %}
+                        {% for courseNum in 1..7 %}
+                            {% if courseTotals[courseNum] is defined %}
                             <td></td>
                             <td>100%</td>
-                            <td>{{ item.compositeTotal|number_format(2) }}</td>
+                            <td>{{ courseTotals[courseNum].compositeTotal|number_format(2) }}</td>
                             {% else %}
                             <td class="empty-cell"></td>
                             <td class="empty-cell">100%</td>
@@ -456,9 +446,9 @@
 
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
-                        {% for item in baccEvaluations %}
-                            {% if item.categorySummary is not empty %}
-                            <td colspan="3">{{ item.level }}</td>
+                        {% for courseNum in 1..7 %}
+                            {% if courseTotals[courseNum] is defined %}
+                            <td colspan="3">{{ courseTotals[courseNum].level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
                             {% endif %}
@@ -491,22 +481,12 @@
                     {% for catName in categoryNames %}
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
-                        {% for item in gradEvaluations %}
-                            {% if item.categorySummary is not empty %}
-                                {% set found = false %}
-                                {% for cat in item.categorySummary %}
-                                    {% if cat.name == catName and not found %}
-                                        <td>{{ cat.mean|number_format(2) }}</td>
-                                        <td>{{ cat.weightPct }}%</td>
-                                        <td>{{ cat.weightedRating|number_format(2) }}</td>
-                                        {% set found = true %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if not found %}
-                                    <td>0.00</td>
-                                    <td>0%</td>
-                                    <td>0.00</td>
-                                {% endif %}
+                        {% for courseNum in 8..14 %}
+                            {% if gradCourseData[courseNum][catName] is defined %}
+                                {% set data = gradCourseData[courseNum][catName] %}
+                                <td>{{ data.mean|number_format(2) }}</td>
+                                <td>{{ data.weightPct }}%</td>
+                                <td>{{ data.weightedRating|number_format(2) }}</td>
                             {% else %}
                                 <td class="empty-cell">0.00</td>
                                 <td class="empty-cell">0%</td>
@@ -518,11 +498,11 @@
 
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
-                        {% for item in gradEvaluations %}
-                            {% if item.categorySummary is not empty %}
+                        {% for courseNum in 8..14 %}
+                            {% if courseTotals[courseNum] is defined %}
                             <td></td>
                             <td>100%</td>
-                            <td>{{ item.compositeTotal|number_format(2) }}</td>
+                            <td>{{ courseTotals[courseNum].compositeTotal|number_format(2) }}</td>
                             {% else %}
                             <td class="empty-cell"></td>
                             <td class="empty-cell">100%</td>
@@ -533,9 +513,9 @@
 
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
-                        {% for item in gradEvaluations %}
-                            {% if item.categorySummary is not empty %}
-                            <td colspan="3">{{ item.level }}</td>
+                        {% for courseNum in 8..14 %}
+                            {% if courseTotals[courseNum] is defined %}
+                            <td colspan="3">{{ courseTotals[courseNum].level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
                             {% endif %}
