@@ -177,22 +177,20 @@
                 </a>
                 {% set _staff_results_routes = ['staff_results','staff_results_faculty_detail','staff_results_export'] %}
                 {% set _staff_results_route = app.request.attributes.get('_route')|default('') %}
-                {% set _staff_results_view = app.request.query.get('view')|default('')|lower %}
-                {% set _staff_sef_active = _staff_results_route in _staff_results_routes and _staff_results_view in ['sef','superior'] %}
-                {% set _staff_set_active = _staff_results_route in _staff_results_routes and _staff_results_view not in ['sef','superior'] %}
+                {% set _staff_set_active = _staff_results_route in _staff_results_routes %}
                 <div class="sidebar-dropdown {% if _staff_results_route in _staff_results_routes %}open{% endif %}">
                     <a class="nav-link sidebar-dropdown-toggle {% if _staff_results_route in _staff_results_routes %}active{% endif %}" href="#">
                         <i class="bi bi-clipboard-data sidebar-icon"></i> Results
                         <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
                     </a>
                     <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
-                        <a class="sidebar-sub-link {% if _staff_set_active %}active{% endif %}"
+                        <a class="sidebar-sub-link {% if 'staff_results' == app.request.attributes.get('_route')|default('') and app.request.query.get('view', '') != 'sef' %}active{% endif %}"
                            href="{{ path('staff_results') }}">
                             <i class="bi bi-mortarboard me-1"></i> SET Results
                         </a>
-                        <a class="sidebar-sub-link {% if _staff_sef_active %}active{% endif %}"
-                           href="{{ path('staff_results') }}?view=sef">
-                            <i class="bi bi-person-badge me-1"></i> SEF Results
+                        <a class="sidebar-sub-link {% if 'staff_results' == app.request.attributes.get('_route')|default('') and app.request.query.get('view', '') == 'sef' %}active{% endif %}"
+                           href="{{ path('staff_results', {view: 'sef'}) }}">
+                            <i class="bi bi-person-up me-1"></i> SEF Results
                         </a>
                     </div>
                 </div>
