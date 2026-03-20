@@ -389,6 +389,11 @@
                         <td style="text-align:center;">
                             <div class="sb-action-btns">
                                 {% if isLoaded %}
+                                    {% if activeEvalMap|length > 0 %}
+                                    <button type="button" class="sb-btn-qr" onclick="showQRModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ firstFsl.section|default('') }}')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
+                                        <i class="bi bi-qr-code"></i>
+                                    </button>
+                                    {% endif %}
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section">
                                         <i class="bi bi-plus-circle"></i> Pick
                                     </button>
@@ -774,6 +779,44 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.boxShadow = '';
         });
     });
+
+    /* QR Code Modal */
+    window.showQRModal = function(subjectId, subjectCode, section) {
+        const qrUrl = '{{ path('evaluate', {'id': '__ID__', 'section': '__SECTION__'}) }}'
+            .replace('__ID__', subjectId)
+            .replace('__SECTION__', encodeURIComponent(section || ''));
+
+        // Generate QR code
+        const qrContainer = document.getElementById('qrContainer');
+        qrContainer.innerHTML = '';
+
+        // Using QRCode.js library
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(qrContainer, {
+                text: window.location.origin + qrUrl,
+                width: 180,
+                height: 180,
+                colorDark: '#000000',
+                colorLight: '#ffffff'
+            });
+        } else {
+            qrContainer.innerHTML = '<p class="text-danger">QR Code generator not available</p>';
+        }
+
+        document.getElementById('qrInfo').textContent = `${subjectCode}${section ? ' - Section ' + section : ''}`;
+        const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+        modal.show();
+    };
+
+    window.downloadQRCode = function() {
+        const canvas = document.querySelector('#qrContainer canvas');
+        if (canvas) {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'evaluation-qr-' + new Date().getTime() + '.png';
+            link.click();
+        }
+    };
 });
 </script>
 
@@ -855,6 +898,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{# ── QR Code Modal ── #}
+<div class="modal fade" id="qrCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold">Evaluation QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div id="qrContent" style="padding: 20px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center;">
+                    <div id="qrContainer"></div>
+                </div>
+                <p class="text-muted small mb-3" id="qrInfo"></p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="downloadQRCode()">
+                        <i class="bi bi-download me-1"></i>Download
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

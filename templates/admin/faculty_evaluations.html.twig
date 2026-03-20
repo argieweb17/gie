@@ -488,6 +488,7 @@
                     <i class="bi bi-check2-square me-1"></i>Choose the subject to print
                 </button>
                 {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -531,11 +532,13 @@
 {# ── Filter Toolbar ── #}
 <div class="fe-toolbar">
     <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
+        {% if not staffMode %}
         <div class="ev-filter-group" id="feTypeFilter">
             <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
             <button class="ev-filter-btn" data-type="SET" onclick="feFilterType('SET', this)">SET <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SET')|length }}</span></button>
             <button class="ev-filter-btn" data-type="SEF" onclick="feFilterType('SEF', this)">SEF <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SEF' or e.evaluation.evaluationType == 'SUPERIOR')|length }}</span></button>
         </div>
+        {% endif %}
         <label class="fe-select-all" id="feSelectAllWrap" style="display:none;">
             <input type="checkbox" id="feSelectAll" class="form-check-input">
             <span>Select All</span>

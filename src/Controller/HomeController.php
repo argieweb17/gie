@@ -627,6 +627,8 @@ class HomeController extends AbstractController
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalPeriodRepo,
+        EvaluationResponseRepository $evalRespRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         /** @var User $user */
@@ -678,6 +680,23 @@ class HomeController extends AbstractController
             }
         }
 
+        // Get active evaluations for SET
+        $now = new \DateTime();
+        $activeEvals = $evalPeriodRepo->findBy(['evaluationType' => 'SET']);
+        $activeEvalMap = [];
+        foreach ($activeEvals as $eval) {
+            $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
+            if ($isActive) {
+                $activeEvalMap[$eval->getId()] = [
+                    'id' => $eval->getId(),
+                    'name' => $eval->getLabel(),
+                    'isActive' => true,
+                    'startDate' => $eval->getStartDate(),
+                    'endDate' => $eval->getEndDate(),
+                ];
+            }
+        }
+
         // Keep departments collapsed on initial load; user expands manually.
         $selectedDepartment = null;
         $deptSubjects = [];
@@ -698,6 +717,7 @@ class HomeController extends AbstractController
             'departments' => $departments,
             'subjectFacultyMap' => $subjectFacultyMap,
             'fslDataMap' => $fslDataMap,
+            'activeEvalMap' => $activeEvalMap,
         ]);
     }
 
