@@ -569,6 +569,11 @@
    JAVASCRIPT
    ═══════════════════════════════════════ #}
 <script>
+/* ── Global active evaluations map ── */
+const activeEvaluations = {{ activeEvalMap|json_encode }};
+const hasActiveEval = Object.keys(activeEvaluations).length > 0;
+const firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
+
 /* ── Checked count ── */
 function updateCheckedCount() {
     var count = document.querySelectorAll('.subject-check:checked').length;
@@ -730,10 +735,21 @@ function updateRowVisual(cb) {
     var actionCell = row.querySelector('.sb-action-btns');
     var sid = cb.dataset.subjectId;
     var code = row.querySelector('.sb-code-text') ? row.querySelector('.sb-code-text').textContent : '';
+    var section = row.querySelector('.sb-section-input') ? row.querySelector('.sb-section-input').value : '';
+
     if (cb.checked) {
         row.classList.add('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded</span>';
-        if (actionCell) actionCell.innerHTML = '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
+
+        // Build action buttons with QR if evaluation is active
+        var actionsHtml = '';
+        if (hasActiveEval && firstActiveEvalId) {
+            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code"></i></button>';
+        }
+        actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
+        actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
+
+        if (actionCell) actionCell.innerHTML = actionsHtml;
     } else {
         row.classList.remove('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>';
