@@ -1865,28 +1865,31 @@ class ReportController extends AbstractController
         // Get all subject evaluations for this faculty organized by course
         $subjectEvals = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
 
-        // Organize by course number (1-7 for Bacc, 8-14 for Grad)
-        $courseData = [];  // course# => { category => mean, ... }
-        $courseEvals = []; // course# => evalPeriodId for type lookup
+        // Organize by evaluation period and course
+        $evalsByPeriod = []; // evalId => [courseNum => subjects, ...]
+        $coursesByEvalId = []; // evalId => courseNum
 
         foreach ($subjectEvals as $seval) {
             $courseNum = (int)($seval['courseNumber'] ?? 1);
             $evalId = (int)$seval['evaluationPeriodId'];
 
-            if (!isset($courseData[$courseNum])) {
-                $courseData[$courseNum] = [];
-                $courseEvals[$courseNum] = $evalId;
+            if (!isset($evalsByPeriod[$evalId])) {
+                $evalsByPeriod[$evalId] = [];
             }
+            if (!isset($evalsByPeriod[$evalId][$courseNum])) {
+                $evalsByPeriod[$evalId][$courseNum] = [];
+            }
+            $evalsByPeriod[$evalId][$courseNum][] = $seval;
         }
 
-        // For each course, calculate average ratings per category
+        // For each evaluation period, calculate average ratings per category per course
         $categoryNames = [];
-        $allCoursesSummary = []; // course# => [roman+name => mean, ...]
-        $evaluationType = 'SET'; // Default, will be overwritten if we find evaluations
+        $allCoursesSummary = []; // course# => [categorySummary, compositeTotal, level]
+        $evaluationType = 'SET'; // Default
         $semester = '';
         $schoolYear = '';
 
-        foreach (array_unique($courseEvals) as $courseNum => $evalId) {
+        foreach ($evalsByPeriod as $evalId => $coursesByNum) {
             $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
 
@@ -1900,7 +1903,7 @@ class ReportController extends AbstractController
             // Get questions for this evaluation type
             $questions = $questionRepo->findByType($eval->getEvaluationType());
 
-            // Get average ratings for this faculty in this evaluation
+            // Get average ratings for faculty across all subjects in this evaluation
             $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
 
             // Calculate per-category averages
@@ -1913,44 +1916,47 @@ class ReportController extends AbstractController
                 if (!isset($categoryAverages[$cat])) {
                     $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
                 }
-                if ($qAvg !== null) {
+                if ($qAvg !== null && $qAvg > 0) {
                     $categoryAverages[$cat]['sum'] += $qAvg;
                     $categoryAverages[$cat]['n']++;
                 }
             }
 
-            $catCount = count($categoryAverages);
-            $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
-            $romNum = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-            $idx = 0;
+            // For each course in this evaluation, store category averages
+            foreach ($coursesByNum as $courseNum => $_) {
+                $catCount = count($categoryAverages);
+                $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+                $romNum = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+                $idx = 0;
 
-            $courseSummary = [];
-            $compositeTotal = 0.0;
-            foreach ($categoryAverages as $cat => $data) {
-                $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
-                $wr = $mean * $weightFrac;
-                $compositeTotal += $wr;
-                $roman = $romNum[$idx] ?? (string)($idx+1);
+                $courseSummary = [];
+                $compositeTotal = 0.0;
+                foreach ($categoryAverages as $cat => $data) {
+                    $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+                    $wr = $mean * $weightFrac;
+                    $compositeTotal += $wr;
+                    $roman = $romNum[$idx] ?? (string)($idx+1);
 
-                if (!in_array($cat, $categoryNames)) {
-                    $categoryNames[] = $cat;
+                    if (!in_array($cat, $categoryNames)) {
+                        $categoryNames[] = $cat;
+                    }
+
+                    $courseSummary[] = [
+                        'roman' => $roman,
+                        'name' => $cat,
+                        'mean' => round($mean, 2),
+                        'weightPct' => $catCount > 0 ? round(100/$catCount) : 0,
+                        'weightedRating' => round($wr, 2),
+                    ];
+                    $idx++;
                 }
 
-                $courseSummary[] = [
-                    'roman' => $roman,
-                    'name' => $cat,
-                    'mean' => round($mean, 2),
-                    'weightPct' => $catCount > 0 ? round(100/$catCount) : 0,
-                    'weightedRating' => round($wr, 2),
+                $allCoursesSummary[$courseNum] = [
+                    'categorySummary' => $courseSummary,
+                    'compositeTotal' => round($compositeTotal, 2),
+                    'level' => $this->performanceLevel(round($compositeTotal, 2)),
                 ];
-                $idx++;
             }
-
-            $allCoursesSummary[$courseNum] = [
-                'categorySummary' => $courseSummary,
-                'compositeTotal' => round($compositeTotal, 2),
-                'level' => $this->performanceLevel(round($compositeTotal, 2)),
-            ];
         }
 
         // Build course evaluations (14 max: 1-7 Bacc, 8-14 Grad)
