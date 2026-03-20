@@ -1434,11 +1434,11 @@ class ReportController extends AbstractController
     private function performanceLevel(float $avg): string
     {
         return match (true) {
-            $avg >= 4.5 => 'Excellent',
-            $avg >= 3.5 => 'Very Good',
-            $avg >= 2.5 => 'Good',
-            $avg >= 1.5 => 'Fair',
-            default => 'Poor',
+            $avg >= 4.5 => 'Always manifested',
+            $avg >= 3.5 => 'Often manifested',
+            $avg >= 2.5 => 'Sometimes manifested',
+            $avg >= 1.5 => 'Seldom manifested',
+            default => 'Never/Rarely manifested',
         };
     }
 
@@ -1889,28 +1889,37 @@ class ReportController extends AbstractController
         }
 
         $selectedEvals = $request->query->all('evals');
-        $evalData = $responseRepo->getEvaluationsByFaculty($facultyId);
+        // Convert to integers for comparison
+        $selectedEvalIds = array_map('intval', $selectedEvals);
+
+        // ── Get all subject-section evaluations (grouping by subject+section) ──
+        $subjectEvalData = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
         $allEvaluations = [];
 
-        foreach ($evalData as $row) {
-            $eval = $evalRepo->find((int) $row['evaluationPeriodId']);
+        foreach ($subjectEvalData as $row) {
+            $evalId = (int) $row['evaluationPeriodId'];
+            $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
 
-            if (!empty($selectedEvals) && !in_array((string) $eval->getId(), $selectedEvals, true)) {
+            // Filter by selected evaluations if any were selected
+            if (!empty($selectedEvalIds) && !in_array($evalId, $selectedEvalIds)) {
                 continue;
             }
 
-            $evalId = $eval->getId();
+            $subjectId = (int) $row['subjectId'];
+            $section = $row['section'] ?? null;
             $avg = round((float) $row['avgRating'], 2);
             $count = (int) $row['evaluatorCount'];
 
-            // Category summary
-            $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+            // Category summary for this subject-section
+            $sectionResults = $responseRepo->getAverageRatingsByFacultyAndSection($facultyId, $evalId, $subjectId, $section);
+            $questionAveragesData = !empty($sectionResults) ? $sectionResults[0]['questionAverages'] : [];
+
             $questions = $questionRepo->findByType($eval->getEvaluationType());
             $categoryAverages = [];
             foreach ($questions as $q) {
                 $qId = $q->getId();
-                $avgData = $questionAverages[$qId] ?? null;
+                $avgData = $questionAveragesData[$qId] ?? null;
                 $qAvg = is_array($avgData) ? $avgData['average'] : null;
                 $cat = $q->getCategory();
                 if (!isset($categoryAverages[$cat])) {
@@ -1939,44 +1948,25 @@ class ReportController extends AbstractController
                 ];
             }
 
-            $comments = $responseRepo->getComments($facultyId, $evalId);
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
             $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
-
-            // Get subject/section details with their comments
-            $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
-            $subjectComments = [];
-            foreach ($allSubjects as $subj) {
-                if ((int) $subj['evaluationPeriodId'] === (int) $evalId) {
-                    $subjComments = $responseRepo->getCommentsBySubjectAndSection(
-                        $facultyId,
-                        $evalId,
-                        $subj['subjectId'],
-                        $subj['section']
-                    );
-                    $filteredSubjComments = array_values(array_filter($subjComments, fn($c) => trim($c) !== ''));
-                    if (!empty($filteredSubjComments)) {
-                        $subjectComments[] = [
-                            'subjectCode' => $subj['subjectCode'] ?? 'N/A',
-                            'section' => $subj['section'] ?? '—',
-                            'comments' => $filteredSubjComments,
-                        ];
-                    }
-                }
-            }
 
             $allEvaluations[] = [
                 'evaluation' => $eval,
+                'subjectCode' => $row['subjectCode'] ?? 'N/A',
+                'subjectName' => $row['subjectName'] ?? 'General',
+                'section' => $section ?? '—',
                 'average' => $avg,
                 'evaluators' => $count,
                 'level' => $this->performanceLevel($avg),
                 'categorySummary' => $categorySummary,
                 'compositeTotal' => round($compositeTotal, 2),
                 'comments' => $filteredComments,
-                'subjectComments' => $subjectComments,
+                'college' => $eval->getCollege() ?? '',
             ];
         }
 
-        // ── Build composite averages across all courses per category ──
+        // ── Build composite averages across all evaluations per category ──
         $categoryNames = [];
         $compositeSums = [];
         $compositeCounts = [];
@@ -2016,12 +2006,12 @@ class ReportController extends AbstractController
             ];
         }
 
-        // ── Split into Baccalaureate vs Graduate, pad to 7 each ──
+        // ── Split into Baccalaureate vs Graduate ──
         $baccEvaluations = [];
         $gradEvaluations = [];
 
         foreach ($allEvaluations as $item) {
-            $college = $item['evaluation']->getCollege() ?? '';
+            $college = $item['college'] ?? '';
             if (stripos($college, 'Graduate') !== false) {
                 $gradEvaluations[] = $item;
             } else {
@@ -2041,14 +2031,16 @@ class ReportController extends AbstractController
         }
 
         $emptySlot = [
-            'evaluation' => null,
+            'subjectCode' => '—',
+            'section' => '',
             'average' => 0.00,
             'evaluators' => 0,
             'level' => 'N/A',
             'categorySummary' => $emptyCategories,
             'compositeTotal' => 0.00,
             'comments' => [],
-            'subjectComments' => [],
+            'evaluation' => null,
+            'college' => '',
         ];
 
         // Pad each group to exactly 7 slots
