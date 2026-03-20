@@ -728,9 +728,11 @@ class ReportController extends AbstractController
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
+        SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
         DepartmentRepository $deptRepo,
     ): Response {
+        $view = strtolower($request->query->get('view', ''));
         $evalId = $request->query->get('evaluation');
         $deptId = $request->query->get('department');
 
@@ -738,50 +740,77 @@ class ReportController extends AbstractController
         $departments = $deptRepo->findAllOrdered();
         $facultyResults = [];
 
-        $qb = $userRepo->createQueryBuilder('u')
-            ->where('u.roles LIKE :role')
-            ->setParameter('role', '%ROLE_FACULTY%')
-            ->orderBy('u.lastName', 'ASC');
-
-        if ($deptId) {
-            $qb->andWhere('u.department = :did')->setParameter('did', $deptId);
-        }
-
-        $facultyList = $qb->getQuery()->getResult();
-
-        foreach ($facultyList as $faculty) {
-            if ($evalId) {
-                $avg = $responseRepo->getOverallAverage($faculty->getId(), (int) $evalId);
-                $count = $responseRepo->countEvaluators($faculty->getId(), (int) $evalId);
-            } else {
-                $avg = $responseRepo->getOverallAverageAll($faculty->getId());
-                $count = $responseRepo->countEvaluatorsAll($faculty->getId());
-            }
-
-            if ($count > 0) {
-                // Get subject+section details
-                $subjectDetails = [];
-                $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
-                foreach ($allSubjects as $subj) {
-                    if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
-                        continue;
-                    }
-                    $subjectDetails[] = [
-                        'subjectCode' => $subj['subjectCode'] ?? 'N/A',
-                        'subjectName' => $subj['subjectName'] ?? '',
-                        'section' => $subj['section'] ?? '—',
-                        'average' => round((float) ($subj['avgRating'] ?? 0), 2),
-                        'evaluators' => (int) $subj['evaluatorCount'],
-                    ];
+        // SEF view - Superior Evaluations
+        if ($view === 'sef' || $view === 'superior') {
+            $evaluations = $evalRepo->findBy(['evaluationType' => 'SUPERIOR'], ['startDate' => 'DESC']);
+            $allUsers = $userRepo->findAll();
+            foreach ($allUsers as $user) {
+                if ($evalId) {
+                    $avg = $superiorEvalRepo->getOverallAverage($user->getId(), (int) $evalId);
+                    $count = $superiorEvalRepo->countEvaluators($user->getId(), (int) $evalId);
+                } else {
+                    $avg = $superiorEvalRepo->getOverallAverageAll($user->getId());
+                    $count = $superiorEvalRepo->countEvaluatorsAll($user->getId());
                 }
 
-                $facultyResults[] = [
-                    'faculty' => $faculty,
-                    'average' => $avg,
-                    'evaluators' => $count,
-                    'level' => $this->performanceLevel($avg),
-                    'subjectDetails' => $subjectDetails,
-                ];
+                if ($count > 0) {
+                    $facultyResults[] = [
+                        'faculty' => $user,
+                        'average' => $avg,
+                        'evaluators' => $count,
+                        'level' => $this->performanceLevel($avg),
+                    ];
+                }
+            }
+        }
+        // SET view - Faculty Evaluations (default)
+        else {
+            $evaluations = $evalRepo->findAllOrdered();
+            $qb = $userRepo->createQueryBuilder('u')
+                ->where('u.roles LIKE :role')
+                ->setParameter('role', '%ROLE_FACULTY%')
+                ->orderBy('u.lastName', 'ASC');
+
+            if ($deptId) {
+                $qb->andWhere('u.department = :did')->setParameter('did', $deptId);
+            }
+
+            $facultyList = $qb->getQuery()->getResult();
+
+            foreach ($facultyList as $faculty) {
+                if ($evalId) {
+                    $avg = $responseRepo->getOverallAverage($faculty->getId(), (int) $evalId);
+                    $count = $responseRepo->countEvaluators($faculty->getId(), (int) $evalId);
+                } else {
+                    $avg = $responseRepo->getOverallAverageAll($faculty->getId());
+                    $count = $responseRepo->countEvaluatorsAll($faculty->getId());
+                }
+
+                if ($count > 0) {
+                    // Get subject+section details
+                    $subjectDetails = [];
+                    $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
+                    foreach ($allSubjects as $subj) {
+                        if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
+                            continue;
+                        }
+                        $subjectDetails[] = [
+                            'subjectCode' => $subj['subjectCode'] ?? 'N/A',
+                            'subjectName' => $subj['subjectName'] ?? '',
+                            'section' => $subj['section'] ?? '—',
+                            'average' => round((float) ($subj['avgRating'] ?? 0), 2),
+                            'evaluators' => (int) $subj['evaluatorCount'],
+                        ];
+                    }
+
+                    $facultyResults[] = [
+                        'faculty' => $faculty,
+                        'average' => $avg,
+                        'evaluators' => $count,
+                        'level' => $this->performanceLevel($avg),
+                        'subjectDetails' => $subjectDetails,
+                    ];
+                }
             }
         }
 
@@ -803,63 +832,6 @@ class ReportController extends AbstractController
             'facultyResults' => $facultyResults,
             'selectedEvaluation' => $evalId,
             'selectedDepartment' => $deptId,
-            'staffMode' => true,
-        ]);
-    }
-
-    #[Route('/results/superior', name: 'staff_results_superior', methods: ['GET'])]
-    public function resultsSuperior(
-        Request $request,
-        EvaluationPeriodRepository $evalRepo,
-        SuperiorEvaluationRepository $superiorEvalRepo,
-        UserRepository $userRepo,
-        DepartmentRepository $deptRepo,
-    ): Response {
-        $evalId = $request->query->get('evaluation');
-
-        $evaluations = $evalRepo->findBy(['evaluationType' => 'SUPERIOR'], ['startDate' => 'DESC']);
-        $departments = $deptRepo->findAllOrdered();
-        $facultyResults = [];
-
-        // Get all users who have been evaluated via superior evaluations
-        $allUsers = $userRepo->findAll();
-        foreach ($allUsers as $user) {
-            if ($evalId) {
-                $avg = $superiorEvalRepo->getOverallAverage($user->getId(), (int) $evalId);
-                $count = $superiorEvalRepo->countEvaluators($user->getId(), (int) $evalId);
-            } else {
-                $avg = $superiorEvalRepo->getOverallAverageAll($user->getId());
-                $count = $superiorEvalRepo->countEvaluatorsAll($user->getId());
-            }
-
-            if ($count > 0) {
-                $facultyResults[] = [
-                    'faculty' => $user,
-                    'average' => $avg,
-                    'evaluators' => $count,
-                    'level' => $this->performanceLevel($avg),
-                ];
-            }
-        }
-
-        usort($facultyResults, fn($a, $b) => $b['average'] <=> $a['average']);
-
-        $collegeNames = [];
-        foreach ($departments as $d) {
-            $cn = $d->getCollegeName();
-            if ($cn && !in_array($cn, $collegeNames, true)) {
-                $collegeNames[] = $cn;
-            }
-        }
-        sort($collegeNames);
-
-        return $this->render('admin/results_superior.html.twig', [
-            'evaluations' => $evaluations,
-            'departments' => $departments,
-            'colleges' => $collegeNames,
-            'facultyResults' => $facultyResults,
-            'selectedEvaluation' => $evalId,
-            'evalEntity' => $evalId ? $evalRepo->find($evalId) : null,
             'staffMode' => true,
         ]);
     }
