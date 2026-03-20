@@ -174,6 +174,34 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
+     * Count unique evaluators for a specific subject and section.
+     */
+    public function countEvaluatorsBySubjectAndSection(int $facultyId, int $evaluationPeriodId, ?int $subjectId = null, ?string $section = null): int
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('COUNT(DISTINCT r.evaluator)')
+            ->where('r.faculty = :fid')
+            ->andWhere('r.evaluationPeriod = :epid')
+            ->andWhere('r.isDraft = false')
+            ->setParameter('fid', $facultyId)
+            ->setParameter('epid', $evaluationPeriodId);
+
+        if ($subjectId !== null) {
+            $qb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        } else {
+            $qb->andWhere('r.subject IS NULL');
+        }
+
+        if ($section !== null) {
+            $qb->andWhere('r.section = :section')->setParameter('section', $section);
+        } else {
+            $qb->andWhere('r.section IS NULL');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Count total unique evaluators for a faculty across ALL evaluation periods.
      */
     public function countEvaluatorsAll(int $facultyId): int

@@ -2033,6 +2033,7 @@ class AdminController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        SubjectRepository $subjectRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $facultyId = (int) $request->query->get('faculty', 0);
@@ -2103,7 +2104,24 @@ class AdminController extends AbstractController
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
         $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
-        $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+
+        // Get evaluator count filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+        }
+
+        // Get subject info if specific subject is being printed
+        $subjectCode = null;
+        $subjectName = null;
+        if ($subjectId !== null) {
+            $subject = $subjectRepo->find($subjectId);
+            if ($subject) {
+                $subjectCode = $subject->getSubjectCode();
+                $subjectName = $subject->getSubjectName();
+            }
+        }
 
         return $this->render('report/print_results.html.twig', [
             'faculty' => $faculty,
@@ -2116,6 +2134,9 @@ class AdminController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'weightPct' => $weightPct,
+            'printSubjectCode' => $subjectCode,
+            'printSubjectName' => $subjectName,
+            'printSection' => $section,
         ]);
     }
 
@@ -2129,9 +2150,12 @@ class AdminController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $facultyId = (int) $request->query->get('faculty', 0);
+        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
+        $section = $request->query->get('section');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2140,15 +2164,32 @@ class AdminController extends AbstractController
             throw $this->createNotFoundException('Evaluation or faculty not found.');
         }
 
-        $comments = $responseRepo->getComments($facultyId, $evalId);
+        // Get comments filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+        }
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
-        $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+
+        // Get subject info if specific subject is being printed
+        $subjectCode = null;
+        if ($subjectId !== null) {
+            $subject = $subjectRepo->find($subjectId);
+            if ($subject) {
+                $subjectCode = $subject->getSubjectCode();
+            }
+        }
 
         return $this->render('report/print_comments.html.twig', [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'comments' => $filteredComments,
             'evaluatorCount' => $evaluatorCount,
+            'printSubjectCode' => $subjectCode,
+            'printSection' => $section,
         ]);
     }
 

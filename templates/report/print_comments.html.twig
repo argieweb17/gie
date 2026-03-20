@@ -256,7 +256,7 @@
             <td class="lbl">Name of Faculty:</td>
             <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
             <td class="lbl">Subject:</td>
-            <td class="val-right">{{ evaluation.subject ?? 'N/A' }}</td>
+            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="lbl">College/Department:</td>
@@ -267,8 +267,8 @@
         <tr>
             <td class="lbl">Campus:</td>
             <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">School Year:</td>
-            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+            <td class="lbl">Section:</td>
+            <td class="val-right">{{ printSection ?? '—' }}</td>
         </tr>
     </table>
 
@@ -425,7 +425,7 @@
             <td class="lbl">Name of Faculty:</td>
             <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
             <td class="lbl">Subject:</td>
-            <td class="val-right">{{ evaluation.subject ?? 'N/A' }}</td>
+            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
         </tr>
         <tr>
             <td class="lbl">College/Department:</td>
@@ -436,16 +436,22 @@
         <tr>
             <td class="lbl">Campus:</td>
             <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">School Year:</td>
-            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+            <td class="lbl">Section:</td>
+            <td class="val-right">{{ printSection ?? '—' }}</td>
         </tr>
     </table>
 
     {# ═══════════════════════════════════════════
        COMMENTS (PAGE 2)
        ═══════════════════════════════════════════ #}
+    {# ═══════════════════════════════════════════
+       COMMENTS (PAGE 2)
+       ═══════════════════════════════════════════ #}
     <div class="comments-section">
-        <h3>Evaluator Comments ({{ comments|length }})</h3>
+        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
+        <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
+            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
+        </div>
         {% if comments|length > 0 %}
         <ol>
             {% for c in comments %}

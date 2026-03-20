@@ -1684,6 +1684,7 @@ class ReportController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        SubjectRepository $subjectRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $facultyId = (int) $request->query->get('faculty', 0);
@@ -1753,7 +1754,24 @@ class ReportController extends AbstractController
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
         $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
-        $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+
+        // Get evaluator count filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+        }
+
+        // Get subject info if specific subject is being printed
+        $subjectCode = null;
+        $subjectName = null;
+        if ($subjectId !== null) {
+            $subject = $subjectRepo->find($subjectId);
+            if ($subject) {
+                $subjectCode = $subject->getSubjectCode();
+                $subjectName = $subject->getSubjectName();
+            }
+        }
 
         return $this->render('report/print_results.html.twig', [
             'faculty' => $faculty,
@@ -1766,6 +1784,9 @@ class ReportController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'weightPct' => $weightPct,
+            'printSubjectCode' => $subjectCode,
+            'printSubjectName' => $subjectName,
+            'printSection' => $section,
         ]);
     }
 

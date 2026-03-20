@@ -213,7 +213,7 @@
        COMMENTS
        ═══════════════════════════════════════════ #}
     <div class="comments-section">
-        <h3>Evaluator Comments ({{ comments|length }})</h3>
+        <h3>Evaluator Comments — {{ printSubjectCode ?? 'SEF' }}{% if printSection %} ({{ printSection }}){% endif %} ({{ comments|length }})</h3>
         {% if comments|length > 0 %}
         <ol>
             {% for c in comments %}
