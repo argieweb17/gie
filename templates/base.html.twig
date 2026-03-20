@@ -196,6 +196,7 @@
                         </a>
                     </div>
                 </div>
+                <div class="sidebar-header">Navigation</div>
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">
                     <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages

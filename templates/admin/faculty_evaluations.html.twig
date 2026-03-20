@@ -484,7 +484,7 @@
                     <i class="bi bi-printer me-1"></i>Print All
                 </a>
                 <button type="button" id="feToggleSelect" class="btn btn-sm fe-btn-select">
-                    <i class="bi bi-check2-square me-1"></i>Select to Print
+                    <i class="bi bi-check2-square me-1"></i>Choose the subject to print
                 </button>
                 {% endif %}
             </div>
@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function exitSelectMode() {
         selectMode = false;
         toggleBtn.classList.remove('active');
-        toggleBtn.innerHTML = '<i class="bi bi-check2-square me-1"></i>Select to Print';
+        toggleBtn.innerHTML = '<i class="bi bi-check2-square me-1"></i>Choose the subject to print';
         selectAllWrap.style.display = 'none';
         thChecks.forEach(th => th.style.display = 'none');
         tdChecks.forEach(td => td.style.display = 'none');
@@ -757,8 +757,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (count > 0) {
             actionBar.classList.add('show');
             const ids = Array.from(selected).map(cb => cb.value);
-            const params = ids.map(id => 'evals[]=' + id).join('&');
-            printSelBtn.href = basePrintUrl + '&' + params;
+            const params = new URLSearchParams();
+            ids.forEach(id => params.append('evals[]', id));
+            const separator = basePrintUrl.includes('?') ? '&' : '?';
+            printSelBtn.href = basePrintUrl + separator + params.toString();
         } else {
             actionBar.classList.remove('show');
         }

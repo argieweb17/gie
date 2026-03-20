@@ -83,8 +83,8 @@ class EvaluationResponseRepository extends ServiceEntityRepository
         $subjectQb = $this->createQueryBuilder('r')
             ->select(
                 'IDENTITY(r.subject) as subjectId',
-                'COALESCE(s.subjectCode, \'N/A\') as subjectCode',
-                'COALESCE(s.subjectName, \'General\') as subjectName',
+                's.subjectCode',
+                's.subjectName',
                 'r.section'
             )
             ->leftJoin('r.subject', 's')
@@ -103,7 +103,7 @@ class EvaluationResponseRepository extends ServiceEntityRepository
             $subjectQb->andWhere('r.section = :sec')->setParameter('sec', $section);
         }
 
-        $subjectSections = $subjectQb->orderBy('COALESCE(s.subjectCode, \'N/A\')', 'ASC')
+        $subjectSections = $subjectQb->orderBy('s.subjectCode', 'ASC')
             ->addOrderBy('r.section', 'ASC')
             ->getQuery()
             ->getResult();
@@ -144,8 +144,8 @@ class EvaluationResponseRepository extends ServiceEntityRepository
 
             $result[$idx] = [
                 'subjectId' => $ss['subjectId'],
-                'subjectCode' => $ss['subjectCode'],
-                'subjectName' => $ss['subjectName'],
+                'subjectCode' => $ss['subjectCode'] ?? 'N/A',
+                'subjectName' => $ss['subjectName'] ?? 'General',
                 'section' => $ss['section'],
                 'questionAverages' => $questionAverages,
             ];

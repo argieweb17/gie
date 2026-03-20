@@ -398,12 +398,12 @@
                         <th colspan="21" style="text-align:center; font-weight:700;">Baccalaureate Course</th>
                     </tr>
                     <tr>
-                        {% for courseEval in baccEvaluations %}
-                        <th colspan="3" class="course-header">Course {{ loop.index }}</th>
+                        {% for courseNum in 1..7 %}
+                        <th colspan="3" class="course-header">Course {{ courseNum }}</th>
                         {% endfor %}
                     </tr>
                     <tr>
-                        {% for courseEval in baccEvaluations %}
+                        {% for courseNum in 1..7 %}
                         <th>Wx</th>
                         <th>W%</th>
                         <th>Rating</th>
@@ -414,12 +414,19 @@
                     {% for catName in categoryNames %}
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
-                        {% for courseNum in 1..7 %}
-                            {% if baccCourseData[courseNum][catName] is defined %}
-                                {% set data = baccCourseData[courseNum][catName] %}
-                                <td>{{ data.mean|number_format(2) }}</td>
-                                <td>{{ data.weightPct }}%</td>
-                                <td>{{ data.weightedRating|number_format(2) }}</td>
+                        {% for courseEval in baccEvaluations %}
+                            {% set categoryData = null %}
+                            {% if courseEval.categorySummary %}
+                                {% for cat in courseEval.categorySummary %}
+                                    {% if cat.name == catName %}
+                                        {% set categoryData = cat %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            {% if categoryData %}
+                                <td>{{ categoryData.mean|number_format(2) }}</td>
+                                <td>{{ categoryData.weightPct }}%</td>
+                                <td>{{ categoryData.weightedRating|number_format(2) }}</td>
                             {% else %}
                                 <td class="empty-cell">0.00</td>
                                 <td class="empty-cell">0%</td>
@@ -431,11 +438,11 @@
 
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
-                        {% for courseNum in 1..7 %}
-                            {% if courseTotals[courseNum] is defined %}
+                        {% for courseEval in baccEvaluations %}
+                            {% if courseEval.compositeTotal %}
                             <td></td>
                             <td>100%</td>
-                            <td>{{ courseTotals[courseNum].compositeTotal|number_format(2) }}</td>
+                            <td>{{ courseEval.compositeTotal|number_format(2) }}</td>
                             {% else %}
                             <td class="empty-cell"></td>
                             <td class="empty-cell">100%</td>
@@ -446,9 +453,9 @@
 
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
-                        {% for courseNum in 1..7 %}
-                            {% if courseTotals[courseNum] is defined %}
-                            <td colspan="3">{{ courseTotals[courseNum].level }}</td>
+                        {% for courseEval in baccEvaluations %}
+                            {% if courseEval.level and courseEval.level != 'N/A' %}
+                            <td colspan="3">{{ courseEval.level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
                             {% endif %}
@@ -465,12 +472,12 @@
                         <th colspan="21" style="text-align:center; font-weight:700;">Graduate Course</th>
                     </tr>
                     <tr>
-                        {% for courseEval in gradEvaluations %}
-                        <th colspan="3" class="course-header">Course {{ 7 + loop.index }}</th>
+                        {% for courseNum in 1..7 %}
+                        <th colspan="3" class="course-header">Course {{ 7 + courseNum }}</th>
                         {% endfor %}
                     </tr>
                     <tr>
-                        {% for courseEval in gradEvaluations %}
+                        {% for courseNum in 1..7 %}
                         <th>Wx</th>
                         <th>W%</th>
                         <th>Rating</th>
@@ -481,12 +488,19 @@
                     {% for catName in categoryNames %}
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
-                        {% for courseNum in 8..14 %}
-                            {% if gradCourseData[courseNum][catName] is defined %}
-                                {% set data = gradCourseData[courseNum][catName] %}
-                                <td>{{ data.mean|number_format(2) }}</td>
-                                <td>{{ data.weightPct }}%</td>
-                                <td>{{ data.weightedRating|number_format(2) }}</td>
+                        {% for courseEval in gradEvaluations %}
+                            {% set categoryData = null %}
+                            {% if courseEval.categorySummary %}
+                                {% for cat in courseEval.categorySummary %}
+                                    {% if cat.name == catName %}
+                                        {% set categoryData = cat %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            {% if categoryData %}
+                                <td>{{ categoryData.mean|number_format(2) }}</td>
+                                <td>{{ categoryData.weightPct }}%</td>
+                                <td>{{ categoryData.weightedRating|number_format(2) }}</td>
                             {% else %}
                                 <td class="empty-cell">0.00</td>
                                 <td class="empty-cell">0%</td>
@@ -498,11 +512,11 @@
 
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
-                        {% for courseNum in 8..14 %}
-                            {% if courseTotals[courseNum] is defined %}
+                        {% for courseEval in gradEvaluations %}
+                            {% if courseEval.compositeTotal %}
                             <td></td>
                             <td>100%</td>
-                            <td>{{ courseTotals[courseNum].compositeTotal|number_format(2) }}</td>
+                            <td>{{ courseEval.compositeTotal|number_format(2) }}</td>
                             {% else %}
                             <td class="empty-cell"></td>
                             <td class="empty-cell">100%</td>
@@ -513,9 +527,9 @@
 
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
-                        {% for courseNum in 8..14 %}
-                            {% if courseTotals[courseNum] is defined %}
-                            <td colspan="3">{{ courseTotals[courseNum].level }}</td>
+                        {% for courseEval in gradEvaluations %}
+                            {% if courseEval.level and courseEval.level != 'N/A' %}
+                            <td colspan="3">{{ courseEval.level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
                             {% endif %}

@@ -2422,7 +2422,7 @@ class AdminController extends AbstractController
             $compositeGrandTotal += $wRating;
             $compositeCategories[] = [
                 'name' => $name,
-                'weightedMean' => $wMean,
+                'mean' => $wMean,
                 'weightPct' => $weightPct,
                 'weightedRating' => $wRating,
             ];
