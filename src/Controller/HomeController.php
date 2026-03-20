@@ -1565,24 +1565,28 @@ class HomeController extends AbstractController
 
         // Find active SET evaluations matching the faculty's subjects
         $openEvals = $evalRepo->findActive('SET');
-        $facultyName = mb_strtolower(trim($user->getFullName()));
-        $subjectEvalMap = [];
+        $now = new \DateTime();
+        $hasActiveEval = false;
+        $activeEvalId = null;
+
         foreach ($openEvals as $eval) {
-            $evalFaculty = $eval->getFaculty();
-            if ($evalFaculty && mb_strtolower(trim($evalFaculty)) === $facultyName) {
-                $evalSubjectStr = $eval->getSubject();
-                if ($evalSubjectStr) {
-                    $parts = explode(' — ', $evalSubjectStr, 2);
-                    $code = strtoupper(trim($parts[0]));
-                    $subjectEvalMap[$code] = $eval;
-                }
+            // Check if evaluation is currently active (within start and end dates)
+            $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
+            if ($isActive) {
+                $hasActiveEval = true;
+                $activeEvalId = $eval->getId();
+                break; // Use first active evaluation
             }
         }
 
         // Attach evaluation to each schedule item
         foreach ($scheduleItems as &$item) {
-            $code = strtoupper(trim($item['subject']->getSubjectCode()));
-            $item['evaluation'] = $subjectEvalMap[$code] ?? null;
+            // Show QR button for all subjects when there's an active evaluation
+            if ($hasActiveEval && $activeEvalId) {
+                $item['evaluation'] = ['id' => $activeEvalId];
+            } else {
+                $item['evaluation'] = null;
+            }
         }
         unset($item);
 

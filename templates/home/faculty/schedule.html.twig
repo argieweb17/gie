@@ -101,14 +101,14 @@
                                     data-bs-toggle="modal"
                                     data-bs-target="#schedQrModal"
                                     data-eval-id="{{ item.evaluation.id }}"
-                                    data-eval-faculty="{{ item.evaluation.faculty ?? '' }}"
-                                    data-eval-subject="{{ item.evaluation.subject ?? '' }}"
-                                    data-eval-section="{{ item.evaluation.section ?? '' }}"
-                                    data-eval-school-year="{{ item.evaluation.schoolYear ?? '' }}">
+                                    data-eval-faculty="{{ app.user.fullName }}"
+                                    data-eval-subject="{{ item.subject.subjectCode }}"
+                                    data-eval-section="{{ item.section ?? '' }}"
+                                    data-eval-school-year="{{ app.request.session.get('schoolYear') ?? '' }}">
                                     <i class="bi bi-qr-code"></i> QR Code
                                 </button>
                             {% else %}
-                                <span class="text-muted" style="font-size:.75rem;">—</span>
+                                <span class="text-muted" style="font-size:.75rem;">No Evaluation</span>
                             {% endif %}
                         </td>
                     </tr>
