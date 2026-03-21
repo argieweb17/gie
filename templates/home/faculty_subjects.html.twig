@@ -319,7 +319,6 @@
                         <th class="sb-th-section">Section</th>
                         <th class="sb-th-schedule">Schedule/Time</th>
                         <th class="sb-th-status">Status</th>
-                        <th style="width:70px;text-align:center!important;">QR</th>
                         <th style="width:100px;text-align:center!important;">Action</th>
                     </tr>
                 </thead>
@@ -399,45 +398,7 @@
                             {% endif %}
                         </td>
                         <td style="text-align:center;">
-                            {% if activeEvalMap|length > 0 %}
-                                {% set firstEvalId = activeEvalMap|keys|first %}
-                                {% set firstEval = activeEvalMap[firstEvalId] %}
-                                <button type="button" class="sb-btn-qr sb-qr-btn-column"
-                                    data-subject-id="{{ subject.id }}"
-                                    data-subject-code="{{ subject.subjectCode|e('js') }}"
-                                    data-subject-name="{{ subject.subjectName|e('js') }}"
-                                    data-section="{{ firstFsl.section|default('')|e('js') }}"
-                                    data-eval-id="{{ firstEvalId }}"
-                                    data-eval-type="SET"
-                                    data-faculty="{{ app.user.firstName|e('js') }} {{ app.user.lastName|e('js') }}"
-                                    data-school-year="{{ firstEval.name|e('js') }}"
-                                    title="Evaluation QR Code"
-                                    style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
-                                    <i class="bi bi-qr-code-scan"></i>
-                                </button>
-                            {% else %}
-                                <span class="text-muted small">No Evaluation</span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align:center;">
                             <div class="sb-action-btns">
-                                {% if isLoaded and activeEvalMap|length > 0 %}
-                                    {% set firstEvalId = activeEvalMap|keys|first %}
-                                    {% set firstEval = activeEvalMap[firstEvalId] %}
-                                    <button type="button" class="sb-btn-qr sb-qr-btn"
-                                        data-subject-id="{{ subject.id }}"
-                                        data-subject-code="{{ subject.subjectCode|e('js') }}"
-                                        data-subject-name="{{ subject.subjectName|e('js') }}"
-                                        data-section="{{ firstFsl.section|default('')|e('js') }}"
-                                        data-eval-id="{{ firstEvalId }}"
-                                        data-eval-type="SET"
-                                        data-faculty="{{ app.user.firstName|e('js') }} {{ app.user.lastName|e('js') }}"
-                                        data-school-year="{{ firstEval.name|e('js') }}"
-                                        title="Evaluation QR Code"
-                                        style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
-                                        <i class="bi bi-qr-code-scan"></i>
-                                    </button>
-                                {% endif %}
                                 {% if isLoaded %}
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section">
                                         <i class="bi bi-plus-circle"></i> Pick
@@ -858,10 +819,8 @@ function updateRowVisual(cb) {
     if (!row) return;
     var statusCell = row.querySelector('.sb-td-status');
     var actionCell = row.querySelector('.sb-action-btns');
-    var qrCell = row.querySelector('td:nth-child(9)');  // QR column is 9th
     var sid = cb.dataset.subjectId;
     var code = row.querySelector('.sb-code-text') ? row.querySelector('.sb-code-text').textContent : '';
-    var section = row.querySelector('.sb-section-input') ? row.querySelector('.sb-section-input').value : '';
 
     if (cb.checked) {
         row.classList.add('is-loaded');
@@ -873,27 +832,8 @@ function updateRowVisual(cb) {
 
         // Small delay to let polling update the state
         setTimeout(function() {
-            console.log('Loading subject:', code, '| hasActiveEval:', window.hasActiveEval, '| firstActiveEvalId:', window.firstActiveEvalId);
+            console.log('Loading subject:', code);
             var actionsHtml = '';
-
-            // Update QR column
-            if (qrCell) {
-                if (window.hasActiveEval && window.firstActiveEvalId) {
-                    console.log('Adding QR button for subject:', code);
-                    var qrHtml = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-subject-name="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-                    qrCell.innerHTML = qrHtml;
-                } else {
-                    qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
-                }
-            }
-
-            // Add QR button if there's an active evaluation
-            if (window.hasActiveEval && window.firstActiveEvalId) {
-                console.log('Adding QR button for subject:', code);
-                actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-subject-name="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-            } else {
-                console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
-            }
 
             // Add Pick and Unload buttons
             actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
@@ -904,9 +844,6 @@ function updateRowVisual(cb) {
     } else {
         row.classList.remove('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>';
-
-        // Clear QR column
-        if (qrCell) qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
 
         if (actionCell) actionCell.innerHTML = '<button type="button" class="sb-btn-pick" onclick="quickLoadSubject(' + sid + ')"><i class="bi bi-plus-circle"></i> Pick</button>';
     }
