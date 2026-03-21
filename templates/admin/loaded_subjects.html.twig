@@ -427,7 +427,6 @@
                 <th class="ls-th">Schedule/Time</th>
                 <th class="ls-th">Department</th>
                 <th class="ls-th text-center">Status</th>
-                <th class="ls-th text-center">QR</th>
                 <th class="ls-th text-center">Actions</th>
             </tr>
         </thead>
@@ -505,6 +504,7 @@
                     {% endif %}
                 </td>
                 <td class="text-center">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
                     {% if activeEvalMap|length > 0 %}
                         {% set firstEvalId = activeEvalMap|keys|first %}
                         <button type="button" class="btn btn-sm ls-action-qr ls-qr-btn"
@@ -514,12 +514,9 @@
                             data-eval-id="{{ firstEvalId }}"
                             title="Generate QR Code"
                             style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;">
-                            <i class="bi bi-qr-code"></i>
+                            <i class="bi bi-qr-code-scan"></i>
                         </button>
                     {% endif %}
-                </td>
-                <td class="text-center">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
                     {% if s.fslId %}
                     <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
@@ -924,24 +921,27 @@ function lsPrint() {
         document.querySelectorAll('#lsTableBody .ls-row').forEach(row => {
             const qrButton = row.querySelector('.ls-qr-btn');
             if (!qrButton && window.firstActiveEvalIdLS) {
-                // QR button doesn't exist, need to add it
-                const qrCell = row.querySelector('td:nth-child(10)'); // QR column is 10th
-                if (qrCell && qrCell.querySelectorAll('button').length === 0) {
-                    const subjectId = row.getAttribute('data-view-id');
-                    const code = row.getAttribute('data-view-code');
-                    const section = row.getAttribute('data-view-section') || '';
+                // QR button doesn't exist, need to add it to the Actions cell
+                const actionsCell = row.querySelector('td:nth-child(10)'); // Actions column is now 10th
+                if (actionsCell) {
+                    const flexDiv = actionsCell.querySelector('.d-flex');
+                    if (flexDiv && !flexDiv.querySelector('.ls-qr-btn')) {
+                        const subjectId = row.getAttribute('data-view-id');
+                        const code = row.getAttribute('data-view-code');
+                        const section = row.getAttribute('data-view-section') || '';
 
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'btn btn-sm ls-action-qr ls-qr-btn';
-                    btn.setAttribute('data-subject-id', subjectId);
-                    btn.setAttribute('data-subject-code', code);
-                    btn.setAttribute('data-section', section);
-                    btn.setAttribute('data-eval-id', window.firstActiveEvalIdLS);
-                    btn.setAttribute('title', 'Generate QR Code');
-                    btn.setAttribute('style', 'width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;');
-                    btn.innerHTML = '<i class="bi bi-qr-code"></i>';
-                    qrCell.appendChild(btn);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-sm ls-action-qr ls-qr-btn';
+                        btn.setAttribute('data-subject-id', subjectId);
+                        btn.setAttribute('data-subject-code', code);
+                        btn.setAttribute('data-section', section);
+                        btn.setAttribute('data-eval-id', window.firstActiveEvalIdLS);
+                        btn.setAttribute('title', 'Generate QR Code');
+                        btn.setAttribute('style', 'width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;');
+                        btn.innerHTML = '<i class="bi bi-qr-code-scan"></i>';
+                        flexDiv.insertBefore(btn, flexDiv.firstChild); // Insert QR button first in the flex container
+                    }
                 }
             }
         });
