@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Subjects | SET-SEF Evaluation{% endblock %}
+{% block title %}Class Schedule | SET-SEF Evaluation{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -188,7 +188,7 @@
                     <i class="bi bi-book-half"></i>
                 </div>
                 <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subjects</h4>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Class Schedule</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
                         <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
                         {% if selectedSemester %}
@@ -275,7 +275,7 @@
     {% for dept in deptGroups %}
     {% if dept.subjects|length > 0 %}
     <div class="sb-dept-section" id="deptSection{{ dept.id }}">
-        <div class="sb-dept-header" onclick="toggleDept({{ dept.id }})">
+        <div class="sb-dept-header" data-dept="{{ dept.id }}" role="button" style="cursor: pointer;">
             <div class="sb-dept-header-left">
                 <div class="sb-dept-icon">
                     <i class="bi bi-building"></i>
@@ -391,7 +391,7 @@
                                 {% if isLoaded and activeEvalMap|length > 0 %}
                                     {% set firstEvalId = activeEvalMap|keys|first %}
                                     <button type="button" class="sb-btn-qr" onclick="showQRModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ firstFsl.section|default('') }}', {{ firstEvalId }})" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
-                                        <i class="bi bi-qr-code"></i>
+                                        <i class="bi bi-qr-code-scan"></i>
                                     </button>
                                 {% endif %}
                                 {% if isLoaded %}
@@ -579,28 +579,12 @@ function updateCheckedCount() {
     var count = document.querySelectorAll('.subject-check:checked').length;
     document.getElementById('checkedCount').textContent = count;
 }
-document.querySelectorAll('.subject-check').forEach(function(cb) {
-    cb.addEventListener('change', updateCheckedCount);
-});
-
-/* ── Select-all per department ── */
-document.querySelectorAll('.sb-check-all').forEach(function(allCb) {
-    allCb.addEventListener('change', function() {
-        var deptId = this.dataset.dept;
-        var body = document.getElementById('deptBody' + deptId);
-        if (!body) return;
-        body.querySelectorAll('.subject-check').forEach(function(cb) {
-            cb.checked = allCb.checked;
-        });
-        updateCheckedCount();
-    });
-});
 
 /* ── Toggle department sections ── */
 function toggleDept(deptId) {
     var body = document.getElementById('deptBody' + deptId);
     var section = document.getElementById('deptSection' + deptId);
-    if (!body) return;
+    if (!body || !section) return;
     var chevron = section.querySelector('.sb-dept-chevron');
     body.classList.toggle('open');
     if (chevron) chevron.classList.toggle('open');
@@ -635,7 +619,8 @@ function applyFilters() {
             meta.textContent = hasFilter ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
         }
     });
-    document.getElementById('sbNoResults').style.display = (!visibleAny && hasFilter) ? '' : 'none';
+    var noResults = document.getElementById('sbNoResults');
+    if (noResults) noResults.style.display = (!visibleAny && hasFilter) ? '' : 'none';
 }
 
 function searchSubjects(query) {
@@ -677,21 +662,6 @@ function unloadSubject(subjectId, subjectCode) {
     document.getElementById('unloadSubjectName').textContent = subjectCode;
     new bootstrap.Modal(document.getElementById('unloadModal')).show();
 }
-document.getElementById('confirmUnloadBtn').addEventListener('click', function() {
-    if (!unloadTargetId) return;
-    var container = document.getElementById('unloadFormSubjects');
-    container.innerHTML = '';
-    loadedSubjectIds.forEach(function(id) {
-        if (id !== unloadTargetId) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'subject_ids[]';
-            input.value = id;
-            container.appendChild(input);
-        }
-    });
-    document.getElementById('unloadForm').submit();
-});
 
 function quickLoadSubject(subjectId) {
     /* Validate section is filled before quick-loading */
@@ -706,6 +676,7 @@ function quickLoadSubject(subjectId) {
     var cb = document.getElementById('subj_' + subjectId);
     if (cb) {
         cb.checked = true;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
         updateCheckedCount();
     }
     document.getElementById('loadForm').submit();
@@ -744,7 +715,7 @@ function updateRowVisual(cb) {
         // Build action buttons with QR if evaluation is active
         var actionsHtml = '';
         if (hasActiveEval && firstActiveEvalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code"></i></button>';
+            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
         }
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
         actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
@@ -757,37 +728,88 @@ function updateRowVisual(cb) {
     }
 }
 
-document.querySelectorAll('.subject-check').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-        updateRowVisual(this);
-    });
-});
-
-/* Stagger row animations */
-document.addEventListener('DOMContentLoaded', function() {
+/* ── Stagger row animations */
+function initializeEventListeners() {
     document.querySelectorAll('.sb-row').forEach(function(r, i) {
         r.style.animationDelay = (i * 0.02) + 's';
     });
 
-    /* Validate: require section for checked subjects only */
-    document.getElementById('loadForm').addEventListener('submit', function(e) {
-        var missing = [];
-        document.querySelectorAll('.subject-check:checked').forEach(function(cb) {
-            var sid = cb.value;
-            var sectionInput = document.querySelector('.sb-section-input[data-subject-id="' + sid + '"]');
-            if (sectionInput && !sectionInput.value.trim()) {
-                missing.push(sectionInput);
-                sectionInput.style.borderColor = '#ef4444';
-                sectionInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+    /* Attach checkbox change events */
+    document.querySelectorAll('.subject-check').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            updateRowVisual(this);
+            updateCheckedCount();
+        });
+    });
+
+    /* Attach select-all per department */
+    document.querySelectorAll('.sb-check-all').forEach(function(allCb) {
+        allCb.addEventListener('change', function() {
+            var deptId = this.dataset.dept;
+            var body = document.getElementById('deptBody' + deptId);
+            if (!body) return;
+            body.querySelectorAll('.subject-check').forEach(function(cb) {
+                cb.checked = allCb.checked;
+            });
+            updateCheckedCount();
+        });
+    });
+
+    /* Unload confirmation button */
+    var confirmUnloadBtn = document.getElementById('confirmUnloadBtn');
+    if (confirmUnloadBtn) {
+        confirmUnloadBtn.addEventListener('click', function() {
+            if (!unloadTargetId) return;
+            var container = document.getElementById('unloadFormSubjects');
+            container.innerHTML = '';
+            loadedSubjectIds.forEach(function(id) {
+                if (id !== unloadTargetId) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'subject_ids[]';
+                    input.value = id;
+                    container.appendChild(input);
+                }
+            });
+            document.getElementById('unloadForm').submit();
+        });
+    }
+
+    /* Department header toggle */
+    document.querySelectorAll('.sb-dept-header').forEach(function(header) {
+        header.addEventListener('click', function(e) {
+            // Don't toggle if clicking on the detail link
+            if (e.target.closest('.sb-dept-link')) return;
+
+            var deptId = this.dataset.dept;
+            if (deptId) {
+                toggleDept(deptId);
             }
         });
-        if (missing.length > 0) {
-            e.preventDefault();
-            missing[0].focus();
-            alert('Please fill in the Section for all selected subjects.');
-            return false;
-        }
     });
+
+    /* Validate: require section for checked subjects only */
+    var loadForm = document.getElementById('loadForm');
+    if (loadForm) {
+        loadForm.addEventListener('submit', function(e) {
+            var missing = [];
+            document.querySelectorAll('.subject-check:checked').forEach(function(cb) {
+                var sid = cb.value;
+                var sectionInput = document.querySelector('.sb-section-input[data-subject-id="' + sid + '"]');
+                if (sectionInput && !sectionInput.value.trim()) {
+                    missing.push(sectionInput);
+                    sectionInput.style.borderColor = '#ef4444';
+                    sectionInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+                }
+            });
+            if (missing.length > 0) {
+                e.preventDefault();
+                missing[0].focus();
+                alert('Please fill in the Section for all selected subjects.');
+                return false;
+            }
+        });
+    }
 
     /* Clear error styling on input */
     document.querySelectorAll('.sb-section-input').forEach(function(inp) {
@@ -835,7 +857,13 @@ document.addEventListener('DOMContentLoaded', function() {
             link.click();
         }
     };
-});
+}
+
+/* Initialize on page load */
+document.addEventListener('DOMContentLoaded', initializeEventListeners);
+
+/* Re-initialize after Turbo navigation (for semester filter) */
+document.addEventListener('turbo:load', initializeEventListeners);
 </script>
 
 {# ── Add Subject Modal ── #}
