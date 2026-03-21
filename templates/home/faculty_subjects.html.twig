@@ -717,19 +717,25 @@ function updateRowVisual(cb) {
         row.classList.add('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded</span>';
 
-        // Build action buttons with QR if evaluation is active
-        console.log('Loading subject:', code, '| hasActiveEval:', window.hasActiveEval, '| firstActiveEvalId:', window.firstActiveEvalId);
-        var actionsHtml = '';
-        if (window.hasActiveEval && window.firstActiveEvalId) {
-            console.log('Adding QR button for subject:', code);
-            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-        } else {
-            console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
-        }
-        actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
-        actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
+        // Check for active evaluations immediately (bypass debounce)
+        // Use setTimeout to allow the fetch to complete before rendering buttons
+        window.pollActiveEvaluations(true);
 
-        if (actionCell) actionCell.innerHTML = actionsHtml;
+        // Small delay to let polling update the state
+        setTimeout(function() {
+            console.log('Loading subject:', code, '| hasActiveEval:', window.hasActiveEval, '| firstActiveEvalId:', window.firstActiveEvalId);
+            var actionsHtml = '';
+            if (window.hasActiveEval && window.firstActiveEvalId) {
+                console.log('Adding QR button for subject:', code);
+                actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+            } else {
+                console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
+            }
+            actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
+            actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
+
+            if (actionCell) actionCell.innerHTML = actionsHtml;
+        }, 200);  // 200ms delay for network fetch to complete
     } else {
         row.classList.remove('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>';
@@ -880,11 +886,12 @@ let currentActiveEvals = activeEvaluations;
 
 /**
  * Poll for active evaluations and update QR buttons if new ones appear
+ * @param {boolean} forceImmediate - If true, bypass debounce check (e.g., when user loads a subject)
  */
-window.pollActiveEvaluations = function() {
-    // Debounce: don't poll more frequently than every 5 seconds
+window.pollActiveEvaluations = function(forceImmediate) {
+    // Debounce: don't poll more frequently than every 5 seconds (unless forceImmediate)
     const now = Date.now();
-    if (now - lastCheckTime < 5000) return;
+    if (!forceImmediate && now - lastCheckTime < 5000) return;
     lastCheckTime = now;
 
     fetch('{{ path("api_active_evaluations") }}')
@@ -965,8 +972,9 @@ window.updateQRButtonsForLoadedSubjects = function() {
     });
 };
 
-// Start polling for new evaluations every 30 seconds
-setInterval(pollActiveEvaluations, 30000);
+// Start polling for new evaluations immediately on load, then every 30 seconds
+window.pollActiveEvaluations(true);  // Initial poll with forceImmediate to get fresh data
+setInterval(pollActiveEvaluations, 30000);  // Then every 30 seconds with debounce
 </script>
 
 {# ── Add Subject Modal ── #}

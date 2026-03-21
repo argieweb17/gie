@@ -1117,6 +1117,13 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_academic_years');
     }
 
+    // ════════════════════════════════════════════════
+    //  C. EVALUATION MANAGEMENT (MOVED TO STAFF ONLY)
+    // ════════════════════════════════════════════════
+    //
+    // NOTE: Evaluation management has been moved to ReportController
+    // for STAFF access only. Admins should not manage evaluations.
+
     #[Route('/api/faculty/{id}/subjects', name: 'admin_api_faculty_subjects', methods: ['GET'])]
     public function apiFacultySubjects(int $id, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo): JsonResponse
     {
