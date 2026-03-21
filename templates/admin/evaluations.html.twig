@@ -414,7 +414,7 @@
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
                             {% if not staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
-                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-faculty-id="{{ firstItem.eval.faculty.id ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {% endif %}
                             <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
@@ -843,6 +843,9 @@
                         </button>
                         <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
                             <i class="bi bi-clipboard"></i> Copy Link
+                        </button>
+                        <button type="button" class="qr-action-btn" id="qrBtnClassSchedule" onclick="openInClassSchedule()" style="flex:1;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:600;" title="Open in Faculty's Class Schedule">
+                            <i class="bi bi-calendar-check"></i> Class Schedule
                         </button>
                     </div>
                 </div>
@@ -1429,6 +1432,7 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
     var qrModal = document.getElementById('qrCodeModal');
     if (!qrModal) return;
     var currentQrUrl = '';
+    var currentFacultyId = '';
 
     qrModal.addEventListener('show.bs.modal', function(e) {
         var btn = e.relatedTarget;
@@ -1437,11 +1441,15 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var evalId = btn.getAttribute('data-eval-id');
         var evalType = btn.getAttribute('data-eval-type');
         var faculty = btn.getAttribute('data-eval-faculty');
+        var facultyId = btn.getAttribute('data-eval-faculty-id');
         var subject = btn.getAttribute('data-eval-subject');
         var subjectId = btn.getAttribute('data-eval-subject-id');
         var section = btn.getAttribute('data-eval-section');
         var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
+
+        // Store faculty ID for class schedule button
+        currentFacultyId = facultyId;
 
         // Build the evaluation URL with subject ID and section for unique codes
         var baseUrl = window.location.origin;
@@ -1474,6 +1482,14 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         // Generate QR code via API
         var qrImg = document.getElementById('qrImage');
         qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+
+        // Enable/disable class schedule button
+        var classScheduleBtn = document.getElementById('qrBtnClassSchedule');
+        if (classScheduleBtn) {
+            classScheduleBtn.disabled = !currentFacultyId;
+            classScheduleBtn.style.opacity = currentFacultyId ? '1' : '0.5';
+            classScheduleBtn.title = currentFacultyId ? 'Open in Faculty\'s Class Schedule' : 'Faculty not assigned';
+        }
     });
 
     window.downloadQR = function() {
@@ -1491,6 +1507,16 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
             btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
         });
+    };
+
+    window.openInClassSchedule = function() {
+        if (!currentFacultyId) {
+            alert('Faculty ID not available');
+            return;
+        }
+        // Navigate to the faculty's class schedule (loaded subjects page)
+        // We navigate directly to the faculty's dashboard - they'll see their class schedule there
+        window.location.href = '/faculty/loaded-subjects';
     };
 })();
 
