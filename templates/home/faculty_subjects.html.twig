@@ -308,6 +308,7 @@
                         <th class="sb-th-section">Section</th>
                         <th class="sb-th-schedule">Schedule/Time</th>
                         <th class="sb-th-status">Status</th>
+                        <th style="width:80px;text-align:center!important;">QR</th>
                         <th style="width:100px;text-align:center!important;">Action</th>
                     </tr>
                 </thead>
@@ -386,14 +387,24 @@
                                 <span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>
                             {% endif %}
                         </td>
+                        <td class="text-center">
+                            {% if isLoaded and activeEvalMap|length > 0 %}
+                                {% set firstEvalId = activeEvalMap|keys|first %}
+                                <button type="button" class="sb-btn-qr sb-qr-btn"
+                                    data-subject-id="{{ subject.id }}"
+                                    data-subject-code="{{ subject.subjectCode|e('js') }}"
+                                    data-section="{{ firstFsl.section|default('')|e('js') }}"
+                                    data-eval-id="{{ firstEvalId }}"
+                                    title="Evaluation QR Code"
+                                    style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
+                                    <i class="bi bi-qr-code-scan"></i>
+                                </button>
+                            {% else %}
+                                <span class="text-muted small">No Evaluation</span>
+                            {% endif %}
+                        </td>
                         <td style="text-align:center;">
                             <div class="sb-action-btns">
-                                {% if isLoaded and activeEvalMap|length > 0 %}
-                                    {% set firstEvalId = activeEvalMap|keys|first %}
-                                    <button type="button" class="sb-btn-qr" onclick="showQRModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ firstFsl.section|default('') }}', {{ firstEvalId }})" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
-                                        <i class="bi bi-qr-code-scan"></i>
-                                    </button>
-                                {% endif %}
                                 {% if isLoaded %}
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section">
                                         <i class="bi bi-plus-circle"></i> Pick
@@ -710,6 +721,7 @@ function updateRowVisual(cb) {
     if (!row) return;
     var statusCell = row.querySelector('.sb-td-status');
     var actionCell = row.querySelector('.sb-action-btns');
+    var qrCell = row.querySelector('td:nth-child(9)');  // QR column is now 9th
     var sid = cb.dataset.subjectId;
     var code = row.querySelector('.sb-code-text') ? row.querySelector('.sb-code-text').textContent : '';
     var section = row.querySelector('.sb-section-input') ? row.querySelector('.sb-section-input').value : '';
@@ -725,14 +737,21 @@ function updateRowVisual(cb) {
         // Small delay to let polling update the state
         setTimeout(function() {
             console.log('Loading subject:', code, '| hasActiveEval:', window.hasActiveEval, '| firstActiveEvalId:', window.firstActiveEvalId);
-            var actionsHtml = '';
-            if (window.hasActiveEval && window.firstActiveEvalId) {
-                console.log('Adding QR button for subject:', code);
-                actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-            } else {
-                console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
+
+            // Update QR cell
+            if (qrCell) {
+                if (window.hasActiveEval && window.firstActiveEvalId) {
+                    console.log('Adding QR button for subject:', code);
+                    var qrHtml = '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+                    qrCell.innerHTML = qrHtml;
+                } else {
+                    console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
+                    qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
+                }
             }
-            actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
+
+            // Update action cell with only Pick and Unload buttons
+            var actionsHtml = '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
             actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
 
             if (actionCell) actionCell.innerHTML = actionsHtml;
@@ -740,6 +759,11 @@ function updateRowVisual(cb) {
     } else {
         row.classList.remove('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>';
+
+        // Clear QR cell
+        if (qrCell) qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
+
+        // Clear action cell
         if (actionCell) actionCell.innerHTML = '<button type="button" class="sb-btn-pick" onclick="quickLoadSubject(' + sid + ')"><i class="bi bi-plus-circle"></i> Pick</button>';
     }
 }
@@ -954,24 +978,42 @@ window.updateQRButtonsForLoadedSubjects = function() {
         const sectionInput = row.querySelector('.sb-section-input');
         const section = sectionInput ? sectionInput.value.trim() : '';
 
-        // Update action buttons for this row
+        // Update QR cell (9th column)
+        const qrCell = row.querySelector('td:nth-child(9)');
+        if (qrCell) {
+            if (window.hasActiveEval && window.firstActiveEvalId) {
+                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+            } else {
+                qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
+            }
+        }
+
+        // Update action buttons (without QR button)
         const actionCell = row.querySelector('.sb-action-btns');
         if (!actionCell) return;
 
         let actionsHtml = '';
-
-        // Add QR button if there's an active evaluation
-        if (window.hasActiveEval && window.firstActiveEvalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-        }
-
-        // Add other action buttons
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
         actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
 
         actionCell.innerHTML = actionsHtml;
     });
 };
+
+/* ── Event delegation for QR button clicks ── */
+document.addEventListener('click', function(event) {
+    const qrBtn = event.target.closest('.sb-qr-btn');
+    if (qrBtn) {
+        const subjectId = qrBtn.getAttribute('data-subject-id');
+        const subjectCode = qrBtn.getAttribute('data-subject-code');
+        const section = qrBtn.getAttribute('data-section');
+        const evalId = qrBtn.getAttribute('data-eval-id');
+
+        if (subjectId && subjectCode && evalId) {
+            window.showQRModal(parseInt(subjectId), subjectCode, section || '', parseInt(evalId));
+        }
+    }
+});
 
 // Start polling for new evaluations immediately on load, then every 30 seconds
 window.pollActiveEvaluations(true);  // Initial poll with forceImmediate to get fresh data
