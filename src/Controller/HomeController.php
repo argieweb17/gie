@@ -682,7 +682,7 @@ class HomeController extends AbstractController
 
         // Get active evaluations for SET
         $now = new \DateTime();
-        $activeEvals = $evalPeriodRepo->findBy(['evaluationType' => 'SET']);
+        $activeEvals = $evalPeriodRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
         $activeEvalMap = [];
         foreach ($activeEvals as $eval) {
             $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
@@ -833,7 +833,7 @@ class HomeController extends AbstractController
 
         // Build active evaluations map for real-time polling (same as Class Schedule)
         $now = new \DateTime();
-        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET']);
+        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
         $activeEvalMap = [];
         foreach ($activeEvals as $eval) {
             $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);

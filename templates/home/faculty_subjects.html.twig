@@ -941,9 +941,9 @@ function initializeEventListeners() {
         modal.show();
     };
 
-    window.copyQRLink = function() {
+    window.copyQRLink = function(btn) {
+        if (!btn) btn = event.target;
         navigator.clipboard.writeText(window.currentQrUrl).then(function() {
-            var btn = event.target;
             var orig = btn.innerHTML;
             btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
@@ -1220,7 +1220,7 @@ setInterval(pollActiveEvaluations, 30000);  // Then every 30 seconds with deboun
                         <button type="button" class="btn btn-sm" onclick="downloadQRCode()" style="flex:1;padding:8px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;">
                             <i class="bi bi-download me-1"></i>Download
                         </button>
-                        <button type="button" class="btn btn-sm" onclick="copyQRLink()" style="flex:1;padding:8px;background:#e2e8f0;color:#334155;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;">
+                        <button type="button" class="btn btn-sm" onclick="copyQRLink(this)" style="flex:1;padding:8px;background:#e2e8f0;color:#334155;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;">
                             <i class="bi bi-clipboard me-1"></i>Copy Link
                         </button>
                     </div>
