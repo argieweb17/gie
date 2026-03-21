@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Class Schedule | SET-SEF Evaluation{% endblock %}
+{% block title %}Subject Load | SET-SEF Evaluation{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -188,7 +188,7 @@
                     <i class="bi bi-book-half"></i>
                 </div>
                 <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Class Schedule</h4>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject Load</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
                         <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
                         {% if selectedSemester %}
@@ -651,7 +651,7 @@ function toggleDept(deptId) {
 /* ── Combined filter: search + year level + department ── */
 function applyFilters() {
     var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
-    var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase();
+    var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase().trim();
     var deptId = (document.getElementById('departmentFilter').value || '').trim();
 
     console.log('applyFilters called - search:', q, 'yearLevel:', yl, 'deptId:', deptId);
@@ -660,9 +660,16 @@ function applyFilters() {
 
     // Process each department section
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
-        var sectionDeptId = section.id.replace('deptSection', '');
-        var deptVisible = deptId === '' || sectionDeptId === deptId;
-        console.log('Checking section:', sectionDeptId, 'deptVisible:', deptVisible);
+        var sectionDeptId = section.id.replace('deptSection', '').trim();
+        var deptMatches = deptId === '' || sectionDeptId === deptId;
+
+        console.log('Checking section:', sectionDeptId, 'deptId:', deptId, 'deptMatches:', deptMatches);
+
+        // If department doesn't match, hide entire section
+        if (!deptMatches) {
+            section.style.display = 'none';
+            return;
+        }
 
         var total = 0;
         var visible = 0;
@@ -671,12 +678,11 @@ function applyFilters() {
         section.querySelectorAll('.sb-row').forEach(function(row) {
             total++;
             var text = (row.getAttribute('data-search') || '').toLowerCase();
-            var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase();
+            var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
             var matchSearch = q === '' || text.indexOf(q) !== -1;
             var matchYl = yl === '' || rowYl === yl;
-            var matchDept = deptVisible;
 
-            var show = matchSearch && matchYl && matchDept;
+            var show = matchSearch && matchYl;
             row.style.display = show ? '' : 'none';
             if (show) {
                 visible++;
@@ -684,42 +690,39 @@ function applyFilters() {
             }
         });
 
-        // Update section visibility
-        section.style.display = (!deptVisible || (visible === 0 && (q || yl))) ? 'none' : '';
+        // Update section visibility (show if has visible rows or no filters applied)
+        var hasFilters = (q !== '' || yl !== '');
+        section.style.display = (visible === 0 && hasFilters) ? 'none' : '';
+
         var meta = section.querySelector('.sb-dept-meta');
         if (meta) {
-            if (deptVisible) {
-                meta.textContent = (q || yl) ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
-            }
+            meta.textContent = hasFilters ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
         }
     });
 
     var noResults = document.getElementById('sbNoResults');
-    if (noResults) noResults.style.display = (!visibleAny && (q || yl || deptId)) ? '' : 'none';
+    if (noResults) noResults.style.display = (!visibleAny && (q !== '' || yl !== '' || deptId !== '')) ? '' : 'none';
 }
 
 function searchSubjects(query) {
+    console.log('searchSubjects called with:', query);
     applyFilters();
 }
 
 function filterByYearLevel(val) {
+    console.log('filterByYearLevel called with:', val);
     applyFilters();
 }
 
 /* ── Department filter ── */
 function filterByDepartment(deptId) {
     console.log('filterByDepartment called with:', deptId);
-    // Reset department body visibility, then apply all filters
-    document.querySelectorAll('.sb-dept-section').forEach(function(section) {
-        section.style.display = '';
-    });
-    // Apply all filters together
-    console.log('Calling applyFilters from filterByDepartment');
     applyFilters();
 }
 
 /* ── Semester filter ── */
 function filterBySemester(val) {
+    console.log('filterBySemester called with:', val);
     /* Fade out content then navigate for smooth transition */
     var mc = document.querySelector('.main-content');
     if (mc) {
