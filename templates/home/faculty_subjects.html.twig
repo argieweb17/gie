@@ -286,7 +286,7 @@
     {% for dept in deptGroups %}
     {% if dept.subjects|length > 0 %}
     <div class="sb-dept-section" id="deptSection{{ dept.id }}">
-        <div class="sb-dept-header" data-dept="{{ dept.id }}" role="button" style="cursor: pointer;">
+        <div class="sb-dept-header" data-dept="{{ dept.id }}" role="button" style="cursor: pointer;" onclick="toggleDept({{ dept.id }});">
             <div class="sb-dept-header-left">
                 <div class="sb-dept-icon">
                     <i class="bi bi-building"></i>
@@ -652,12 +652,32 @@ function updateCheckedCount() {
 
 /* ── Toggle department sections ── */
 function toggleDept(deptId) {
-    var body = document.getElementById('deptBody' + deptId);
-    var section = document.getElementById('deptSection' + deptId);
-    if (!body || !section) return;
-    var chevron = section.querySelector('.sb-dept-chevron');
+    if (!deptId) {
+        console.warn('toggleDept called without deptId');
+        return;
+    }
+
+    const bodyId = 'deptBody' + deptId;
+    const sectionId = 'deptSection' + deptId;
+
+    const body = document.getElementById(bodyId);
+    const section = document.getElementById(sectionId);
+
+    if (!body || !section) {
+        console.warn('toggleDept: Could not find elements', { bodyId, sectionId, bodyExists: !!body, sectionExists: !!section });
+        return;
+    }
+
+    // Toggle the body open class
     body.classList.toggle('open');
-    if (chevron) chevron.classList.toggle('open');
+
+    // Toggle the chevron open class
+    const chevron = section.querySelector('.sb-dept-chevron');
+    if (chevron) {
+        chevron.classList.toggle('open');
+    }
+
+    console.log('Department toggled:', deptId, 'now open:', body.classList.contains('open'));
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -940,25 +960,6 @@ function initializeEventListeners() {
             document.getElementById('unloadForm').submit();
         });
     }
-
-    /* Department header toggle - expand/collapse */
-    document.querySelectorAll('.sb-dept-header').forEach(function(header) {
-        header.addEventListener('click', function(e) {
-            // Don't toggle if clicking on the external link
-            if (e.target.closest('.sb-dept-link')) {
-                return;
-            }
-
-            const deptId = this.getAttribute('data-dept');
-            if (!deptId) {
-                console.warn('Department ID not found on header');
-                return;
-            }
-
-            console.log('Department clicked:', deptId);
-            toggleDept(deptId);
-        });
-    });
 
     /* Validate: require section for checked subjects only */
     var loadForm = document.getElementById('loadForm');
