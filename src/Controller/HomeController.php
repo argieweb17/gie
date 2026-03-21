@@ -831,6 +831,23 @@ class HomeController extends AbstractController
         }
         unset($item);
 
+        // Build active evaluations map for real-time polling (same as Class Schedule)
+        $now = new \DateTime();
+        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET']);
+        $activeEvalMap = [];
+        foreach ($activeEvals as $eval) {
+            $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
+            if ($isActive) {
+                $activeEvalMap[$eval->getId()] = [
+                    'id' => $eval->getId(),
+                    'name' => $eval->getLabel(),
+                    'isActive' => true,
+                    'startDate' => $eval->getStartDate(),
+                    'endDate' => $eval->getEndDate(),
+                ];
+            }
+        }
+
         return $this->render('admin/loaded_subjects.html.twig', [
             'subjects' => $loadedItems,
             'totalUnits' => $totalUnits,
@@ -838,6 +855,7 @@ class HomeController extends AbstractController
             'pastLoadsByAY' => array_values($pastLoadsByAY),
             'currentAY' => $currentAY,
             'semesterEnded' => $semesterEnded,
+            'activeEvalMap' => $activeEvalMap,
         ]);
     }
 

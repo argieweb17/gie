@@ -427,6 +427,7 @@
                 <th class="ls-th">Schedule/Time</th>
                 <th class="ls-th">Department</th>
                 <th class="ls-th text-center">Status</th>
+                <th class="ls-th text-center">QR</th>
                 <th class="ls-th text-center">Actions</th>
             </tr>
         </thead>
@@ -504,19 +505,18 @@
                     {% endif %}
                 </td>
                 <td class="text-center">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                    {% if s.evaluation is defined and s.evaluation is not null %}
-                        <button type="button" class="ls-action-btn ls-action-qr"
-                            data-bs-toggle="modal"
-                            data-bs-target="#lsQrModal"
-                            data-eval-id="{{ s.evaluation.id }}"
-                            data-eval-faculty="{{ s.evaluation.faculty ?? '' }}"
-                            data-eval-subject="{{ s.evaluation.subject ?? '' }}"
-                            data-eval-section="{{ s.evaluation.section ?? '' }}"
-                            data-eval-school-year="{{ s.evaluation.schoolYear ?? '' }}">
+                    {% if activeEvalMap|length > 0 %}
+                        {% set firstEvalId = activeEvalMap|keys|first %}
+                        <button type="button" class="btn btn-sm ls-action-qr"
+                            onclick="showLoadedSubjectsQR({{ s.subject.id }}, '{{ s.subject.subjectCode|e('js') }}', '{{ s.section|default('')|e('js') }}', {{ firstEvalId }})"
+                            title="Generate QR Code"
+                            style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;">
                             <i class="bi bi-qr-code"></i>
                         </button>
                     {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
                     {% if s.fslId %}
                     <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
@@ -877,6 +877,80 @@ function lsPrint() {
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
         });
     };
+
+    /* ─── Real-time QR Polling ─── */
+    const activeEvaluations = {{ activeEvalMap|json_encode }};
+    let lastPolledTime = 0;
+    let currentActiveEvals = activeEvaluations;
+
+    window.pollActiveEvaluationsLS = function(forceImmediate) {
+        const now = Date.now();
+        if (!forceImmediate && now - lastPolledTime < 5000) return;
+        lastPolledTime = now;
+
+        fetch('{{ path("api_active_evaluations") }}')
+            .then(response => response.json())
+            .then(data => {
+                const newEvals = data.evaluations || [];
+                const newEvalMap = {};
+                newEvals.forEach(e => {
+                    newEvalMap[e.id] = e;
+                });
+
+                const oldKeys = Object.keys(currentActiveEvals || {}).sort();
+                const newKeys = Object.keys(newEvalMap).sort();
+
+                if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
+                    console.log('Loaded subjects: Evaluation list changed!');
+                    currentActiveEvals = newEvalMap;
+                    window.hasActiveEvalLS = newKeys.length > 0;
+                    window.firstActiveEvalIdLS = newKeys.length > 0 ? newKeys[0] : null;
+                    updateQRButtons();
+                }
+            })
+            .catch(error => console.error('Poll error:', error));
+    };
+
+    function updateQRButtons() {
+        if (!window.hasActiveEvalLS) return;
+
+        document.querySelectorAll('#lsTableBody .ls-row').forEach(row => {
+            const qrButton = row.querySelector('button[onclick*="showLoadedSubjectsQR"]');
+            if (!qrButton && window.firstActiveEvalIdLS) {
+                // QR button doesn't exist, need to add it
+                const qrCell = row.querySelector('td:nth-child(10)'); // QR column is 10th
+                if (qrCell && qrCell.querySelectorAll('button').length === 0) {
+                    const subjectId = row.getAttribute('data-view-id');
+                    const code = row.getAttribute('data-view-code');
+                    const section = row.getAttribute('data-view-section') || '';
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-sm ls-action-qr';
+                    btn.setAttribute('onclick', `showLoadedSubjectsQR(${subjectId}, '${code}', '${section}', ${window.firstActiveEvalIdLS})`);
+                    btn.setAttribute('title', 'Generate QR Code');
+                    btn.setAttribute('style', 'width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;');
+                    btn.innerHTML = '<i class="bi bi-qr-code"></i>';
+                    qrCell.appendChild(btn);
+                }
+            }
+        });
+    }
+
+    window.showLoadedSubjectsQR = function(subjectId, code, section, evalId) {
+        const qrUrl = '{{ path('evaluation_qr_redirect_with_section', {'id': '__EVAL_ID__', 'subjectId': '__SUBJECT_ID__', 'section': '__SECTION__'}) }}'
+            .replace('__EVAL_ID__', evalId)
+            .replace('__SUBJECT_ID__', subjectId)
+            .replace('__SECTION__', encodeURIComponent(section || ''));
+
+        window.currentQrUrl = window.location.origin + qrUrl;
+        document.getElementById('lsQrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(window.currentQrUrl);
+        new bootstrap.Modal(document.getElementById('lsQrModal')).show();
+    };
+
+    // Start polling
+    window.pollActiveEvaluationsLS(true);
+    setInterval(() => window.pollActiveEvaluationsLS(), 30000);
 })();
 </script>
 {% endblock %}
