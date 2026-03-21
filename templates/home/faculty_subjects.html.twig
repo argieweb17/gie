@@ -574,6 +574,11 @@ const activeEvaluations = {{ activeEvalMap|json_encode }};
 window.hasActiveEval = Object.keys(activeEvaluations).length > 0;
 window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
 
+// Debug log
+console.log('Active Evaluations on page load:', activeEvaluations);
+console.log('hasActiveEval:', window.hasActiveEval);
+console.log('firstActiveEvalId:', window.firstActiveEvalId);
+
 /* ── Checked count ── */
 function updateCheckedCount() {
     var count = document.querySelectorAll('.subject-check:checked').length;
@@ -713,9 +718,13 @@ function updateRowVisual(cb) {
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded</span>';
 
         // Build action buttons with QR if evaluation is active
+        console.log('Loading subject:', code, '| hasActiveEval:', window.hasActiveEval, '| firstActiveEvalId:', window.firstActiveEvalId);
         var actionsHtml = '';
         if (window.hasActiveEval && window.firstActiveEvalId) {
+            console.log('Adding QR button for subject:', code);
             actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+        } else {
+            console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
         }
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
         actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
@@ -895,11 +904,18 @@ window.pollActiveEvaluations = function() {
             const oldKeys = Object.keys(currentActiveEvals || {}).sort();
             const newKeys = Object.keys(newEvalMap).sort();
 
+            // Debug log
+            if (newKeys.length > 0 || oldKeys.length > 0) {
+                console.log('Poll update - Old evaluations:', oldKeys, 'New evaluations:', newKeys);
+            }
+
             // Only update if evaluation list actually changed
             if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
+                console.log('Evaluation list changed! Updating UI...');
                 currentActiveEvals = newEvalMap;
                 window.firstActiveEvalId = newKeys.length > 0 ? newKeys[0] : null;
                 window.hasActiveEval = newKeys.length > 0;
+                console.log('Updated hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
 
                 // Update QR buttons for all loaded subjects
                 updateQRButtonsForLoadedSubjects();
