@@ -654,16 +654,15 @@ function applyFilters() {
     var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase().trim();
     var deptId = (document.getElementById('departmentFilter').value || '').trim();
 
-    console.log('applyFilters called - search:', q, 'yearLevel:', yl, 'deptId:', deptId);
+    console.log('applyFilters - search:', q, 'yearLevel:', yl, 'deptId:', deptId);
 
-    var visibleAny = false;
+    var visibleSectionCount = 0;
+    var anyRowVisible = false;
 
     // Process each department section
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
         var sectionDeptId = section.id.replace('deptSection', '').trim();
-        var deptMatches = deptId === '' || sectionDeptId === deptId;
-
-        console.log('Checking section:', sectionDeptId, 'deptId:', deptId, 'deptMatches:', deptMatches);
+        var deptMatches = (deptId === '' || sectionDeptId === deptId);
 
         // If department doesn't match, hide entire section
         if (!deptMatches) {
@@ -679,29 +678,44 @@ function applyFilters() {
             total++;
             var text = (row.getAttribute('data-search') || '').toLowerCase();
             var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
-            var matchSearch = q === '' || text.indexOf(q) !== -1;
-            var matchYl = yl === '' || rowYl === yl;
+            var matchSearch = (q === '' || text.indexOf(q) !== -1);
+            var matchYl = (yl === '' || rowYl === yl);
 
-            var show = matchSearch && matchYl;
+            var show = (matchSearch && matchYl);
             row.style.display = show ? '' : 'none';
             if (show) {
                 visible++;
-                visibleAny = true;
+                anyRowVisible = true;
             }
         });
 
-        // Update section visibility (show if has visible rows or no filters applied)
-        var hasFilters = (q !== '' || yl !== '');
-        section.style.display = (visible === 0 && hasFilters) ? 'none' : '';
+        // Always show the section if dept matches, hide only if zero visible rows with filters
+        var hasFilters = (q !== '' || yl !== '' || deptId !== '');
+        if (visible > 0 || (visible === 0 && !hasFilters)) {
+            section.style.display = '';
+            visibleSectionCount++;
+        } else {
+            section.style.display = 'none';
+        }
 
+        // Update meta text
         var meta = section.querySelector('.sb-dept-meta');
-        if (meta) {
-            meta.textContent = hasFilters ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+        if (meta && total > 0) {
+            if (q !== '' || yl !== '') {
+                meta.textContent = visible + ' of ' + total + ' subject' + (total !== 1 ? 's' : '') + ' shown';
+            } else {
+                meta.textContent = total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+            }
         }
     });
 
+    // Show "no results" message if no rows visible and filters are applied
     var noResults = document.getElementById('sbNoResults');
-    if (noResults) noResults.style.display = (!visibleAny && (q !== '' || yl !== '' || deptId !== '')) ? '' : 'none';
+    if (noResults) {
+        noResults.style.display = (!anyRowVisible && (q !== '' || yl !== '' || deptId !== '')) ? '' : 'none';
+    }
+
+    console.log('Filter complete - visible sections:', visibleSectionCount, 'any row visible:', anyRowVisible);
 }
 
 function searchSubjects(query) {
