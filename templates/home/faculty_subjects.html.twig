@@ -5,17 +5,29 @@
 {% block stylesheets %}
 <style>
 /* ─── Header ─── */
-.sb-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
-.sb-header-inner{padding:22px 26px 18px;}
-.sb-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
-.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
-.sb-meta-filter{background:rgba(251,191,36,.2);color:#fbbf24;}
-.sb-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
-.sb-stat{flex:1;text-align:center;}
-.sb-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
-.sb-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
-.sb-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
-.sb-val-success{color:#34d399!important;}
+.sb-header{border-radius:1.25rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.98),rgba(30,64,175,.92) 40%,rgba(5,150,105,.88) 100%);box-shadow:0 8px 32px rgba(26,86,219,.18);margin-bottom:24px;position:relative;border:1px solid rgba(255,255,255,.06);}
+.sb-header::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at top right, rgba(255,255,255,.05), transparent 60%);pointer-events:none;}
+.sb-header-inner{padding:28px 32px;position:relative;z-index:1;}
+.sb-header-top{display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;}
+.sb-header-left{display:flex;align-items:center;gap:16px;flex:1;}
+.sb-header-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.05));backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.sb-header-content h4{font-size:1.3rem;font-weight:800;color:#fff;margin:0 0 6px;letter-spacing:-.4px;line-height:1.1;}
+.sb-header-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);padding:5px 12px;border-radius:22px;font-weight:600;font-size:.78rem;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.sb-meta-filter{background:rgba(251,191,36,.25);color:#fef3c7;border-color:rgba(251,191,36,.4);}
+.sb-header-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);padding:7px 18px;border-radius:24px;font-weight:700;font-size:.78rem;cursor:pointer;backdrop-filter:blur(4px);transition:all .25s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);white-space:nowrap;}
+.sb-header-btn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.35);box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateY(-1px);}
+.sb-stats-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
+.sb-stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;backdrop-filter:blur(6px);transition:all .25s ease;position:relative;overflow:hidden;}
+.sb-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);opacity:0;}
+.sb-stat-card:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateY(-2px);}
+.sb-stat-card:hover::before{opacity:1;animation:shimmer 1.5s infinite;}
+.sb-stat-icon{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:10px;}
+.sb-stat-val{display:block;font-size:1.4rem;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-.4px;}
+.sb-stat-lbl{display:block;font-size:.65rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.9px;margin-top:6px;font-weight:600;}
+.sb-stat-divider{display:none;}
+.sb-val-success{color:#86efac!important;}
+@keyframes shimmer{0%,100%{opacity:0;}50%{opacity:1;}}
 
 /* ─── Toolbar ─── */
 .sb-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
@@ -143,12 +155,21 @@
     .sb-toolbar{flex-direction:column;align-items:stretch;gap:8px;}
     .sb-search-wrap{max-width:100%;}
     .sb-toolbar-right{justify-content:flex-end;margin-left:0;}
+    .sb-header-top{flex-direction:column;}
+    .sb-header-left{width:100%;}
+    .sb-stats-container{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
 }
 @media(max-width:767.98px){
-    .sb-header-inner{padding:16px 18px 14px;}
-    .sb-stats-row{flex-wrap:wrap;gap:8px;}
-    .sb-stat{min-width:45%;}
-    .sb-stat-divider{display:none;}
+    .sb-header-inner{padding:20px 20px 24px;}
+    .sb-header-top{margin-bottom:20px;gap:12px;}
+    .sb-header-icon{width:48px;height:48px;font-size:1.2rem;}
+    .sb-header-content h4{font-size:1.15rem;}
+    .sb-meta-pill{padding:4px 10px;font-size:.72rem;}
+    .sb-stats-container{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;}
+    .sb-stat-card{padding:12px;}
+    .sb-stat-val{font-size:1.2rem;}
+    .sb-stat-lbl{font-size:.6rem;margin-top:4px;}
+    .sb-stat-icon{width:28px;height:28px;font-size:.85rem;margin-bottom:8px;}
     .sb-dept-header{padding:12px 16px;}
     .sb-table{font-size:.75rem;}
     .sb-table thead th{padding:8px 10px;font-size:.58rem;}
@@ -182,39 +203,45 @@
    ═══════════════════════════════════════ #}
 <div class="sb-header">
     <div class="sb-header-inner">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
+        <div class="sb-header-top">
+            <div class="sb-header-left">
                 <div class="sb-header-icon">
                     <i class="bi bi-book-half"></i>
                 </div>
-                <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject load</h4>
-                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
+                <div class="sb-header-content">
+                    <h4>Subject Load</h4>
+                    <div class="sb-header-meta">
+                        <span class="sb-meta-pill"><i class="bi bi-collection me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
                         {% if selectedSemester %}
                             <span class="sb-meta-pill sb-meta-filter"><i class="bi bi-funnel-fill me-1"></i>{{ selectedSemester }}</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn btn-sm text-white fw-bold rounded-pill px-3" style="background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);font-size:.78rem;" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                <i class="bi bi-plus-circle-fill me-1"></i>Add Subject
+            <button type="button" class="sb-header-btn" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <i class="bi bi-plus-circle-fill"></i>Add Subject
             </button>
         </div>
-        <div class="sb-stats-row">
-            <div class="sb-stat">
+        <div class="sb-stats-container">
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon"><i class="bi bi-book"></i></div>
                 <span class="sb-stat-val">{{ totalSubjects }}</span>
                 <span class="sb-stat-lbl">Total Subjects</span>
             </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon"><i class="bi bi-check-circle-fill"></i></div>
                 <span class="sb-stat-val sb-val-success">{{ loadedSubjectIds|length }}</span>
                 <span class="sb-stat-lbl">Loaded</span>
             </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon"><i class="bi bi-building"></i></div>
                 <span class="sb-stat-val">{{ totalDepts }}</span>
                 <span class="sb-stat-lbl">Departments</span>
+            </div>
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                <span class="sb-stat-val">{{ (assignedSubjects|length) }}</span>
+                <span class="sb-stat-lbl">Assigned</span>
             </div>
         </div>
     </div>
