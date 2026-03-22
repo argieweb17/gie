@@ -1684,10 +1684,22 @@ a.rg-contact-item:hover {
                             </div>
                             <div class="row g-3">
                                 <div class="col-sm-6">
+                                    <label class="rg-label">Employment Status</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-briefcase"></i>
+                                        <select class="form-select rg-select" name="{{ registrationForm.employmentStatus.vars.full_name }}" required>
+                                            <option value="">Select employment status</option>
+                                            {% for choice in registrationForm.employmentStatus.vars.choices %}
+                                                <option value="{{ choice.value }}" {{ registrationForm.employmentStatus.vars.value == choice.value ? 'selected' : '' }}>{{ choice.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
                                     <label class="rg-label">Office / Unit</label>
                                     <div class="rg-input-wrap">
                                         <i class="bi bi-building"></i>
-                                        <input type="text" class="form-control rg-input" name="_office" placeholder="e.g. Registrar's Office" required>
+                                        <input type="text" class="form-control rg-input" name="_office" value="QUAMC Office" readonly required>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
@@ -2149,7 +2161,7 @@ a.rg-contact-item:hover {
     /* ── Submit with approval confirmation for non-student roles ── */
     var approvalModal = null;
     var approvalModalEl = document.getElementById('approvalConfirmModal');
-    if (approvalModalEl) {
+    if (approvalModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         approvalModal = new bootstrap.Modal(approvalModalEl);
     }
     var confirmProceedBtn = document.getElementById('confirmProceedBtn');
@@ -2324,8 +2336,10 @@ a.rg-contact-item:hover {
 
     /* ── Success modal ── */
     {% if registrationSuccess|default(false) %}
-    var successModal = new bootstrap.Modal(document.getElementById('registrationSuccessModal'));
-    successModal.show();
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        var successModal = new bootstrap.Modal(document.getElementById('registrationSuccessModal'));
+        successModal.show();
+    }
     {% endif %}
 
     /* ═══ College → Department filter (shared) ═══ */
@@ -2341,13 +2355,25 @@ a.rg-contact-item:hover {
     if (hiddenDeptSelect) {
         Array.prototype.slice.call(hiddenDeptSelect.options).forEach(function(opt) {
             if (opt.value) {
-                allDeptOptions.push({ value: opt.value, text: opt.text });
+                allDeptOptions.push({
+                    value: String(opt.value),
+                    text: opt.text,
+                    college: (deptCollegeMap && deptCollegeMap[String(opt.value)] !== undefined)
+                        ? String(deptCollegeMap[String(opt.value)])
+                        : ''
+                });
             }
         });
         hiddenDeptSelect.disabled = true;
     }
 
+    function normalizeText(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
     function filterDeptsByCollege(collegeSel, deptSel) {
+        if (!collegeSel || !deptSel) return;
+
         var college = collegeSel.value;
         deptSel.innerHTML = '';
 
@@ -2357,6 +2383,8 @@ a.rg-contact-item:hover {
             return;
         }
 
+        var normalizedCollege = normalizeText(college);
+
         var placeholder = document.createElement('option');
         placeholder.value = '';
         placeholder.textContent = 'Select department';
@@ -2364,7 +2392,7 @@ a.rg-contact-item:hover {
 
         var count = 0;
         allDeptOptions.forEach(function(opt) {
-            if (deptCollegeMap[opt.value] === college) {
+            if (normalizeText(opt.college) === normalizedCollege) {
                 var o = document.createElement('option');
                 o.value = opt.value;
                 o.textContent = opt.text;
@@ -2386,6 +2414,13 @@ a.rg-contact-item:hover {
     window.filterFacultyDepts = function() {
         filterDeptsByCollege(facultyCollegeSel, facultyDeptSel);
     };
+
+    if (studentCollegeSel) {
+        studentCollegeSel.addEventListener('change', window.filterStudentDepts);
+    }
+    if (facultyCollegeSel) {
+        facultyCollegeSel.addEventListener('change', window.filterFacultyDepts);
+    }
 })();
 </script>
 {% endblock %}

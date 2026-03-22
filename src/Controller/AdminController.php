@@ -256,6 +256,15 @@ class AdminController extends AbstractController
                 $subj->setFaculty(null);
             }
 
+            // Avoid FK constraint errors when deleting users tied to faculty/admin messages.
+            $em->createQuery('UPDATE App\\Entity\\EvaluationMessage m SET m.repliedBy = NULL WHERE m.repliedBy = :user')
+                ->setParameter('user', $user)
+                ->execute();
+
+            $em->createQuery('DELETE FROM App\\Entity\\EvaluationMessage m WHERE m.sender = :user')
+                ->setParameter('user', $user)
+                ->execute();
+
             $em->remove($user);
             $em->flush();
             $this->addFlash('success', 'User deleted.');

@@ -256,6 +256,7 @@ class HomeController extends AbstractController
                 'IDENTITY(r.faculty) as facultyId',
                 'IDENTITY(r.subject) as subjectId',
                 'COUNT(DISTINCT r.evaluator) as evaluatorCount',
+                'MAX(r.section) as responseSection',
                 'MAX(r.submittedAt) as lastSubmitted'
             )
             ->where('r.isDraft = false')
@@ -517,11 +518,17 @@ class HomeController extends AbstractController
             $fac  = $uMap[$sub['facultyId']] ?? null;
             $subj = isset($sub['subjectId']) ? ($sMap[$sub['subjectId']] ?? null) : null;
 
+            $evaluationTime = $ep ? trim((string) ($ep->getTime() ?? '')) : '';
+            $subjectSchedule = $subj ? trim((string) ($subj->getSchedule() ?? '')) : '';
+            $evaluationSection = $ep ? trim((string) ($ep->getSection() ?? '')) : '';
+            $responseSection = trim((string) ($sub['responseSection'] ?? ''));
+            $subjectSection = $subj ? trim((string) ($subj->getSection() ?? '')) : '';
+
             $completedEvals[] = [
                 'subject'       => $subj ? $subj->getSubjectName() : ($ep ? ($ep->getSubject() ?? '—') : '—'),
                 'faculty'       => $fac ? $fac->getFullName() : ($ep ? ($ep->getFaculty() ?? '—') : '—'),
-                'time'          => $ep ? ($ep->getTime() ?? '—') : '—',
-                'section'       => $ep ? ($ep->getSection() ?? '—') : '—',
+                'time'          => $evaluationTime !== '' ? $evaluationTime : ($subjectSchedule !== '' ? $subjectSchedule : '—'),
+                'section'       => $evaluationSection !== '' ? $evaluationSection : ($responseSection !== '' ? $responseSection : ($subjectSection !== '' ? $subjectSection : '—')),
                 'submittedAt'   => $sub['lastSubmitted'],
                 'college'       => ($ep && $ep->getDepartment()) ? ($ep->getDepartment()->getCollegeName() ?? '—') : '—',
                 'department'    => ($ep && $ep->getDepartment()) ? $ep->getDepartment()->getDepartmentName() : '—',
