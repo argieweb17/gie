@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Enrollment;
 use App\Entity\EvaluationMessage;
 use App\Entity\FacultyNotificationRead;
 use App\Entity\FacultySubjectLoad;
@@ -16,7 +15,6 @@ use App\Repository\CurriculumRepository;
 use App\Repository\FacultyNotificationReadRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\DepartmentRepository;
-use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\MessageNotificationRepository;
@@ -80,7 +78,6 @@ class HomeController extends AbstractController
         AuditLogRepository $auditRepo,
         CurriculumRepository $curriculumRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
-        EnrollmentRepository $enrollRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -102,7 +99,7 @@ class HomeController extends AbstractController
         }
 
         // Student (ROLE_USER)
-        return $this->studentDashboard($user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo, $enrollRepo);
+        return $this->studentDashboard($user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo);
     }
 
     private function adminDashboard(
@@ -690,6 +687,9 @@ class HomeController extends AbstractController
                 $activeEvalMap[$eval->getId()] = [
                     'id' => $eval->getId(),
                     'name' => $eval->getLabel(),
+                    'faculty' => $eval->getFaculty(),
+                    'subject' => $eval->getSubject(),
+                    'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                     'isActive' => true,
                     'startDate' => $eval->getStartDate(),
                     'endDate' => $eval->getEndDate(),
@@ -841,6 +841,9 @@ class HomeController extends AbstractController
                 $activeEvalMap[$eval->getId()] = [
                     'id' => $eval->getId(),
                     'name' => $eval->getLabel(),
+                    'faculty' => $eval->getFaculty(),
+                    'subject' => $eval->getSubject(),
+                    'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                     'isActive' => true,
                     'startDate' => $eval->getStartDate(),
                     'endDate' => $eval->getEndDate(),
@@ -1581,531 +1584,94 @@ class HomeController extends AbstractController
             }
         }
 
-        // Find active SET evaluations matching the faculty's subjects
+        // Find active SET evaluations
         $openEvals = $evalRepo->findActive('SET');
         $now = new \DateTime();
-        $hasActiveEval = false;
-        $activeEvalId = null;
+        $activeEvals = [];
 
         foreach ($openEvals as $eval) {
             // Check if evaluation is currently active (within start and end dates)
             $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
             if ($isActive) {
-                $hasActiveEval = true;
-                $activeEvalId = $eval->getId();
-                break; // Use first active evaluation
+                $activeEvals[] = $eval;
             }
+        }
+
+        // Build active evaluations map for real-time polling
+        $activeEvalMap = [];
+        foreach ($activeEvals as $eval) {
+            $activeEvalMap[$eval->getId()] = [
+                'id' => $eval->getId(),
+                'name' => $eval->getLabel(),
+                'faculty' => $eval->getFaculty(),
+                'subject' => $eval->getSubject(),
+                'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
+                'isActive' => true,
+                'startDate' => $eval->getStartDate(),
+                'endDate' => $eval->getEndDate(),
+            ];
         }
 
         // Attach evaluation to each schedule item
         foreach ($scheduleItems as &$item) {
-            // Show QR button for all subjects when there's an active evaluation
-            if ($hasActiveEval && $activeEvalId) {
-                $item['evaluation'] = ['id' => $activeEvalId];
-            } else {
-                $item['evaluation'] = null;
+            $item['evaluation'] = null;
+
+            // For each active evaluation, check if it applies to this subject
+            foreach ($activeEvals as $eval) {
+                $evalMatch = false;
+
+                // Get evaluation's faculty field
+                $evalFaculty = trim($eval->getFaculty() ?? '');
+                $userFullName = $user->getFirstName() . ' ' . $user->getLastName();
+                $userLastFirst = $user->getLastName() . ', ' . $user->getFirstName();
+
+                // Check if evaluation is for the current faculty member
+                if (!empty($evalFaculty)) {
+                    // Case-insensitive comparison, trim spaces
+                    $evalFacultyLower = strtolower($evalFaculty);
+                    $userNameLower = strtolower($userFullName);
+                    $userNameLastFirstLower = strtolower($userLastFirst);
+
+                    if ($evalFacultyLower === $userNameLower ||
+                        $evalFacultyLower === $userNameLastFirstLower ||
+                        stripos($evalFacultyLower, strtolower($user->getLastName())) !== false) {
+                        $evalMatch = true;
+                    }
+                }
+
+                // If evaluation has specific subject, also check subject match
+                $evalSubject = trim($eval->getSubject() ?? '');
+                if (!empty($evalSubject) && $evalMatch) {
+                    // Only show if both faculty and subject match
+                    $evalMatch = (stripos($item['subject']->getSubjectCode(), $evalSubject) === 0 ||
+                                  stripos($item['subject']->getSubjectName(), $evalSubject) !== false);
+                } elseif (!empty($evalSubject) && empty($evalFaculty)) {
+                    // If only subject is specified (no faculty), match by subject
+                    $evalMatch = (stripos($item['subject']->getSubjectCode(), $evalSubject) === 0 ||
+                                  stripos($item['subject']->getSubjectName(), $evalSubject) !== false);
+                } elseif (empty($evalSubject) && empty($evalFaculty)) {
+                    // If neither subject nor faculty is specified, show for all
+                    $evalMatch = true;
+                }
+
+                if ($evalMatch) {
+                    $item['evaluation'] = [
+                        'id' => $eval->getId(),
+                        'faculty' => $eval->getFaculty() ?? '',
+                        'schoolYear' => $eval->getLabel() ?? '',
+                    ];
+                    break; // Use first matching evaluation
+                }
             }
         }
         unset($item);
 
         return $this->render('home/faculty/schedule.html.twig', [
             'subjects' => $scheduleItems,
+            'activeEvalMap' => $activeEvalMap,
         ]);
     }
 
-    #[Route('/faculty/enrollment-management', name: 'faculty_enrollment_management')]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentManagement(EnrollmentRepository $enrollRepo): Response
-    {
-        /** @var User $user */
-        $user = $this->getUser();
-
-        $enrollments = $enrollRepo->createQueryBuilder('e')
-            ->join('e.subject', 's')
-            ->join('e.student', 'st')
-            ->leftJoin('st.department', 'd')
-            ->addSelect('s', 'st', 'd')
-            ->where('s.faculty = :fid')
-            ->setParameter('fid', $user->getId())
-            ->orderBy('s.subjectCode', 'ASC')
-            ->addOrderBy('st.lastName', 'ASC')
-            ->addOrderBy('st.firstName', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        $subjectCounts = [];
-        foreach ($enrollments as $enrollment) {
-            $subject = $enrollment->getSubject();
-            $sid = $subject->getId();
-            if (!isset($subjectCounts[$sid])) {
-                $subjectCounts[$sid] = [
-                    'subject' => $subject,
-                    'count' => 0,
-                ];
-            }
-            $subjectCounts[$sid]['count']++;
-        }
-
-        $pendingCount = 0;
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->isPending()) {
-                $pendingCount++;
-            }
-        }
-
-        // Build section grouping per subject for sectioning management
-        $sectionData = [];
-        foreach ($enrollments as $enrollment) {
-            $subject = $enrollment->getSubject();
-            $sid = $subject->getId();
-            $section = $enrollment->getSection() ?: $subject->getSection() ?: 'Unassigned';
-            if (!isset($sectionData[$sid])) {
-                $sectionData[$sid] = [
-                    'subject' => $subject,
-                    'sections' => [],
-                ];
-            }
-            if (!isset($sectionData[$sid]['sections'][$section])) {
-                $sectionData[$sid]['sections'][$section] = [];
-            }
-            $sectionData[$sid]['sections'][$section][] = $enrollment;
-        }
-        // Sort sections within each subject
-        foreach ($sectionData as &$sd) {
-            ksort($sd['sections']);
-        }
-        unset($sd);
-
-        return $this->render('home/faculty/enrollment_management.html.twig', [
-            'enrollments' => $enrollments,
-            'subjectCounts' => array_values($subjectCounts),
-            'pendingCount' => $pendingCount,
-            'sectionData' => array_values($sectionData),
-        ]);
-    }
-
-    #[Route('/student/enrolled-subjects', name: 'student_enrolled_subjects')]
-    #[IsGranted('ROLE_USER')]
-    public function studentEnrolledSubjects(EnrollmentRepository $enrollRepo, SubjectRepository $subjectRepo, AcademicYearRepository $ayRepo, DepartmentRepository $deptRepo): Response
-    {
-        if ($this->isGranted('ROLE_FACULTY') || $this->isGranted('ROLE_STAFF') || $this->isGranted('ROLE_SUPERIOR') || $this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-        $enrollments = $enrollRepo->findByStudent($user->getId());
-        $availableSubjects = $this->getStudentAvailableLoadedSubjects($user, $subjectRepo, $enrollRepo, $ayRepo);
-
-        // Collect distinct year levels and departments from available subjects for filters
-        $yearLevels = [];
-        $faculties = [];
-        foreach ($availableSubjects as $s) {
-            if ($s->getYearLevel()) $yearLevels[$s->getYearLevel()] = $s->getYearLevel();
-            if ($s->getFaculty()) $faculties[$s->getFaculty()->getId()] = $s->getFaculty()->getFullName();
-        }
-        sort($yearLevels);
-        asort($faculties);
-
-        return $this->render('home/student_enrolled_subjects.html.twig', [
-            'enrollments' => $enrollments,
-            'availableSubjects' => $availableSubjects,
-            'currentAY' => $ayRepo->findCurrent(),
-            'yearLevels' => array_values($yearLevels),
-            'faculties' => $faculties,
-        ]);
-    }
-
-    #[Route('/student/enrolled-subjects/add', name: 'student_enrolled_subject_add', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function studentEnrolledSubjectAdd(
-        Request $request,
-        SubjectRepository $subjectRepo,
-        EnrollmentRepository $enrollRepo,
-        AcademicYearRepository $ayRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        if ($this->isGranted('ROLE_FACULTY') || $this->isGranted('ROLE_STAFF') || $this->isGranted('ROLE_SUPERIOR') || $this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('student_add_subject', $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        $subjectId = (int) $request->request->get('subject_id');
-        $availableMap = [];
-        foreach ($this->getStudentAvailableLoadedSubjects($user, $subjectRepo, $enrollRepo, $ayRepo) as $subject) {
-            $availableMap[$subject->getId()] = $subject;
-        }
-
-        if (!isset($availableMap[$subjectId])) {
-            $this->addFlash('danger', 'Selected subject is not available for your account.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        if ($enrollRepo->isEnrolled($user->getId(), $subjectId)) {
-            $this->addFlash('info', 'You are already enrolled in that subject.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        $enrollment = new Enrollment();
-        $enrollment->setStudent($user);
-        $enrollment->setSubject($availableMap[$subjectId]);
-        if ($availableMap[$subjectId]->getSection()) $enrollment->setSection($availableMap[$subjectId]->getSection());
-        if ($availableMap[$subjectId]->getSchedule()) $enrollment->setSchedule($availableMap[$subjectId]->getSchedule());
-        $em->persist($enrollment);
-        $em->flush();
-
-        $this->addFlash('success', 'Subject added to your enrolled subjects.');
-        return $this->redirectToRoute('student_enrolled_subjects');
-    }
-
-    #[Route('/student/enrolled-subjects/import', name: 'student_enrolled_subject_import', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function studentEnrolledSubjectImport(
-        Request $request,
-        SubjectRepository $subjectRepo,
-        EnrollmentRepository $enrollRepo,
-        AcademicYearRepository $ayRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        if ($this->isGranted('ROLE_FACULTY') || $this->isGranted('ROLE_STAFF') || $this->isGranted('ROLE_SUPERIOR') || $this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('student_import_subjects', $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        $availableSubjects = $this->getStudentAvailableLoadedSubjects($user, $subjectRepo, $enrollRepo, $ayRepo);
-        $count = 0;
-        foreach ($availableSubjects as $subject) {
-            if ($enrollRepo->isEnrolled($user->getId(), $subject->getId())) {
-                continue;
-            }
-
-            $enrollment = new Enrollment();
-            $enrollment->setStudent($user);
-            $enrollment->setSubject($subject);
-            if ($subject->getSection()) $enrollment->setSection($subject->getSection());
-            if ($subject->getSchedule()) $enrollment->setSchedule($subject->getSchedule());
-            $em->persist($enrollment);
-            $count++;
-        }
-        $em->flush();
-
-        if ($count > 0) {
-            $this->addFlash('success', $count . ' subject' . ($count !== 1 ? 's' : '') . ' imported from your load slip.');
-        } else {
-            $this->addFlash('info', 'No new subjects were available from your load slip.');
-        }
-
-        return $this->redirectToRoute('student_enrolled_subjects');
-    }
-
-    #[Route('/student/enrolled-subjects/{id}/remove', name: 'student_enrolled_subject_remove', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function studentEnrolledSubjectRemove(
-        int $id,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        if ($this->isGranted('ROLE_FACULTY') || $this->isGranted('ROLE_STAFF') || $this->isGranted('ROLE_SUPERIOR') || $this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_dashboard');
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('student_remove_subject_' . $id, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        $enrollment = $enrollRepo->find($id);
-        if (!$enrollment || $enrollment->getStudent()->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Enrollment record not found.');
-            return $this->redirectToRoute('student_enrolled_subjects');
-        }
-
-        $subjectLabel = $enrollment->getSubject()->getSubjectCode() . ' - ' . $enrollment->getSubject()->getSubjectName();
-        $em->remove($enrollment);
-        $em->flush();
-
-        $this->addFlash('success', 'Removed subject from your load slip: ' . $subjectLabel . '.');
-        return $this->redirectToRoute('student_enrolled_subjects');
-    }
-
-    #[Route('/faculty/enrollment/{id}/approve', name: 'faculty_enrollment_approve', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentApprove(
-        int $id,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_enrollment_action_' . $id, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollment = $enrollRepo->find($id);
-        if (!$enrollment || $enrollment->getSubject()->getFaculty()?->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Enrollment record not found.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollment->setStatus(Enrollment::STATUS_APPROVED);
-        $em->flush();
-
-        $this->addFlash('success', 'Enrollment approved for ' . $enrollment->getStudent()->getFullName() . '.');
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/{id}/reject', name: 'faculty_enrollment_reject', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentReject(
-        int $id,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_enrollment_action_' . $id, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollment = $enrollRepo->find($id);
-        if (!$enrollment || $enrollment->getSubject()->getFaculty()?->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Enrollment record not found.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollment->setStatus(Enrollment::STATUS_REJECTED);
-        $em->flush();
-
-        $this->addFlash('warning', 'Enrollment rejected for ' . $enrollment->getStudent()->getFullName() . '.');
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/approve-all', name: 'faculty_enrollment_approve_all', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentApproveAll(
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_approve_all', $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollments = $enrollRepo->createQueryBuilder('e')
-            ->join('e.subject', 's')
-            ->where('s.faculty = :fid')
-            ->andWhere('e.status = :status')
-            ->setParameter('fid', $user->getId())
-            ->setParameter('status', Enrollment::STATUS_PENDING)
-            ->getQuery()
-            ->getResult();
-
-        $count = 0;
-        foreach ($enrollments as $enrollment) {
-            $enrollment->setStatus(Enrollment::STATUS_APPROVED);
-            $count++;
-        }
-        $em->flush();
-
-        if ($count > 0) {
-            $this->addFlash('success', $count . ' pending enrollment' . ($count !== 1 ? 's' : '') . ' approved.');
-        } else {
-            $this->addFlash('info', 'No pending enrollments to approve.');
-        }
-
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/{id}/update-section', name: 'faculty_enrollment_update_section', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentUpdateSection(
-        int $id,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_section_update_' . $id, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollment = $enrollRepo->find($id);
-        if (!$enrollment || $enrollment->getSubject()->getFaculty()?->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Enrollment record not found.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $section = trim($request->request->get('section', ''));
-        $enrollment->setSection($section ?: null);
-        $em->flush();
-
-        $this->addFlash('success', 'Section updated for ' . $enrollment->getStudent()->getFullName() . '.');
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/bulk-section', name: 'faculty_enrollment_bulk_section', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentBulkSection(
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_bulk_section', $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollmentIds = $request->request->all('enrollment_ids');
-        $section = trim($request->request->get('section', ''));
-
-        if (empty($enrollmentIds)) {
-            $this->addFlash('warning', 'No students selected.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollments = $enrollRepo->createQueryBuilder('e')
-            ->join('e.subject', 's')
-            ->where('e.id IN (:ids)')
-            ->andWhere('s.faculty = :fid')
-            ->setParameter('ids', $enrollmentIds)
-            ->setParameter('fid', $user->getId())
-            ->getQuery()
-            ->getResult();
-
-        $count = 0;
-        foreach ($enrollments as $enrollment) {
-            $enrollment->setSection($section ?: null);
-            $count++;
-        }
-        $em->flush();
-
-        if ($count > 0) {
-            $this->addFlash('success', $count . ' enrollment' . ($count !== 1 ? 's' : '') . ' assigned to section ' . ($section ?: '(cleared)') . '.');
-        }
-
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/auto-section/{subjectId}', name: 'faculty_enrollment_auto_section', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentAutoSection(
-        int $subjectId,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        SubjectRepository $subjectRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_auto_section_' . $subjectId, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $subject = $subjectRepo->find($subjectId);
-        if (!$subject || $subject->getFaculty()?->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Subject not found.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $sections = trim($request->request->get('sections', 'A,B'));
-        $sectionList = array_filter(array_map('trim', explode(',', $sections)));
-        if (empty($sectionList)) {
-            $this->addFlash('warning', 'No sections specified.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollments = $enrollRepo->createQueryBuilder('e')
-            ->join('e.subject', 's')
-            ->join('e.student', 'st')
-            ->where('e.subject = :sid')
-            ->andWhere('s.faculty = :fid')
-            ->setParameter('sid', $subjectId)
-            ->setParameter('fid', $user->getId())
-            ->orderBy('st.lastName', 'ASC')
-            ->addOrderBy('st.firstName', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        $numSections = count($sectionList);
-        foreach ($enrollments as $i => $enrollment) {
-            $enrollment->setSection($sectionList[$i % $numSections]);
-        }
-        $em->flush();
-
-        $this->addFlash('success', count($enrollments) . ' student(s) distributed across ' . implode(', ', $sectionList) . '.');
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
-
-    #[Route('/faculty/enrollment/clear-sections/{subjectId}', name: 'faculty_enrollment_clear_sections', methods: ['POST'])]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEnrollmentClearSections(
-        int $subjectId,
-        Request $request,
-        EnrollmentRepository $enrollRepo,
-        SubjectRepository $subjectRepo,
-        EntityManagerInterface $em,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$this->isCsrfTokenValid('faculty_clear_sections_' . $subjectId, $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Invalid request token.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $subject = $subjectRepo->find($subjectId);
-        if (!$subject || $subject->getFaculty()?->getId() !== $user->getId()) {
-            $this->addFlash('danger', 'Subject not found.');
-            return $this->redirectToRoute('faculty_enrollment_management');
-        }
-
-        $enrollments = $enrollRepo->createQueryBuilder('e')
-            ->join('e.subject', 's')
-            ->where('e.subject = :sid')
-            ->andWhere('s.faculty = :fid')
-            ->setParameter('sid', $subjectId)
-            ->setParameter('fid', $user->getId())
-            ->getQuery()
-            ->getResult();
-
-        $count = 0;
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->getSection()) {
-                $enrollment->setSection(null);
-                $count++;
-            }
-        }
-        $em->flush();
-
-        $this->addFlash('success', $count . ' section assignment(s) cleared for ' . $subject->getSubjectCode() . '.');
-        return $this->redirectToRoute('faculty_enrollment_management');
-    }
 
     #[Route('/faculty/evaluation/request', name: 'faculty_eval_request', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_FACULTY')]
@@ -2406,86 +1972,18 @@ class HomeController extends AbstractController
         return $map[strtolower(trim($yl))] ?? $yl;
     }
 
-    /**
-     * @return array<int, \App\Entity\Subject>
-     */
-    private function getStudentAvailableLoadedSubjects(
-        User $user,
-        SubjectRepository $subjectRepo,
-        EnrollmentRepository $enrollRepo,
-        AcademicYearRepository $ayRepo,
-    ): array {
-        $deptId = $user->getDepartment()?->getId();
-        $studentYearLevel = $this->normalizeYearLevel($user->getYearLevel());
-        $currentAY = $ayRepo->findCurrent();
-        $currentSemester = $currentAY?->getSemester();
-
-        $subjects = $subjectRepo->createQueryBuilder('s')
-            ->leftJoin('s.department', 'd')
-            ->leftJoin('s.faculty', 'f')
-            ->addSelect('d', 'f')
-            ->where('s.faculty IS NOT NULL')
-            ->orderBy('s.subjectCode', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        $enrolledIds = array_map(
-            fn($enrollment) => $enrollment->getSubject()->getId(),
-            $enrollRepo->findByStudent($user->getId())
-        );
-        $enrolledIdMap = array_flip($enrolledIds);
-
-        $available = [];
-        foreach ($subjects as $subject) {
-            if (isset($enrolledIdMap[$subject->getId()])) {
-                continue;
-            }
-
-            // Only show subjects that belong to the student's department
-            if ($deptId && $subject->getDepartment() && $subject->getDepartment()->getId() !== $deptId) {
-                continue;
-            }
-
-            // Only show subjects that match the student's year level
-            if ($studentYearLevel && $subject->getYearLevel()) {
-                $subjectYL = $this->normalizeYearLevel($subject->getYearLevel());
-                if ($subjectYL !== $studentYearLevel) {
-                    continue;
-                }
-            }
-
-            $available[] = $subject;
-        }
-
-        return $available;
-    }
-
     private function studentDashboard(
         $user,
         CurriculumRepository $curriculumRepo,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
-        EnrollmentRepository $enrollRepo,
     ): Response {
         $openEvals = $evalRepo->findOpen();
 
-        // ── Resolve the student's approved enrollments ──
-        $studentYearLevel = $this->normalizeYearLevel($user->getYearLevel());
-
-        $enrollments = $enrollRepo->findByStudent($user->getId());
-        $enrolledSubjects = [];
-        $enrollmentSections = [];
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->isApproved()) {
-                $subj = $enrollment->getSubject();
-                $enrolledSubjects[$subj->getId()] = $subj;
-                $enrollmentSections[$subj->getId()] = $enrollment->getSection();
-            }
-        }
-
         $pending = [];
         $completed = [];
+        $studentYearLevel = $this->normalizeYearLevel($user->getYearLevel());
 
         foreach ($openEvals as $eval) {
             if ($eval->getEvaluationType() !== 'SET') {
@@ -2511,52 +2009,36 @@ class HomeController extends AbstractController
                 continue;
             }
 
-            // ── Only show subjects the student is enrolled in (approved) ──
-            foreach ($enrolledSubjects as $subject) {
-                $faculty = $subject->getFaculty();
+            // ── Get faculty and subject from evaluation ──
+            $faculty = null;
+            $subject = null;
+            $subjectLabel = $eval->getSubject() ?? '';
 
-                // If eval targets a specific faculty+subject, resolve faculty from eval
-                if ($eval->getFaculty() && $eval->getSubject()) {
-                    $subjectLabel = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
-                    if ($subjectLabel !== $eval->getSubject()) {
-                        continue;
-                    }
-                    if (!$faculty) {
-                        $faculty = $userRepo->findOneByFullName($eval->getFaculty());
-                    }
-                    if (!$faculty || $faculty->getFullName() !== $eval->getFaculty()) {
-                        continue;
-                    }
-                } else {
-                    if (!$faculty) continue;
-                }
+            if ($eval->getFaculty()) {
+                $faculty = $userRepo->findOneByFullName($eval->getFaculty());
+            }
 
-                // If eval targets a specific section, match against enrollment section
-                if ($eval->getSection() !== null && $eval->getSection() !== '') {
-                    $studentSection = $enrollmentSections[$subject->getId()] ?? null;
-                    if ($studentSection === null || strtoupper(trim($studentSection)) !== strtoupper(trim($eval->getSection()))) {
-                        continue;
-                    }
-                }
+            if (!$faculty || !$subjectLabel) {
+                continue;
+            }
 
-                $submitted = $responseRepo->hasSubmitted(
-                    $user->getId(),
-                    $eval->getId(),
-                    $faculty->getId(),
-                    $subject->getId(),
-                );
+            $submitted = $responseRepo->hasSubmitted(
+                $user->getId(),
+                $eval->getId(),
+                $faculty->getId(),
+                0, // No subject ID needed now
+            );
 
-                $item = [
-                    'evaluation' => $eval,
-                    'subject' => $subject,
-                    'faculty' => $faculty,
-                ];
+            $item = [
+                'evaluation' => $eval,
+                'subject' => $subjectLabel,
+                'faculty' => $faculty,
+            ];
 
-                if ($submitted) {
-                    $completed[] = $item;
-                } else {
-                    $pending[] = $item;
-                }
+            if ($submitted) {
+                $completed[] = $item;
+            } else {
+                $pending[] = $item;
             }
         }
 

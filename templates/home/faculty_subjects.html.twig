@@ -188,7 +188,7 @@
                     <i class="bi bi-book-half"></i>
                 </div>
                 <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject Load</h4>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject load</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
                         <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
                         {% if selectedSemester %}
@@ -593,7 +593,44 @@ try {
 window.activeEvaluations = activeEvaluations;
 
 // Faculty and evaluation data for QR modals
-window.facultyName = '{{ app.user.firstName|e("js") }} {{ app.user.lastName|e("js") }}';
+// Get faculty name from user object
+let facultyFirstName = '{{ app.user.firstName|e("js") }}'.trim();
+let facultyLastName = '{{ app.user.lastName|e("js") }}'.trim();
+
+// Build full name with proper fallbacks
+let facultyFullName = '';
+if (facultyFirstName && facultyLastName) {
+    facultyFullName = facultyFirstName + ' ' + facultyLastName;
+} else if (facultyFirstName) {
+    facultyFullName = facultyFirstName;
+} else if (facultyLastName) {
+    facultyFullName = facultyLastName;
+}
+
+// Try alternatives if both are empty
+if (!facultyFullName) {
+    let altName = '{{ app.user.name|e("js") }}'.trim();
+    if (altName) facultyFullName = altName;
+}
+
+if (!facultyFullName) {
+    let altEmail = '{{ app.user.email|e("js") }}'.trim();
+    if (altEmail) facultyFullName = altEmail.split('@')[0]; // Use username part of email
+}
+
+if (!facultyFullName) {
+    facultyFullName = 'Faculty';
+}
+
+window.facultyName = facultyFullName;
+console.log('Faculty Name Resolution:', {
+    firstName: '{{ app.user.firstName|e("js") }}',
+    lastName: '{{ app.user.lastName|e("js") }}',
+    firstName_trimmed: facultyFirstName,
+    lastName_trimmed: facultyLastName,
+    finalFacultyName: window.facultyName
+});
+
 if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.firstActiveEvalId]) {
     window.firstEvalName = activeEvaluations[window.firstActiveEvalId].name;
 } else {
@@ -930,7 +967,19 @@ function initializeEventListeners() {
     });
 
     /* QR Code Modal */
-    window.showQRModal = function(subjectId, subjectCode, subjectName, section, evalId, evalType, faculty, schoolYear) {
+    window.showQRModal = function(subjectId, subjectCode, subjectName, section, evalId, evalType, faculty, schoolYear, schedule) {
+        console.log('showQRModal called with:', {subjectId, subjectCode, subjectName, section, evalId, evalType, faculty, schoolYear, schedule});
+
+        // If evaluation data is incomplete, try to fetch from activeEvaluations
+        if (!faculty || !schoolYear) {
+            if (window.activeEvaluations && window.activeEvaluations[evalId]) {
+                const evalData = window.activeEvaluations[evalId];
+                faculty = faculty || evalData.faculty || '';
+                schoolYear = schoolYear || evalData.schoolYear || evalData.name || '';
+                console.log('Filled in missing eval data from activeEvaluations:', {faculty, schoolYear});
+            }
+        }
+
         const qrUrl = '{{ path('evaluation_qr_redirect_with_section', {'id': '__EVAL_ID__', 'subjectId': '__SUBJECT_ID__', 'section': '__SECTION__'}) }}'
             .replace('__EVAL_ID__', evalId)
             .replace('__SUBJECT_ID__', subjectId)
@@ -941,33 +990,55 @@ function initializeEventListeners() {
 
         // Populate modal fields
         const typeBadge = document.getElementById('qrEvalType');
-        typeBadge.textContent = evalType || 'SET';
+        if (typeBadge) typeBadge.textContent = evalType || 'SET';
 
-        document.getElementById('qrEvalFaculty').textContent = faculty || '';
-        document.getElementById('qrEvalSubject').textContent = `${subjectCode}${subjectName ? ' — ' + subjectName : ''}`;
-        document.getElementById('qrEvalDetails').textContent = section || '';
+        const facultyEl = document.getElementById('qrEvalFaculty');
+        if (facultyEl) {
+            facultyEl.textContent = faculty || '';
+            console.log('Set faculty element to:', facultyEl.textContent);
+        }
+
+        const subjectEl = document.getElementById('qrEvalSubject');
+        if (subjectEl) {
+            subjectEl.textContent = `${subjectCode}${subjectName ? ' — ' + subjectName : ''}`;
+            console.log('Set subject element to:', subjectEl.textContent);
+        }
+
+        // Show section and schedule
+        var detailsText = [];
+        if (section) detailsText.push(section);
+        if (schedule) detailsText.push(schedule);
+
+        const detailsEl = document.getElementById('qrEvalDetails');
+        if (detailsEl) {
+            detailsEl.textContent = detailsText.join(' | ') || '';
+            console.log('Set details element to:', detailsEl.textContent);
+        }
 
         const detailsRow = document.getElementById('qrEvalDetailsRow');
-        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
+        if (detailsRow) detailsRow.style.display = detailsText.length > 0 ? '' : 'none';
 
-        document.getElementById('qrUrl').textContent = fullUrl;
+        const urlEl = document.getElementById('qrUrl');
+        if (urlEl) urlEl.textContent = fullUrl;
 
         // Generate QR code
         const qrContainer = document.getElementById('qrContainer');
-        qrContainer.innerHTML = '';
+        if (qrContainer) {
+            qrContainer.innerHTML = '';
 
-        // Using QRCode.js library
-        if (typeof QRCode !== 'undefined') {
-            new QRCode(qrContainer, {
-                text: fullUrl,
-                width: 180,
-                height: 180,
-                colorDark: '#000000',
-                colorLight: '#ffffff'
-            });
-        } else {
-            // Fallback to QR server
-            qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=' + encodeURIComponent(fullUrl) + '" alt="QR Code" style="max-width:180px;height:auto;">';
+            // Using QRCode.js library
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(qrContainer, {
+                    text: fullUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff'
+                });
+            } else {
+                // Fallback to QR server
+                qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=' + encodeURIComponent(fullUrl) + '" alt="QR Code" style="max-width:180px;height:auto;">';
+            }
         }
 
         const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
@@ -1048,9 +1119,15 @@ window.pollActiveEvaluations = function(forceImmediate) {
             if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
                 console.log('Evaluation list changed! Updating UI...');
                 currentActiveEvals = newEvalMap;
+                activeEvaluations = newEvalMap;
+                window.activeEvaluations = newEvalMap;
                 window.firstActiveEvalId = newKeys.length > 0 ? newKeys[0] : null;
                 window.hasActiveEval = newKeys.length > 0;
+                if (window.firstActiveEvalId && newEvalMap[window.firstActiveEvalId]) {
+                    window.firstEvalName = newEvalMap[window.firstActiveEvalId].name;
+                }
                 console.log('Updated hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
+                console.log('Updated activeEvaluations:', newEvalMap);
 
                 // Update QR buttons for all loaded subjects
                 updateQRButtonsForLoadedSubjects();
@@ -1076,15 +1153,43 @@ window.updateQRButtonsForLoadedSubjects = function() {
         const codeCell = row.querySelector('.sb-code-text');
         const subjectCode = codeCell ? codeCell.textContent.trim() : '';
 
+        // Get full subject name
+        const nameCell = row.querySelector('.sb-subject-name');
+        const subjectName = nameCell ? nameCell.textContent.trim() : '';
+
         // Find section from the section input field
         const sectionInput = row.querySelector('.sb-section-input');
         const section = sectionInput ? sectionInput.value.trim() : '';
+
+        // Get schedule from the schedule select
+        const scheduleSelect = row.querySelector('.sb-inline-select');
+        const schedule = scheduleSelect ? scheduleSelect.value.trim() : '';
+
+        // Get evaluation data for this subject
+        let evalFaculty = '';
+        if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.firstActiveEvalId]) {
+            evalFaculty = activeEvaluations[window.firstActiveEvalId].faculty || '';
+        }
+
+        console.log(`Updating QR buttons for subject ${subjectCode}:`, {subjectCode, subjectName, section, schedule, evalFaculty: evalFaculty, firstEvalName: window.firstEvalName});
 
         // Update QR column (9th column)
         const qrCell = row.querySelector('td:nth-child(9)');
         if (qrCell) {
             if (window.hasActiveEval && window.firstActiveEvalId) {
-                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+                const dataFaculty = evalFaculty.replace(/"/g, '&quot;');
+                const dataSchoolYear = (window.firstEvalName || '').replace(/"/g, '&quot;');
+                console.log('Creating QR button with data:', {
+                    'data-subject-code': subjectCode,
+                    'data-subject-name': subjectName,
+                    'data-section': section,
+                    'data-schedule': schedule,
+                    'data-eval-id': window.firstActiveEvalId,
+                    'data-faculty': dataFaculty,
+                    'data-school-year': dataSchoolYear
+                    
+                });
+                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectName.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-schedule="' + schedule.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + dataFaculty + '" data-school-year="' + dataSchoolYear + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
             } else {
                 qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
             }
@@ -1098,7 +1203,7 @@ window.updateQRButtonsForLoadedSubjects = function() {
 
         // Add QR button if there's an active evaluation
         if (window.hasActiveEval && window.firstActiveEvalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectName.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-schedule="' + schedule.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + evalFaculty.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
         }
 
         // Add other action buttons
@@ -1117,13 +1222,16 @@ document.addEventListener('click', function(event) {
         const subjectCode = qrBtn.getAttribute('data-subject-code');
         const subjectName = qrBtn.getAttribute('data-subject-name');
         const section = qrBtn.getAttribute('data-section');
+        const schedule = qrBtn.getAttribute('data-schedule');
         const evalId = qrBtn.getAttribute('data-eval-id');
         const evalType = qrBtn.getAttribute('data-eval-type');
         const faculty = qrBtn.getAttribute('data-faculty');
         const schoolYear = qrBtn.getAttribute('data-school-year');
 
+        console.log('QR Button clicked:', {subjectId, subjectCode, subjectName, section, schedule, evalId, evalType, faculty, schoolYear});
+
         if (subjectId && subjectCode && evalId) {
-            window.showQRModal(parseInt(subjectId), subjectCode, subjectName, section || '', parseInt(evalId), evalType, faculty, schoolYear);
+            window.showQRModal(parseInt(subjectId), subjectCode, subjectName, section || '', parseInt(evalId), evalType, faculty, schoolYear, schedule || '');
         }
     }
 });

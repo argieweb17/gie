@@ -63,6 +63,7 @@
                         <th>Section</th>
                         <th>Room</th>
                         <th>Schedule / Time</th>
+                        <th class="text-center">Status</th>
                         <th class="text-center">Evaluate</th>
                     </tr>
                 </thead>
@@ -96,19 +97,29 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if item.evaluation is defined and item.evaluation %}
+                            {% if item.evaluation is defined and item.evaluation and item.evaluation.id %}
+                                <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Evaluation</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-circle me-1"></i>No Evaluation</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.evaluation is defined and item.evaluation and item.evaluation.id %}
                                 <button type="button" class="sched-qr-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#schedQrModal"
                                     data-eval-id="{{ item.evaluation.id }}"
-                                    data-eval-faculty="{{ app.user.fullName }}"
-                                    data-eval-subject="{{ item.subject.subjectCode }}"
+                                    data-eval-faculty="{{ item.evaluation.faculty ?? '' }}"
+                                    data-eval-subject="{{ item.subject.subjectCode }} — {{ item.subject.subjectName }}"
+                                    data-eval-subject-id="{{ item.subject.id }}"
                                     data-eval-section="{{ item.section ?? '' }}"
-                                    data-eval-school-year="{{ app.request.session.get('schoolYear') ?? '' }}">
+                                    data-eval-schedule="{{ item.schedule ?? '' }}"
+                                    data-eval-school-year="{{ item.evaluation.schoolYear ?? '' }}">
                                     <i class="bi bi-qr-code"></i> QR Code
                                 </button>
                             {% else %}
                                 <span class="text-muted" style="font-size:.75rem;">No Evaluation</span>
+                                <script>console.log('No evaluation for subject');</script>
                             {% endif %}
                         </td>
                     </tr>
@@ -151,9 +162,9 @@
                             <span class="qr-info-label">Subject</span>
                             <span class="qr-info-value" id="schedQrSubject"></span>
                         </div>
-                        <div class="qr-info-row" id="schedQrSectionRow">
-                            <span class="qr-info-label">Section</span>
-                            <span class="qr-info-value" id="schedQrSection"></span>
+                        <div class="qr-info-row" id="schedQrDetailsRow">
+                            <span class="qr-info-label">Details</span>
+                            <span class="qr-info-value" id="schedQrDetails"></span>
                         </div>
                     </div>
 
@@ -195,22 +206,71 @@
         var evalId = btn.getAttribute('data-eval-id');
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
+        var subjectId = btn.getAttribute('data-eval-subject-id');
         var section = btn.getAttribute('data-eval-section');
+        var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
-        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        console.log('QR Modal opened with data:', {
+            evalId: evalId,
+            subjectId: subjectId,
+            faculty: faculty,
+            subject: subject,
+            section: section,
+            schedule: schedule,
+            schoolYear: schoolYear
+        });
 
-        document.getElementById('schedQrSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
-        document.getElementById('schedQrFaculty').textContent = faculty || '—';
-        document.getElementById('schedQrSubject').textContent = subject || '—';
-        document.getElementById('schedQrSection').textContent = section || '—';
-        var sectionRow = document.getElementById('schedQrSectionRow');
-        sectionRow.style.display = section ? '' : 'none';
+        if (!evalId) {
+            console.error('No evalId found!');
+            return;
+        }
+
+        // Build the evaluation URL with subject ID and section for unique codes
+        if (subjectId && section) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId + '/' + encodeURIComponent(section);
+        } else if (subjectId) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId;
+        } else {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        }
+
+        // Set subtitle
+        var subtitle = schoolYear || 'Scan to open the evaluation form';
+        document.getElementById('schedQrSubtitle').textContent = subtitle;
+        console.log('Subtitle set to:', subtitle);
+
+        // Set faculty
+        var facultyDisplay = faculty || '—';
+        document.getElementById('schedQrFaculty').textContent = facultyDisplay;
+        console.log('Faculty set to:', facultyDisplay);
+
+        // Set subject
+        var subjectDisplay = subject || '—';
+        document.getElementById('schedQrSubject').textContent = subjectDisplay;
+        console.log('Subject set to:', subjectDisplay);
+
+        // Build details display with section and schedule if available
+        var detailsDisplay = section || '';
+        if (schedule) {
+            detailsDisplay = (detailsDisplay ? detailsDisplay + ' | ' : '') + schedule;
+        }
+        document.getElementById('schedQrDetails').textContent = detailsDisplay || '—';
+        console.log('Details set to:', detailsDisplay || '—');
+
+        var detailsRow = document.getElementById('schedQrDetailsRow');
+        if (detailsRow) {
+            detailsRow.style.display = detailsDisplay ? '' : 'none';
+        }
 
         document.getElementById('schedQrUrl').textContent = currentQrUrl;
+        console.log('URL set to:', currentQrUrl);
 
         var qrImg = document.getElementById('schedQrImage');
-        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+        if (qrImg) {
+            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentQrUrl);
+            console.log('QR image generated');
+        }
     });
 
     window.schedDownloadQR = function() {
