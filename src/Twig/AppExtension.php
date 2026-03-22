@@ -8,6 +8,7 @@ use App\Repository\CurriculumRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\FacultyNotificationReadRepository;
+use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
@@ -32,6 +33,7 @@ class AppExtension extends AbstractExtension
         private EvaluationMessageRepository $evalMessageRepo,
         private FacultyNotificationReadRepository $notifReadRepo,
         private MessageNotificationRepository $messageNotifRepo,
+        private FacultySubjectLoadRepository $fslRepo,
     ) {}
 
     public function getFunctions(): array
@@ -42,6 +44,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('current_academic_year', [$this, 'getCurrentAcademicYear']),
             new TwigFunction('faculty_pending_evaluations', [$this, 'getFacultyPendingEvaluations']),
             new TwigFunction('unread_message_notifications', [$this, 'getUnreadMessageNotifications']),
+            new TwigFunction('faculty_has_conversation', [$this, 'facultyHasConversation']),
         ];
     }
 
@@ -127,7 +130,24 @@ class AppExtension extends AbstractExtension
             return [];
         }
 
-        return $this->subjectRepo->findByFaculty($user->getId());
+        $currentAY = $this->academicYearRepo->findCurrent();
+        $subjectsById = [];
+
+        $savedLoads = $this->fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        foreach ($savedLoads as $load) {
+            $subject = $load->getSubject();
+            $subjectsById[$subject->getId()] = $subject;
+        }
+
+        $directSubjects = $this->subjectRepo->findByFaculty($user->getId());
+        foreach ($directSubjects as $subject) {
+            $subjectsById[$subject->getId()] = $subject;
+        }
+
+        $subjects = array_values($subjectsById);
+        usort($subjects, static fn($a, $b) => strcmp($a->getSubjectCode(), $b->getSubjectCode()));
+
+        return $subjects;
     }
 
     /**
@@ -174,5 +194,16 @@ class AppExtension extends AbstractExtension
         }
 
         return $this->messageNotifRepo->countUnreadForUser($user->getId());
+    }
+
+    public function facultyHasConversation(): bool
+    {
+        /** @var \App\Entity\User|null $user */
+        $user = $this->security->getUser();
+        if (!$user || !in_array('ROLE_FACULTY', $user->getRoles(), true)) {
+            return false;
+        }
+
+        return $this->evalMessageRepo->hasConversationBySender($user->getId());
     }
 }

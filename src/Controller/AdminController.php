@@ -343,7 +343,7 @@ class AdminController extends AbstractController
         $all = $repo->findBy([], ['createdAt' => 'DESC']);
         $faculty = array_filter($all, fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles()));
 
-        return $this->render('admin/faculty_list.html.twig', [
+        return $this->render('admin/faculty/faculty_list.html.twig', [
             'users' => array_values($faculty),
             'departments' => $deptRepo->findAllOrdered(),
         ]);
@@ -999,7 +999,7 @@ class AdminController extends AbstractController
                 $em->flush();
                 $this->addFlash('success', 'Subject deleted.');
             } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
-                $this->addFlash('danger', 'Cannot delete this subject because it has enrollments or other records linked to it.');
+                $this->addFlash('danger', 'Cannot delete this subject because it has other records linked to it.');
             }
         }
         return $this->redirectToRoute('admin_subjects');
@@ -1772,7 +1772,7 @@ class AdminController extends AbstractController
 
         $overallAvg = count($results) > 0 ? round($sumAvg / count($results), 2) : 0;
 
-        return $this->render('admin/faculty_evaluations.html.twig', [
+        return $this->render('admin/faculty/faculty_evaluations.html.twig', [
             'faculty' => $faculty,
             'evaluations' => $results,
             'totalEvaluators' => $totalEvaluators,
@@ -2221,7 +2221,7 @@ class AdminController extends AbstractController
 
         $overallAvg = count($results) > 0 ? round($sumAvg / count($results), 2) : 0;
 
-        return $this->render('admin/faculty_evaluations_superior.html.twig', [
+        return $this->render('admin/faculty/faculty_evaluations_superior.html.twig', [
             'faculty' => $faculty,
             'evaluations' => $results,
             'totalEvaluators' => $totalEvaluators,
@@ -2458,13 +2458,23 @@ class AdminController extends AbstractController
     #[Route('/faculty-messages', name: 'admin_faculty_messages', methods: ['GET'])]
     public function facultyMessages(
         EvaluationMessageRepository $msgRepo,
+        MessageNotificationRepository $notifRepo,
     ): Response {
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User && $currentUser->getId() !== null) {
+            try {
+                $notifRepo->markAllAsReadForUser($currentUser->getId());
+            } catch (\Throwable) {
+                // Do not block message page rendering if notification cleanup fails.
+            }
+        }
+
         $messages = $msgRepo->findAllMessages();
         $repliesMap = [];
         foreach ($messages as $msg) {
             $repliesMap[$msg->getId()] = $msgRepo->findRepliesForMessage($msg->getId());
         }
-        return $this->render('admin/faculty_messages.html.twig', [
+        return $this->render('admin/faculty/faculty_messages.html.twig', [
             'messages' => $messages,
             'repliesMap' => $repliesMap,
             'pendingCount' => $msgRepo->countPending(),

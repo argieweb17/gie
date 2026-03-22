@@ -54,15 +54,11 @@ class Subject
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $schedule = null;
 
-    #[ORM\OneToMany(mappedBy: 'subject', targetEntity: Enrollment::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    private Collection $enrollments;
-
     #[ORM\ManyToMany(targetEntity: Curriculum::class, mappedBy: 'subjects')]
     private Collection $curricula;
 
     public function __construct()
     {
-        $this->enrollments = new ArrayCollection();
         $this->curricula = new ArrayCollection();
     }
 
@@ -103,11 +99,6 @@ class Subject
 
     public function getSchedule(): ?string { return $this->schedule; }
     public function setSchedule(?string $v): static { $this->schedule = $v; return $this; }
-
-    /** @return Collection<int, Enrollment> */
-    public function getEnrollments(): Collection { return $this->enrollments; }
-    public function addEnrollment(Enrollment $e): static { if (!$this->enrollments->contains($e)) { $this->enrollments->add($e); $e->setSubject($this); } return $this; }
-    public function removeEnrollment(Enrollment $e): static { $this->enrollments->removeElement($e); return $this; }
 
     /** @return Collection<int, Curriculum> */
     public function getCurricula(): Collection { return $this->curricula; }

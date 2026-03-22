@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Teaching Subjects | SET-SEF Evaluation{% endblock %}
+{% block title %}Schedule | SET-SEF Evaluation{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -74,6 +74,14 @@
 .ls-action-qr{color:#0d9488;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;width:auto;padding:2px 10px;font-size:.72rem;font-weight:600;gap:4px;display:inline-flex;align-items:center;}
 .ls-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;transform:scale(1.05);}
 
+/* Unload blocked modal */
+.ls-blocked-modal .modal-content{border:0;border-radius:14px;overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.16);}
+.ls-blocked-head{padding:14px 16px;background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 55%,#0d9488 100%);color:#fff;display:flex;align-items:center;gap:10px;}
+.ls-blocked-icon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;}
+.ls-blocked-body{padding:16px 16px 12px;}
+.ls-blocked-list{margin:8px 0 0;padding-left:18px;max-height:180px;overflow:auto;font-size:.82rem;color:#334155;}
+.ls-blocked-list li{margin-bottom:3px;}
+
 .ls-th-actions{text-align:center;width:120px;}
 
 /* Empty */
@@ -135,6 +143,34 @@
 .ls-past-icon{background:#fde68a!important;color:#b45309!important;}
 .ls-restore-past{background:linear-gradient(135deg,#d97706,#f59e0b)!important;box-shadow:0 2px 8px rgba(217,119,6,.25)!important;}
 .ls-restore-past:hover{background:linear-gradient(135deg,#b45309,#d97706)!important;box-shadow:0 4px 12px rgba(217,119,6,.35)!important;}
+
+/* Previous Evaluations */
+.ls-history-card{background:#fff;border:1px solid #dbeafe;border-radius:12px;margin-top:16px;overflow:hidden;box-shadow:0 1px 4px rgba(37,99,235,.08);}
+.ls-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-bottom:1px solid #dbeafe;}
+.ls-history-title{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:700;color:#1e3a8a;}
+.ls-history-title i{font-size:1rem;color:#2563eb;}
+.ls-history-meta{font-size:.72rem;color:#475569;}
+.ls-history-tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.ls-history-select{min-width:150px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.78rem;background:#fff;color:#334155;outline:none;}
+.ls-history-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.ls-history-search{min-width:180px;flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.78rem;background:#fff;color:#334155;outline:none;}
+.ls-history-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.ls-history-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.ls-history-table thead{background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.ls-history-table th{padding:9px 12px;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;}
+.ls-history-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.ls-history-table tbody tr:hover{background:#f8fbff;}
+.ls-history-table tbody tr:last-child td{border-bottom:none;}
+.ls-history-code{display:inline-block;font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:6px;font-size:.74rem;}
+.ls-history-name{display:block;font-weight:600;color:#1e293b;margin-top:2px;}
+.ls-history-period-main{font-weight:700;color:#1e293b;display:block;}
+.ls-history-period-sub{font-size:.72rem;color:#64748b;display:block;margin-top:1px;}
+.ls-rating-pill{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:3px 10px;border-radius:999px;font-size:.76rem;font-weight:700;}
+.ls-rating-high{background:#dcfce7;color:#166534;}
+.ls-rating-mid{background:#fef3c7;color:#92400e;}
+.ls-rating-low{background:#fee2e2;color:#991b1b;}
+.ls-history-empty{padding:20px;color:#94a3b8;text-align:center;font-size:.82rem;}
+.ls-history-no-results{padding:12px;color:#94a3b8;text-align:center;font-size:.8rem;border-top:1px solid #f1f5f9;display:none;}
 
 /* Animations */
 .ls-header,.ls-toolbar,.ls-table-wrap,.ls-prev-load-card{animation:lsFadeIn .25s ease;}
@@ -245,7 +281,7 @@
                     <i class="bi bi-journal-bookmark-fill"></i>
                 </div>
                 <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Teaching Subjects</h4>
+                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Schedule</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
                         <span class="ls-meta-pill"><i class="bi bi-person-fill me-1"></i>{{ app.user.firstName }} {{ app.user.lastName }}</span>
                         {% if app.user.department %}
@@ -255,7 +291,7 @@
                 </div>
             </div>
             {% if subjects|length > 0 %}
-            <form method="post" action="{{ path('faculty_unload_all_subjects') }}" style="display:inline" onsubmit="return confirm('Are you sure you want to unload all {{ subjects|length }} subject{{ subjects|length != 1 ? 's' : '' }}?')">
+            <form method="post" action="{{ path('faculty_unload_all_subjects') }}" class="js-unload-all-form" style="display:inline" data-confirm-message="Are you sure you want to unload all {{ subjects|length }} subject{{ subjects|length != 1 ? 's' : '' }}?">
                 <input type="hidden" name="_token" value="{{ csrf_token('unload_all_subjects') }}">
                 <button type="submit" class="ls-print-btn" style="background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);" title="Unload All Subjects">
                     <i class="bi bi-x-circle-fill me-1"></i> Unload All
@@ -498,34 +534,38 @@
                 </td>
                 <td class="text-center">
                     {% if s.evaluation is defined and s.evaluation is not null %}
-                        <span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Evaluated</span>
+                        <span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Active</span>
                     {% else %}
                         <span class="ls-eval-badge ls-eval-none"><i class="bi bi-dash-circle"></i> No Evaluation</span>
                     {% endif %}
                 </td>
                 <td class="text-center">
                     <div class="d-flex align-items-center justify-content-center gap-2">
-                    {% if activeEvalMap|length > 0 %}
-                        {% set firstEvalId = activeEvalMap|keys|first %}
+                    {% if s.evaluation is defined and s.evaluation is not null %}
                         <button type="button" class="btn btn-sm ls-action-qr ls-qr-btn"
-                            data-subject-id="{{ s.subject.id }}"
-                            data-subject-code="{{ s.subject.subjectCode|e('js') }}"
-                            data-section="{{ s.section|default('')|e('js') }}"
-                            data-eval-id="{{ firstEvalId }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#lsQrModal"
+                            data-eval-id="{{ s.evaluation.id }}"
+                            data-eval-faculty="{{ s.evaluation.faculty ?? '' }}"
+                            data-eval-subject="{{ s.subject.subjectCode }} — {{ s.subject.subjectName }}"
+                            data-eval-subject-id="{{ s.subject.id }}"
+                            data-eval-section="{{ s.section|default('')|e('js') }}"
+                            data-eval-schedule="{{ s.schedule|default('')|e('js') }}"
+                            data-eval-school-year="{{ s.evaluation.schoolYear ?? s.evaluation.label ?? '' }}"
                             title="Generate QR Code"
                             style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;">
                             <i class="bi bi-qr-code-scan"></i>
                         </button>
                     {% endif %}
                     {% if s.fslId %}
-                    <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?')">
+                    <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" class="js-unload-form" style="display:inline" data-subject-label="{{ s.subject.subjectCode }} — Section {{ s.section|default('') }}" data-confirm-message="Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
                             <i class="bi bi-x-circle"></i>
                         </button>
                     </form>
                     {% else %}
-                    <form method="post" action="{{ path('faculty_subject_unload', {id: s.subject.id}) }}" style="display:inline" onsubmit="return confirm('Unload {{ s.subject.subjectCode }} — {{ s.subject.subjectName }}?')">
+                    <form method="post" action="{{ path('faculty_subject_unload', {id: s.subject.id}) }}" class="js-unload-form" style="display:inline" data-subject-label="{{ s.subject.subjectCode }} — {{ s.subject.subjectName }}" data-confirm-message="Unload {{ s.subject.subjectCode }} — {{ s.subject.subjectName }}?">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.subject.id) }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
                             <i class="bi bi-x-circle"></i>
@@ -551,6 +591,130 @@
     <div id="lsNoResults" class="ls-no-results" style="display:none;">
         <i class="bi bi-search"></i>
         <span>No subjects match your search.</span>
+    </div>
+</div>
+
+    {# ═══════════════════════════════════════
+       PREVIOUS EVALUATION HISTORY
+       ═══════════════════════════════════════ #}
+    {% set historySubjectSet = [] %}
+    {% set historySchoolYearSet = [] %}
+    {% set historySemesterSet = [] %}
+    {% for h in previousEvaluations|default([]) %}
+        {% if h.subjectCode not in historySubjectSet %}{% set historySubjectSet = historySubjectSet|merge([h.subjectCode]) %}{% endif %}
+        {% if h.schoolYear not in historySchoolYearSet %}{% set historySchoolYearSet = historySchoolYearSet|merge([h.schoolYear]) %}{% endif %}
+        {% if h.semester not in historySemesterSet %}{% set historySemesterSet = historySemesterSet|merge([h.semester]) %}{% endif %}
+    {% endfor %}
+
+    <div class="ls-history-card">
+        <div class="ls-history-head">
+            <div class="ls-history-title">
+                <i class="bi bi-clock-history"></i>
+                <span>Previous Evaluations</span>
+            </div>
+            <div class="ls-history-meta">
+                {{ previousEvaluations|default([])|length }} record{{ previousEvaluations|default([])|length != 1 ? 's' : '' }}
+            </div>
+        </div>
+
+        {% if previousEvaluations|default([])|length > 0 %}
+        <div class="ls-history-tools">
+            <select id="lsHistorySubject" class="ls-history-select">
+                <option value="all">All Subjects</option>
+                {% for code in historySubjectSet|sort %}
+                    <option value="{{ code|lower }}">{{ code }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="lsHistoryYear" class="ls-history-select">
+                <option value="all">All School Years</option>
+                {% for sy in historySchoolYearSet|sort|reverse %}
+                    <option value="{{ sy|lower }}">{{ sy }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="lsHistorySemester" class="ls-history-select">
+                <option value="all">All Semesters</option>
+                {% for sem in historySemesterSet|sort %}
+                    <option value="{{ sem|lower }}">{{ sem }}</option>
+                {% endfor %}
+            </select>
+
+            <input
+                type="text"
+                id="lsHistorySearch"
+                class="ls-history-search"
+                placeholder="Search previous evaluations...">
+        </div>
+
+        <table class="ls-history-table">
+            <thead>
+                <tr>
+                    <th>Period</th>
+                    <th>Subject</th>
+                    <th>Section</th>
+                    <th class="text-center">Respondents</th>
+                    <th class="text-center">Average</th>
+                </tr>
+            </thead>
+            <tbody id="lsHistoryBody">
+                {% for h in previousEvaluations %}
+                    {% set ratingClass = h.avgRating >= 4 ? 'ls-rating-high' : (h.avgRating >= 3 ? 'ls-rating-mid' : 'ls-rating-low') %}
+                    <tr class="ls-history-row"
+                        data-h-subject="{{ h.subjectCode|lower }}"
+                        data-h-year="{{ h.schoolYear|lower }}"
+                        data-h-sem="{{ h.semester|lower }}"
+                        data-h-search="{{ (h.subjectCode ~ ' ' ~ h.subjectName ~ ' ' ~ h.section ~ ' ' ~ h.schoolYear ~ ' ' ~ h.semester)|lower }}">
+                        <td>
+                            <span class="ls-history-period-main">{{ h.schoolYear }}</span>
+                            <span class="ls-history-period-sub">{{ h.semester }}</span>
+                        </td>
+                        <td>
+                            <span class="ls-history-code">{{ h.subjectCode }}</span>
+                            <span class="ls-history-name">{{ h.subjectName }}</span>
+                        </td>
+                        <td>{{ h.section }}</td>
+                        <td class="text-center">{{ h.evaluatorCount }}</td>
+                        <td class="text-center">
+                            <span class="ls-rating-pill {{ ratingClass }}">{{ h.avgRating|number_format(2) }}</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="lsHistoryNoResults" class="ls-history-no-results">
+            <i class="bi bi-search me-1"></i>No previous evaluations match your filter.
+        </div>
+        {% else %}
+        <div class="ls-history-empty">
+            <i class="bi bi-inboxes me-1"></i>No previous evaluation records found.
+        </div>
+        {% endif %}
+    </div>
+
+{# ═══════════════════════════════════════
+   UNLOAD BLOCKED MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade ls-blocked-modal" id="lsUnloadBlockedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="ls-blocked-head">
+                <div class="ls-blocked-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div>
+                    <div class="fw-bold" style="font-size:.9rem;line-height:1;">Unload Blocked</div>
+                    <small style="opacity:.85;">Active evaluation detected</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="ls-blocked-body">
+                <p id="lsUnloadBlockedMessage" class="mb-2" style="font-size:.84rem;color:#334155;">Cannot unload this subject because evaluation is currently active.</p>
+                <ul id="lsUnloadBlockedList" class="ls-blocked-list" style="display:none;"></ul>
+                <div class="text-end mt-3">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -633,9 +797,9 @@
                             <span class="qr-info-label">Subject</span>
                             <span class="qr-info-value" id="lsQrSubject"></span>
                         </div>
-                        <div class="qr-info-row" id="lsQrSectionRow">
-                            <span class="qr-info-label">Section</span>
-                            <span class="qr-info-value" id="lsQrSection"></span>
+                        <div class="qr-info-row" id="lsQrDetailsRow">
+                            <span class="qr-info-label">Details</span>
+                            <span class="qr-info-value" id="lsQrDetails"></span>
                         </div>
                     </div>
                     <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
@@ -704,6 +868,37 @@ function lsFilter() {
     document.getElementById('lsNoResults').style.display = count === 0 ? '' : 'none';
 }
 
+/* ── Previous evaluations filter ── */
+function lsHistoryFilter() {
+    var body = document.getElementById('lsHistoryBody');
+    if (!body) return;
+
+    var subject = (document.getElementById('lsHistorySubject') || {}).value || 'all';
+    var year = (document.getElementById('lsHistoryYear') || {}).value || 'all';
+    var semester = (document.getElementById('lsHistorySemester') || {}).value || 'all';
+    var search = ((document.getElementById('lsHistorySearch') || {}).value || '').toLowerCase();
+
+    var rows = body.querySelectorAll('.ls-history-row');
+    var shown = 0;
+
+    rows.forEach(function(row) {
+        var matchSubject = subject === 'all' || (row.getAttribute('data-h-subject') || '') === subject;
+        var matchYear = year === 'all' || (row.getAttribute('data-h-year') || '') === year;
+        var matchSemester = semester === 'all' || (row.getAttribute('data-h-sem') || '') === semester;
+        var haystack = row.getAttribute('data-h-search') || '';
+        var matchSearch = haystack.indexOf(search) !== -1;
+
+        var visible = matchSubject && matchYear && matchSemester && matchSearch;
+        row.style.display = visible ? '' : 'none';
+        if (visible) shown++;
+    });
+
+    var noResult = document.getElementById('lsHistoryNoResults');
+    if (noResult) {
+        noResult.style.display = shown === 0 ? '' : 'none';
+    }
+}
+
 var lsSortState = {};
 function lsSort(col) {
     var tbody = document.getElementById('lsTableBody');
@@ -754,6 +949,91 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.ls-row').forEach(function(r, i) {
         r.style.animationDelay = (i * 0.03) + 's';
     });
+
+    var historySubject = document.getElementById('lsHistorySubject');
+    var historyYear = document.getElementById('lsHistoryYear');
+    var historySemester = document.getElementById('lsHistorySemester');
+    var historySearch = document.getElementById('lsHistorySearch');
+
+    if (historySubject) historySubject.addEventListener('change', lsHistoryFilter);
+    if (historyYear) historyYear.addEventListener('change', lsHistoryFilter);
+    if (historySemester) historySemester.addEventListener('change', lsHistoryFilter);
+    if (historySearch) historySearch.addEventListener('input', lsHistoryFilter);
+
+    if (historySubject || historyYear || historySemester || historySearch) {
+        lsHistoryFilter();
+    }
+});
+
+function showUnloadBlockedModal(message, subjects) {
+    var msgEl = document.getElementById('lsUnloadBlockedMessage');
+    var listEl = document.getElementById('lsUnloadBlockedList');
+    if (msgEl) {
+        msgEl.textContent = message || 'Cannot unload this subject because evaluation is currently active.';
+    }
+    if (listEl) {
+        listEl.innerHTML = '';
+        if (Array.isArray(subjects) && subjects.length > 0) {
+            listEl.style.display = '';
+            subjects.forEach(function(label) {
+                var li = document.createElement('li');
+                li.textContent = label;
+                listEl.appendChild(li);
+            });
+        } else {
+            listEl.style.display = 'none';
+        }
+    }
+
+    var modalEl = document.getElementById('lsUnloadBlockedModal');
+    if (!modalEl) return;
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
+document.addEventListener('submit', function(event) {
+    var form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    if (form.classList.contains('js-unload-form')) {
+        var row = form.closest('.ls-row');
+        var isActive = !!(row && row.querySelector('.ls-eval-badge.ls-eval-active'));
+        if (isActive) {
+            event.preventDefault();
+            var subjectLabel = form.getAttribute('data-subject-label') || 'This subject';
+            showUnloadBlockedModal('Cannot unload while evaluation is active for this subject.', [subjectLabel]);
+            return;
+        }
+
+        var confirmMessage = form.getAttribute('data-confirm-message') || 'Unload this subject?';
+        if (!confirm(confirmMessage)) {
+            event.preventDefault();
+        }
+        return;
+    }
+
+    if (form.classList.contains('js-unload-all-form')) {
+        var blocked = [];
+        document.querySelectorAll('#lsTableBody .ls-row').forEach(function(row) {
+            var isActive = !!row.querySelector('.ls-eval-badge.ls-eval-active');
+            if (!isActive) return;
+
+            var code = (row.getAttribute('data-view-code') || '').trim();
+            var name = (row.getAttribute('data-view-name') || '').trim();
+            blocked.push(code + (name ? ' — ' + name : ''));
+        });
+
+        if (blocked.length > 0) {
+            event.preventDefault();
+            showUnloadBlockedModal('Cannot unload all because some subjects have active evaluation.', blocked);
+            return;
+        }
+
+        var unloadAllConfirm = form.getAttribute('data-confirm-message') || 'Unload all subjects?';
+        if (!confirm(unloadAllConfirm)) {
+            event.preventDefault();
+        }
+    }
 });
 
 /* ── Print Loaded Subjects ── */
@@ -769,7 +1049,7 @@ function lsPrint() {
     var userName = '{{ app.user.firstName }} {{ app.user.lastName }}';
     var deptName = '{{ app.user.department ? app.user.department.departmentName : "" }}';
     printDiv.innerHTML = '<div class="print-header">' +
-        '<h3>Teaching Subjects</h3>' +
+        '<h3>Schedule</h3>' +
         '<p>' + userName + (deptName ? ' — ' + deptName : '') + '</p>' +
         '<p style="font-size:7.5pt;color:#94a3b8;margin-top:4px;">Generated on ' + new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}) + '</p>' +
     '</div>';
@@ -843,17 +1123,71 @@ function lsPrint() {
         var evalId = btn.getAttribute('data-eval-id');
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
+        var subjectId = btn.getAttribute('data-eval-subject-id');
         var section = btn.getAttribute('data-eval-section');
+        var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
-        currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        // Fallback for stale/missing button data: rebuild values from the row and active evaluations.
+        var row = btn.closest('.ls-row');
+        if (row) {
+            var rowCode = (row.getAttribute('data-view-code') || '').trim();
+            var rowName = (row.getAttribute('data-view-name') || '').trim();
+            var rowSubjectId = (row.getAttribute('data-view-id') || '').trim();
+            var rowSectionRaw = (row.getAttribute('data-view-section') || '').trim();
+            var rowScheduleRaw = (row.getAttribute('data-view-schedule') || '').trim();
+            var rowSection = rowSectionRaw === '—' ? '' : rowSectionRaw;
+            var rowSchedule = rowScheduleRaw === '—' ? '' : rowScheduleRaw;
+
+            if (!subject && (rowCode || rowName)) {
+                subject = rowCode + (rowName ? ' — ' + rowName : '');
+            }
+            if (!subjectId && rowSubjectId) {
+                subjectId = rowSubjectId;
+            }
+            if (!section && rowSection) {
+                section = rowSection;
+            }
+            if (!schedule && rowSchedule) {
+                schedule = rowSchedule;
+            }
+
+            var rowMatch = findMatchingEvaluation(rowCode, rowName, section || rowSection);
+            if (rowMatch && rowMatch.data) {
+                if (!evalId) {
+                    evalId = rowMatch.id;
+                }
+                if (!faculty) {
+                    faculty = rowMatch.data.faculty || '';
+                }
+                if (!schoolYear) {
+                    schoolYear = rowMatch.data.schoolYear || rowMatch.data.name || '';
+                }
+            }
+        }
+
+        // Build thevaluation URL with subject ID and section for unique codes
+        if (subjectId && section) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId + '/' + encodeURIComponent(section);
+        } else if (subjectId) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId;
+        } else {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;
+        }
 
         document.getElementById('lsQrSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
         document.getElementById('lsQrFaculty').textContent = faculty || '—';
         document.getElementById('lsQrSubject').textContent = subject || '—';
-        document.getElementById('lsQrSection').textContent = section || '—';
-        var sectionRow = document.getElementById('lsQrSectionRow');
-        if (sectionRow) sectionRow.style.display = section ? '' : 'none';
+
+        // Build details display with section and schedule if available
+        var detailsDisplay = section || '';
+        if (schedule) {
+            detailsDisplay = (detailsDisplay ? detailsDisplay + ' | ' : '') + schedule;
+        }
+        document.getElementById('lsQrDetails').textContent = detailsDisplay || '—';
+
+        var detailsRow = document.getElementById('lsQrDetailsRow');
+        if (detailsRow) detailsRow.style.display = detailsDisplay ? '' : 'none';
 
         document.getElementById('lsQrUrl').textContent = currentQrUrl;
 
@@ -880,8 +1214,88 @@ function lsPrint() {
 
     /* ─── Real-time QR Polling ─── */
     const activeEvaluations = JSON.parse('{{ activeEvalMap|json_encode|escape('js') }}');
+    const facultyNameCandidates = [
+        '{{ app.user.firstName|default('')|e('js') }} {{ app.user.lastName|default('')|e('js') }}',
+        '{{ app.user.lastName|default('')|e('js') }}, {{ app.user.firstName|default('')|e('js') }}',
+        '{{ app.user.lastName|default('')|e('js') }}'
+    ].map(function(v) {
+        return (v || '').toLowerCase().trim();
+    }).filter(function(v, i, arr) {
+        return !!v && arr.indexOf(v) === i;
+    });
+
     let lastPolledTime = 0;
     let currentActiveEvals = activeEvaluations;
+
+    function normalizeText(value) {
+        return (value || '').toString().trim().toLowerCase();
+    }
+
+    function getEvalSubjectCode(evalSubject) {
+        if (!evalSubject) return '';
+        var parts = evalSubject.split(' — ');
+        return normalizeText(parts[0] || evalSubject);
+    }
+
+    function facultyMatches(evalData) {
+        var evalFaculty = normalizeText(evalData && evalData.faculty ? evalData.faculty : '');
+        if (!evalFaculty) return true;
+        if (facultyNameCandidates.length === 0) return true;
+
+        return facultyNameCandidates.some(function(candidate) {
+            return evalFaculty === candidate || evalFaculty.indexOf(candidate) !== -1 || candidate.indexOf(evalFaculty) !== -1;
+        });
+    }
+
+    function subjectMatches(evalData, code, name) {
+        var evalSubject = normalizeText(evalData && evalData.subject ? evalData.subject : '');
+        if (!evalSubject) return true;
+
+        var codeNorm = normalizeText(code);
+        var nameNorm = normalizeText(name);
+        var evalCode = getEvalSubjectCode(evalData.subject || '');
+
+        return (evalCode && codeNorm === evalCode) ||
+            codeNorm.indexOf(evalSubject) === 0 ||
+            evalSubject.indexOf(codeNorm) === 0 ||
+            nameNorm.indexOf(evalSubject) !== -1;
+    }
+
+    function sectionMatches(evalData, section) {
+        var evalSection = normalizeText(evalData && evalData.section ? evalData.section : '');
+        if (!evalSection) return true;
+        return evalSection === normalizeText(section);
+    }
+
+    function findMatchingEvaluation(code, name, section) {
+        var entries = Object.entries(currentActiveEvals || {});
+        var fallback = null;
+
+        for (var i = 0; i < entries.length; i++) {
+            var evalId = entries[i][0];
+            var evalData = entries[i][1] || {};
+
+            if (!facultyMatches(evalData)) continue;
+            if (!subjectMatches(evalData, code, name)) continue;
+
+            if (sectionMatches(evalData, section)) {
+                return { id: evalId, data: evalData };
+            }
+
+            if (!fallback) {
+                fallback = { id: evalId, data: evalData };
+            }
+        }
+
+        return fallback;
+    }
+
+    function escapeAttr(value) {
+        return (value || '').toString()
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
     window.pollActiveEvaluationsLS = function(forceImmediate) {
         const now = Date.now();
@@ -907,11 +1321,12 @@ function lsPrint() {
 
                 if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
                     console.log('Loaded subjects: Evaluation list changed!');
-                    currentActiveEvals = newEvalMap;
-                    window.hasActiveEvalLS = newKeys.length > 0;
-                    window.firstActiveEvalIdLS = newKeys.length > 0 ? newKeys[0] : null;
-                    updateQRButtons();
                 }
+
+                currentActiveEvals = newEvalMap;
+                window.hasActiveEvalLS = newKeys.length > 0;
+                window.firstActiveEvalIdLS = newKeys.length > 0 ? newKeys[0] : null;
+                updateQRButtons();
             })
             .catch(error => {
                 if (error.name !== 'AbortError') {
@@ -921,59 +1336,49 @@ function lsPrint() {
     };
 
     function updateQRButtons() {
-        if (!window.hasActiveEvalLS) return;
-
         document.querySelectorAll('#lsTableBody .ls-row').forEach(row => {
-            const qrButton = row.querySelector('.ls-qr-btn');
-            if (!qrButton && window.firstActiveEvalIdLS) {
-                // QR button doesn't exist, need to add it to the Actions cell
-                const actionsCell = row.querySelector('td:nth-child(10)'); // Actions column is now 10th
-                if (actionsCell) {
-                    const flexDiv = actionsCell.querySelector('.d-flex');
-                    if (flexDiv && !flexDiv.querySelector('.ls-qr-btn')) {
-                        const subjectId = row.getAttribute('data-view-id');
-                        const code = row.getAttribute('data-view-code');
-                        const section = row.getAttribute('data-view-section') || '';
+            const statusCell = row.querySelector('td:nth-child(9)');
+            const actionsCell = row.querySelector('td:nth-child(10)');
+            if (!actionsCell) return;
 
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'btn btn-sm ls-action-qr ls-qr-btn';
-                        btn.setAttribute('data-subject-id', subjectId);
-                        btn.setAttribute('data-subject-code', code);
-                        btn.setAttribute('data-section', section);
-                        btn.setAttribute('data-eval-id', window.firstActiveEvalIdLS);
-                        btn.setAttribute('title', 'Generate QR Code');
-                        btn.setAttribute('style', 'width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;');
-                        btn.innerHTML = '<i class="bi bi-qr-code-scan"></i>';
-                        flexDiv.insertBefore(btn, flexDiv.firstChild); // Insert QR button first in the flex container
-                    }
+            const flexDiv = actionsCell.querySelector('.d-flex');
+            if (!flexDiv) return;
+
+            const subjectId = row.getAttribute('data-view-id') || '';
+            const code = row.getAttribute('data-view-code') || '';
+            const name = row.getAttribute('data-view-name') || '';
+            const section = row.getAttribute('data-view-section') || '';
+            const schedule = row.getAttribute('data-view-schedule') || '';
+
+            const match = findMatchingEvaluation(code, name, section);
+            const existingQrBtn = flexDiv.querySelector('.ls-qr-btn');
+
+            if (!match || !match.id) {
+                if (statusCell) {
+                    statusCell.innerHTML = '<span class="ls-eval-badge ls-eval-none"><i class="bi bi-dash-circle"></i> No Evaluation</span>';
                 }
+                if (existingQrBtn) {
+                    existingQrBtn.remove();
+                }
+                return;
+            }
+
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Active</span>';
+            }
+
+            const evalData = match.data || {};
+            const evalId = match.id;
+
+            const qrButtonHtml = '<button type="button" class="btn btn-sm ls-action-qr ls-qr-btn" data-bs-toggle="modal" data-bs-target="#lsQrModal" data-eval-id="' + evalId + '" data-eval-faculty="' + escapeAttr(evalData.faculty || '') + '" data-eval-subject="' + escapeAttr(code + ' — ' + name) + '" data-eval-subject-id="' + escapeAttr(subjectId) + '" data-eval-section="' + escapeAttr(section) + '" data-eval-schedule="' + escapeAttr(schedule) + '" data-eval-school-year="' + escapeAttr(evalData.schoolYear || evalData.name || '') + '" title="Generate QR Code" style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;"><i class="bi bi-qr-code-scan"></i></button>';
+
+            if (existingQrBtn) {
+                existingQrBtn.outerHTML = qrButtonHtml;
+            } else {
+                flexDiv.insertAdjacentHTML('afterbegin', qrButtonHtml);
             }
         });
     }
-
-    window.showLoadedSubjectsQR = function(subjectId, code, section, evalId) {
-        const params = new URLSearchParams();
-        params.append('subjectId', subjectId);
-        if (section) params.append('section', section);
-
-        const qrUrl = '/evaluation/qr/' + evalId + '?' + params.toString();
-        window.currentQrUrl = window.location.origin + qrUrl;
-        document.getElementById('lsQrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(window.currentQrUrl);
-        new bootstrap.Modal(document.getElementById('lsQrModal')).show();
-    };
-
-    // Event delegation for QR button clicks
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.ls-qr-btn')) {
-            const btn = e.target.closest('.ls-qr-btn');
-            const subjectId = btn.getAttribute('data-subject-id');
-            const code = btn.getAttribute('data-subject-code');
-            const section = btn.getAttribute('data-section');
-            const evalId = btn.getAttribute('data-eval-id');
-            window.showLoadedSubjectsQR(parseInt(subjectId), code, section, parseInt(evalId));
-        }
-    });
 
     // Start polling
     window.pollActiveEvaluationsLS(true);

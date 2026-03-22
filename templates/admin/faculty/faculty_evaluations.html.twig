@@ -5,7 +5,7 @@
 
 {% block stylesheets %}
 <style>
-/* ── Header ── */
+/* ΓöÇΓöÇ Header ΓöÇΓöÇ */
 .fe-header {
     position: relative;
     border-radius: 16px;
@@ -105,7 +105,7 @@
     box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
-/* ── Stats ── */
+/* ΓöÇΓöÇ Stats ΓöÇΓöÇ */
 .fe-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -155,7 +155,7 @@
     font-weight: 500;
 }
 
-/* ── Toolbar ── */
+/* ΓöÇΓöÇ Toolbar ΓöÇΓöÇ */
 .fe-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem;overflow-x:auto;}
 .ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
 .ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
@@ -168,7 +168,7 @@
 .ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
 .ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 
-/* ── Evaluation Table ── */
+/* ΓöÇΓöÇ Evaluation Table ΓöÇΓöÇ */
 .fe-table-wrap {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -286,7 +286,7 @@
     cursor: pointer;
 }
 
-/* ── Empty ── */
+/* ΓöÇΓöÇ Empty ΓöÇΓöÇ */
 .fe-empty {
     text-align: center;
     padding: 3rem 1rem;
@@ -308,7 +308,7 @@
     margin-bottom: .75rem;
 }
 
-/* ── Animation ── */
+/* ΓöÇΓöÇ Animation ΓöÇΓöÇ */
 @keyframes feSlideIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -323,7 +323,7 @@
 .fe-stat-card:nth-child(4) { animation-delay: .2s; }
 .fe-table-wrap { animation-delay: .15s; }
 
-/* ── Select Mode Button ── */
+/* ΓöÇΓöÇ Select Mode Button ΓöÇΓöÇ */
 .fe-btn-select {
     background: rgba(255,255,255,.1);
     border: 1px solid rgba(255,255,255,.2);
@@ -344,7 +344,7 @@
     color: #78350f;
 }
 
-/* ── Select All ── */
+/* ΓöÇΓöÇ Select All ΓöÇΓöÇ */
 .fe-select-all {
     display: flex;
     align-items: center;
@@ -360,7 +360,7 @@
     cursor: pointer;
 }
 
-/* ── Checkbox in Table ── */
+/* ΓöÇΓöÇ Checkbox in Table ΓöÇΓöÇ */
 .fe-th-check, .fe-td-check {
     text-align: center;
     width: 40px;
@@ -374,7 +374,7 @@
     border-radius: 4px;
 }
 
-/* ── Floating Action Bar ── */
+/* ΓöÇΓöÇ Floating Action Bar ΓöÇΓöÇ */
 .fe-action-bar {
     position: fixed;
     bottom: -80px;
@@ -436,7 +436,7 @@
     color: #fff;
 }
 
-/* ── Responsive ── */
+/* ΓöÇΓöÇ Responsive ΓöÇΓöÇ */
 @media (max-width: 768px) {
     .fe-stats { grid-template-columns: repeat(2, 1fr); }
     .fe-table-wrap { overflow-x: auto; }
@@ -447,7 +447,7 @@
 
 {% block body %}
 
-{# ── Header Section ── #}
+{# ΓöÇΓöÇ Header Section ΓöÇΓöÇ #}
 <div class="fe-header">
     <div class="fe-header-bg"></div>
     <div class="fe-header-inner">
@@ -494,7 +494,7 @@
     </div>
 </div>
 
-{# ── Stats Row ── #}
+{# ΓöÇΓöÇ Stats Row ΓöÇΓöÇ #}
 {% if evaluations|length > 0 %}
 <div class="fe-stats">
     <div class="fe-stat-card">
@@ -529,7 +529,7 @@
 </div>
 {% endif %}
 
-{# ── Filter Toolbar ── #}
+{# ΓöÇΓöÇ Filter Toolbar ΓöÇΓöÇ #}
 <div class="fe-toolbar">
     <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
         {% if not staffMode %}
@@ -550,7 +550,7 @@
     </div>
 </div>
 
-{# ── Evaluation Table ── #}
+{# ΓöÇΓöÇ Evaluation Table ΓöÇΓöÇ #}
 {% if evaluations|length > 0 %}
 <div class="fe-table-wrap">
     <table class="table table-hover align-middle mb-0 fe-table">
@@ -581,10 +581,10 @@
                     <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
                 </td>
                 <td>
-                    {% if ev.subject %}<span class="fe-info-badge"><i class="bi bi-book me-1"></i>{{ ev.subject }}</span>{% else %}—{% endif %}
+                    {% if ev.subject %}<span class="fe-info-badge"><i class="bi bi-book me-1"></i>{{ ev.subject }}</span>{% else %}ΓÇö{% endif %}
                 </td>
                 <td>
-                    {% if ev.section %}<span class="fe-info-badge"><i class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}—{% endif %}
+                    {% if ev.section %}<span class="fe-info-badge"><i class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}ΓÇö{% endif %}
                 </td>
                 <td></td>
                 <td class="text-center">
@@ -674,7 +674,7 @@
 </div>
 {% endif %}
 
-{# ── Floating Action Bar ── #}
+{# ΓöÇΓöÇ Floating Action Bar ΓöÇΓöÇ #}
 <div class="fe-action-bar" id="feActionBar">
     <div class="fe-action-inner">
         <span class="fe-action-count"><span id="feSelCount">0</span> evaluation(s) selected</span>
@@ -691,7 +691,7 @@
 
 
 <script>
-/* ── Type Filter & Search ── */
+/* ΓöÇΓöÇ Type Filter & Search ΓöÇΓöÇ */
 var feCurrentType = 'all';
 
 function feFilterType(type, btn) {

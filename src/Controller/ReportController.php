@@ -12,11 +12,11 @@ use App\Entity\MessageNotification;
 use App\Entity\Question;
 use App\Entity\QuestionCategoryDescription;
 use App\Entity\Subject;
+use App\Entity\User;
 use App\Repository\AcademicYearRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\DepartmentRepository;
-use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
@@ -171,6 +171,7 @@ class ReportController extends AbstractController
     // ════════════════════════════════════════════════
 
     #[Route('/evaluations', name: 'staff_evaluations', methods: ['GET'])]
+    #[IsGranted('ROLE_STAFF')]
     public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo, FacultySubjectLoadRepository $fslRepo): Response
     {
         $evaluations = $repo->findAllOrdered();
@@ -415,6 +416,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/evaluations/create', name: 'staff_evaluation_create', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
     public function createEvaluation(Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
@@ -466,6 +468,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/evaluations/{id}/toggle', name: 'staff_evaluation_toggle', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
     public function toggleEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('toggle_eval' . $eval->getId(), $request->request->get('_token'))) {
@@ -482,6 +485,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/evaluations/{id}/edit', name: 'staff_evaluation_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
     public function editEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('edit_eval' . $eval->getId(), $request->request->get('_token'))) {
@@ -561,6 +565,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/evaluations/{id}/lock-results', name: 'staff_evaluation_lock_results', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
     public function lockResults(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('lock' . $eval->getId(), $request->request->get('_token'))) {
@@ -595,6 +600,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/evaluations/{id}/delete', name: 'staff_evaluation_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
     public function deleteEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('delete_eval' . $eval->getId(), $request->request->get('_token'))) {
@@ -1038,7 +1044,6 @@ class ReportController extends AbstractController
         CourseRepository $courseRepo,
         DepartmentRepository $deptRepo,
         SubjectRepository $subjectRepo,
-        EnrollmentRepository $enrollRepo,
         EvaluationPeriodRepository $evalRepo
     ): Response {
         $departments = $deptRepo->findAllOrdered();
@@ -1057,7 +1062,6 @@ class ReportController extends AbstractController
             'courses'           => $courseRepo->findAllOrdered(),
             'departments'       => $departments,
             'subjects'          => $subjectRepo->findAll(),
-            'enrollments'       => $enrollRepo->findAll(),
             'evaluationPeriods' => $evalRepo->findAllOrdered(),
             'colleges'          => $collegeNames,
             'staffMode'         => true,
@@ -1350,7 +1354,7 @@ class ReportController extends AbstractController
                 $em->flush();
                 $this->addFlash('success', 'Subject deleted.');
             } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
-                $this->addFlash('danger', 'Cannot delete this subject because it has enrollments or other records linked to it.');
+                $this->addFlash('danger', 'Cannot delete this subject because it has other records linked to it.');
             }
         }
         return $this->redirectToRoute('staff_subjects');
@@ -1476,14 +1480,26 @@ class ReportController extends AbstractController
     // ════════════════════════════════════════════════
 
     #[Route('/faculty-messages', name: 'staff_faculty_messages', methods: ['GET'])]
-    public function facultyMessages(EvaluationMessageRepository $msgRepo): Response
+    public function facultyMessages(
+        EvaluationMessageRepository $msgRepo,
+        MessageNotificationRepository $notifRepo,
+    ): Response
     {
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User && $currentUser->getId() !== null) {
+            try {
+                $notifRepo->markAllAsReadForUser($currentUser->getId());
+            } catch (\Throwable) {
+                // Do not block message page rendering if notification cleanup fails.
+            }
+        }
+
         $messages = $msgRepo->findAllMessages();
         $repliesMap = [];
         foreach ($messages as $msg) {
             $repliesMap[$msg->getId()] = $msgRepo->findRepliesForMessage($msg->getId());
         }
-        return $this->render('admin/faculty_messages.html.twig', [
+        return $this->render('admin/faculty/faculty_messages.html.twig', [
             'messages'     => $messages,
             'repliesMap'   => $repliesMap,
             'pendingCount' => $msgRepo->countPending(),
@@ -1693,7 +1709,7 @@ class ReportController extends AbstractController
 
         $overallAvg = count($results) > 0 ? round($sumAvg / count($results), 2) : 0;
 
-        return $this->render('admin/faculty_evaluations.html.twig', [
+        return $this->render('admin/faculty/faculty_evaluations.html.twig', [
             'faculty' => $faculty,
             'evaluations' => $results,
             'totalEvaluators' => $totalEvaluators,
@@ -1740,7 +1756,7 @@ class ReportController extends AbstractController
 
         $overallAvg = count($results) > 0 ? round($sumAvg / count($results), 2) : 0;
 
-        return $this->render('admin/faculty_evaluations_superior.html.twig', [
+        return $this->render('admin/faculty/faculty_evaluations_superior.html.twig', [
             'faculty' => $faculty,
             'evaluations' => $results,
             'totalEvaluators' => $totalEvaluators,

@@ -71,6 +71,28 @@
 .fd-perf-tag.perf-orange{background:#FFF7ED;color:#EA580C;}
 .fd-perf-tag.perf-red{background:#FEF2F2;color:#DC2626;}
 
+/* ── Evaluation Notify Modal ── */
+.fd-eval-notif-dialog{max-width:540px;}
+.fd-eval-notif-modal{border-radius:16px;overflow:hidden;box-shadow:0 20px 44px rgba(15,23,42,.2);background:#fff;}
+.fd-eval-notif-hero{padding:14px 16px 10px;background:#fff;position:relative;}
+.fd-eval-notif-hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:#e8edf4;}
+.fd-eval-notif-head{display:flex;align-items:flex-start;gap:.7rem;position:relative;z-index:1;}
+.fd-eval-notif-icon{width:40px;height:40px;border-radius:12px;background:#eef4ff;color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:.92rem;border:1px solid #e1ebff;}
+.fd-eval-notif-title{margin:0;font-size:1.45rem;font-weight:800;color:#1e293b;letter-spacing:.05px;line-height:1.18;}
+.fd-eval-notif-sub{margin:.2rem 0 0;color:#64748b;font-size:.95rem;line-height:1.32;}
+.fd-eval-notif-list{margin-top:.3rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px;}
+.fd-eval-notif-item{display:flex;align-items:flex-start;gap:.62rem;padding:.72rem .78rem;border:1px solid #dbe4ee;border-radius:12px;background:#f8fafc;}
+.fd-eval-notif-type{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:24px;border-radius:999px;background:#eaf1ff;color:#2563eb;font-size:.64rem;font-weight:800;letter-spacing:.2px;flex-shrink:0;}
+.fd-eval-notif-main{min-width:0;}
+.fd-eval-notif-main strong{display:block;font-size:.92rem;color:#1e293b;line-height:1.25;}
+.fd-eval-notif-main small{display:block;color:#64748b;font-size:.82rem;line-height:1.34;}
+.fd-eval-notif-more{grid-column:1 / -1;padding:.65rem .8rem;background:#f3f6fb;color:#475569;font-size:.74rem;font-weight:600;text-align:center;border-radius:10px;border:1px solid #e2e8f0;}
+.fd-eval-notif-footer{padding:.8rem .95rem;background:#fff;border-top:1px solid #e8edf4;}
+.fd-eval-later-btn{min-width:86px;height:40px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-weight:700;}
+.fd-eval-later-btn:hover{background:#f1f5f9;color:#334155;}
+.fd-eval-primary-btn{min-width:148px;height:40px;border:none;border-radius:10px;background:linear-gradient(135deg,#3b4fba 0%,#355fc0 52%,#2c9ca7 100%);color:#fff;font-weight:700;box-shadow:0 7px 14px rgba(53,95,192,.22);display:inline-flex;align-items:center;justify-content:center;}
+.fd-eval-primary-btn:hover{color:#fff;filter:brightness(1.04);}
+
 /* ── Responsive ── */
 @media(max-width:992px){
     .fd-actions-grid{grid-template-columns:repeat(2,1fr);}
@@ -82,6 +104,13 @@
     .fd-table{font-size:.75rem;}
     .fd-table thead th{padding:8px 10px;font-size:.62rem;}
     .fd-table tbody td{padding:8px 10px;}
+    .fd-eval-notif-dialog{max-width:100%;margin:.5rem;}
+    .fd-eval-notif-hero{padding:14px 14px 10px;}
+    .fd-eval-notif-title{font-size:1.16rem;}
+    .fd-eval-notif-sub{font-size:.82rem;}
+    .fd-eval-notif-list{grid-template-columns:1fr;}
+    .fd-eval-notif-main strong{font-size:.86rem;}
+    .fd-eval-notif-main small{font-size:.76rem;}
 }
 
 /* ── Animations ── */
@@ -112,6 +141,64 @@
         <span><i class="bi bi-clipboard-check me-1"></i>{{ openEvaluations|length }} active evaluation(s)</span>
     </div>
 </div>
+
+{% if openEvaluations|length > 0 %}
+<div class="modal fade" id="facultyEvalNotifyModal" tabindex="-1" aria-hidden="true" data-user-id="{{ app.user.id }}">
+    <div class="modal-dialog modal-dialog-centered fd-eval-notif-dialog">
+        <div class="modal-content border-0 fd-eval-notif-modal">
+            <div class="fd-eval-notif-hero">
+                <div class="fd-eval-notif-head">
+                    <div class="fd-eval-notif-icon"><i class="bi bi-bell-fill"></i></div>
+                    <div>
+                        <h5 class="fd-eval-notif-title">You Have {{ openEvaluations|length }} Active Evaluation{{ openEvaluations|length != 1 ? 's' : '' }}</h5>
+                        <p class="fd-eval-notif-sub">Students can currently evaluate your assigned classes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-3 pt-2">
+                <div class="fd-eval-notif-list">
+                    {% for eval in openEvaluations|slice(0, 4) %}
+                    <div class="fd-eval-notif-item">
+                        <span class="fd-eval-notif-type">{{ eval.evaluationType }}</span>
+                        <div class="fd-eval-notif-main">
+                            <strong>
+                                Subject: {{ eval.subject ?: 'General Evaluation' }}
+                            </strong>
+                            {% if eval.subject is empty and subjects|length > 0 %}
+                            <small>
+                                Assigned subject{{ subjects|length != 1 ? 's' : '' }}:
+                                {% for s in subjects|slice(0, 3) %}
+                                    {{ s.subjectCode }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if subjects|length > 3 %}
+                                    +{{ subjects|length - 3 }} more
+                                {% endif %}
+                            </small>
+                            {% endif %}
+                            <small>
+                                {{ eval.department ? eval.department.departmentName : 'Department-wide' }}
+                                {% if eval.section %} · Section {{ eval.section }}{% endif %}
+                                · Ends {{ eval.endDate|date('M d, Y g:i A') }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if openEvaluations|length > 4 %}
+                    <div class="fd-eval-notif-more">+{{ openEvaluations|length - 4 }} more active evaluation{{ (openEvaluations|length - 4) != 1 ? 's' : '' }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer fd-eval-notif-footer">
+                <button type="button" class="btn fd-eval-later-btn" data-bs-dismiss="modal">Later</button>
+                <a href="{{ path('faculty_eval_results') }}" class="btn fd-eval-primary-btn">
+                    <i class="bi bi-clipboard-data me-1"></i> Review Results
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {# ═══════ STAT CARDS ═══════ #}
 {% set avgRating = 0 %}
@@ -191,7 +278,7 @@
         </div>
         <i class="bi bi-chevron-right fd-action-arrow"></i>
     </a>
-    <a href="{{ path('faculty_schedule') }}" class="fd-action-card">
+    <a href="{{ path('faculty_loaded_subjects') }}" class="fd-action-card">
         <div class="fd-action-icon" style="background:#F0FDF4;color:#16A34A"><i class="bi bi-calendar-week"></i></div>
         <div class="fd-action-text">
             <span class="fd-action-title">Class Schedule</span>
@@ -304,5 +391,26 @@ function fdSortSubjects(col){
     const icon=document.querySelector('.fd-sort-icon[data-col="'+col+'"]');
     if(icon){icon.className='bi '+(dir==='asc'?'bi-arrow-up':'bi-arrow-down')+' fd-sort-icon';icon.style.opacity='.85';}
 }
+
+function showFacultyEvalNotifyModal(){
+    const modalEl = document.getElementById('facultyEvalNotifyModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return;
+    }
+
+    if (modalEl.dataset.autoShown === '1') {
+        return;
+    }
+    modalEl.dataset.autoShown = '1';
+
+    setTimeout(function(){
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }, 120);
+}
+
+document.addEventListener('DOMContentLoaded', showFacultyEvalNotifyModal);
+document.addEventListener('turbo:load', showFacultyEvalNotifyModal);
+
 </script>
 {% endblock %}

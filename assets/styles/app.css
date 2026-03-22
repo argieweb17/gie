@@ -1867,9 +1867,33 @@ a:hover {
 }
 
 /* ── Notification Bell ── */
+.mobile-notif-link,
+.mobile-notif-link:hover,
+.mobile-notif-link:focus {
+    color: #fff !important;
+}
+.mobile-notif-icon {
+    color: currentColor !important;
+}
+.topbar-notif-btn,
+.topbar-notif-btn:hover,
+.topbar-notif-btn:focus {
+    color: #64748B !important;
+}
+.topbar-notif-btn.has-unread {
+    color: #64748B !important;
+}
+.topbar-notif-icon {
+    color: currentColor !important;
+}
+.notif-count-badge {
+    background: #EF4444 !important;
+    color: #fff !important;
+}
 .topbar-bell-ring {
     animation: bellRing 2s ease infinite;
     transform-origin: top center;
+    color: inherit !important;
 }
 @keyframes bellRing {
     0% { transform: rotate(0); }

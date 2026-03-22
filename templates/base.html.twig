@@ -26,19 +26,19 @@
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
                 <div class="d-flex align-items-center ms-auto gap-2">
                     {% if is_granted('ROLE_FACULTY') %}
-                    <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative" title="Notifications">
-                        <i class="bi bi-bell-fill fs-5"></i>
+                    <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
+                        <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
                         {% if notifCount > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
                     {% elseif is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-                    <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative" title="Notifications">
-                        <i class="bi bi-bell-fill fs-5"></i>
+                    <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
+                        <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
                         {% if notifCount > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
                     {% endif %}
@@ -123,7 +123,7 @@
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
                         <i class="bi bi-book-fill sidebar-icon"></i> Subject Load
-                        <span class="sidebar-count">{{ sc.subjects }}</span>
+                        <span class="sidebar-count">{{ faculty_subjects()|length }}</span>
                     </a>
                     <a class="nav-link {% if 'faculty_department_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('faculty_department_subjects') }}">
@@ -131,7 +131,7 @@
                     </a>
                     <a class="nav-link {% if 'faculty_loaded_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('faculty_loaded_subjects') }}">
-                        <i class="bi bi-journal-bookmark-fill sidebar-icon"></i> Class Schedule
+                        <i class="bi bi-journal-bookmark-fill sidebar-icon"></i> Schedule
                     </a>
                 {% endif %}
 
@@ -354,10 +354,10 @@
                 {% if is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
                 {% set messageNotifCount = unread_message_notifications() %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
-                    <button class="topbar-notif-btn" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:{% if messageNotifCount > 0 %}#DC2626{% else %}#64748B{% endif %};cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-bell{% if messageNotifCount > 0 %}-fill{% endif %}"></i>
+                    <button class="topbar-notif-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-bell topbar-notif-icon{% if messageNotifCount > 0 %} topbar-bell-ring{% endif %}"></i>
                         {% if messageNotifCount > 0 %}
-                            <span class="topbar-notif-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;background:#EF4444;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">{{ messageNotifCount }}</span>
+                            <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">{{ messageNotifCount }}</span>
                         {% endif %}
                     </button>
                     <div class="topbar-notif-dropdown" id="topbarMessageNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">

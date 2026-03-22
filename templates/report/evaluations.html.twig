@@ -560,7 +560,7 @@
                             <span class="qr-info-value" id="qrEvalSubject"></span>
                         </div>
                         <div class="qr-info-row" id="qrEvalDetailsRow">
-                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-label">Details</span>
                             <span class="qr-info-value" id="qrEvalDetails"></span>
                         </div>
                     </div>
@@ -824,6 +824,7 @@ document.querySelectorAll('.faculty-select').forEach(function(sel) {
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
         var section = btn.getAttribute('data-eval-section');
+        var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
         var baseUrl = window.location.origin;
@@ -836,9 +837,15 @@ document.querySelectorAll('.faculty-select').forEach(function(sel) {
         document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
         document.getElementById('qrEvalFaculty').textContent = faculty || '';
         document.getElementById('qrEvalSubject').textContent = subject || '';
-        document.getElementById('qrEvalDetails').textContent = section || '';
+
+        // Build details display with section and schedule if available
+        var detailsDisplay = section || '';
+        if (schedule) {
+            detailsDisplay = (detailsDisplay ? detailsDisplay + ' | ' : '') + schedule;
+        }
+        document.getElementById('qrEvalDetails').textContent = detailsDisplay || '';
         var detailsRow = document.getElementById('qrEvalDetailsRow');
-        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
+        if (detailsRow) detailsRow.style.display = detailsDisplay ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
 
         var qrImg = document.getElementById('qrImage');

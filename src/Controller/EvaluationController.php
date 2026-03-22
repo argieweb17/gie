@@ -6,7 +6,6 @@ use App\Entity\AuditLog;
 use App\Entity\EvaluationResponse;
 use App\Repository\AcademicYearRepository;
 use App\Repository\CurriculumRepository;
-use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\FacultySubjectLoadRepository;
@@ -51,12 +50,9 @@ class EvaluationController extends AbstractController
     #[Route('/qr/{id}/{subjectId}/{section}', name: 'evaluation_qr_redirect_with_section', methods: ['GET', 'POST'])]
     public function qrRedirect(
         int $id,
-        ?int $subjectId = null,
-        ?string $section = null,
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SubjectRepository $subjectRepo,
-        EnrollmentRepository $enrollRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
         QuestionCategoryDescriptionRepository $descRepo,
@@ -64,6 +60,8 @@ class EvaluationController extends AbstractController
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
         EntityManagerInterface $em,
+        ?int $subjectId = null,
+        ?string $section = null,
     ): Response {
         $eval = $evalRepo->find($id);
         if (!$eval || !$eval->isOpen() || $eval->getEvaluationType() !== 'SET') {
@@ -242,25 +240,13 @@ class EvaluationController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
-        EnrollmentRepository $enrollRepo,
+        SubjectRepository $subjectRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
         $openEvals = $evalRepo->findOpen();
 
-        // ── Resolve the student's approved enrollments ──
         $studentYearLevel = $this->normalizeYearLevel($user->getYearLevel());
-
-        $enrollments = $enrollRepo->findByStudent($user->getId());
-        $enrolledSubjects = [];
-        $enrollmentSections = [];
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->isApproved()) {
-                $subj = $enrollment->getSubject();
-                $enrolledSubjects[$subj->getId()] = $subj;
-                $enrollmentSections[$subj->getId()] = $enrollment->getSection();
-            }
-        }
 
         // ── Build evaluation list ──
         $subjects = [];
@@ -288,47 +274,36 @@ class EvaluationController extends AbstractController
                 continue;
             }
 
-            // ── Only show subjects the student is enrolled in (approved) ──
-            foreach ($enrolledSubjects as $subject) {
-                $faculty = $subject->getFaculty();
+            // ── Resolve faculty from evaluation ──
+            $faculty = null;
+            $subject = null;
 
-                // If eval targets a specific faculty+subject, match against eval
-                if ($eval->getFaculty() && $eval->getSubject()) {
-                    $subjectLabel = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
-                    if ($subjectLabel !== $eval->getSubject()) {
-                        continue;
-                    }
-                    if (!$faculty) {
-                        $faculty = $userRepo->findOneByFullName($eval->getFaculty());
-                    }
-                    if (!$faculty || $faculty->getFullName() !== $eval->getFaculty()) {
-                        continue;
-                    }
-                } else {
-                    if (!$faculty) continue;
-                }
-
-                // If eval targets a specific section, match against enrollment section
-                if ($eval->getSection() !== null && $eval->getSection() !== '') {
-                    $studentSection = $enrollmentSections[$subject->getId()] ?? null;
-                    if ($studentSection === null || strtolower(trim($studentSection)) !== strtolower(trim($eval->getSection()))) {
-                        continue;
-                    }
-                }
-
-                $submitted = $responseRepo->hasSubmitted(
-                    $user->getId(), $eval->getId(), $faculty->getId(), $subject->getId()
-                );
-                $drafts = $responseRepo->findDrafts($user->getId(), $eval->getId(), $faculty->getId(), $subject->getId());
-
-                $subjects[] = [
-                    'evaluation' => $eval,
-                    'subject' => $subject,
-                    'faculty' => $faculty,
-                    'submitted' => $submitted,
-                    'hasDraft' => count($drafts) > 0,
-                ];
+            if ($eval->getFaculty()) {
+                $faculty = $userRepo->findOneByFullName($eval->getFaculty());
             }
+
+            if ($eval->getSubject()) {
+                $parts = explode(' — ', $eval->getSubject(), 2);
+                $code = trim($parts[0]);
+                $subject = $subjectRepo->findOneBy(['subjectCode' => $code]);
+            }
+
+            if (!$faculty || !$subject) {
+                continue;
+            }
+
+            $submitted = $responseRepo->hasSubmitted(
+                $user->getId(), $eval->getId(), $faculty->getId(), $subject->getId()
+            );
+            $drafts = $responseRepo->findDrafts($user->getId(), $eval->getId(), $faculty->getId(), $subject->getId());
+
+            $subjects[] = [
+                'evaluation' => $eval,
+                'subject' => $subject,
+                'faculty' => $faculty,
+                'submitted' => $submitted,
+                'hasDraft' => count($drafts) > 0,
+            ];
         }
 
         return $this->render('evaluation/set_index.html.twig', [
@@ -349,7 +324,6 @@ class EvaluationController extends AbstractController
         QuestionCategoryDescriptionRepository $descRepo,
         EntityManagerInterface $em,
         UserRepository $userRepo,
-        EnrollmentRepository $enrollRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
@@ -359,30 +333,6 @@ class EvaluationController extends AbstractController
         if (!$eval || !$subject || !$eval->isOpen() || $eval->getEvaluationType() !== 'SET') {
             $this->addFlash('danger', 'Invalid evaluation or evaluation is closed.');
             return $this->redirectToRoute('evaluation_set_index');
-        }
-
-        // Check if student is enrolled (approved) in this subject
-        $enrolled = false;
-        $studentSection = null;
-        $enrollments = $enrollRepo->findByStudent($user->getId());
-        foreach ($enrollments as $enrollment) {
-            if ($enrollment->isApproved() && $enrollment->getSubject()->getId() === $subjectId) {
-                $enrolled = true;
-                $studentSection = $enrollment->getSection();
-                break;
-            }
-        }
-        if (!$enrolled) {
-            $this->addFlash('danger', 'You are not enrolled in this subject.');
-            return $this->redirectToRoute('evaluation_set_index');
-        }
-
-        // If eval targets a specific section, verify student's enrollment section matches
-        if ($eval->getSection() !== null && $eval->getSection() !== '') {
-            if ($studentSection === null || strtoupper(trim($studentSection)) !== strtoupper(trim($eval->getSection()))) {
-                $this->addFlash('danger', 'This evaluation is not for your section.');
-                return $this->redirectToRoute('evaluation_set_index');
-            }
         }
 
         $faculty = $subject->getFaculty();

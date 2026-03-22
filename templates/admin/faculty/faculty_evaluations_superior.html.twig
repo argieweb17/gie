@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+
+{% block title %}{{ faculty.fullName }} | SEF Evaluations{% endblock %}
+
+{% block body %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h4 class="mb-1 fw-bold">{{ faculty.fullName }}</h4>
+        <div class="text-muted small">SEF evaluation summary</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ path(prefix ~ '_results_superior') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        {% if evaluations|length > 0 %}
+            <a href="{{ path(prefix ~ '_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm btn-primary">
+                <i class="bi bi-printer me-1"></i>Print All
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">Evaluations</div>
+                <div class="fs-4 fw-bold">{{ evaluations|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">Overall Average</div>
+                <div class="fs-4 fw-bold">{{ overallAvg|number_format(2) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="text-muted small">Total Evaluators</div>
+                <div class="fs-4 fw-bold">{{ totalEvaluators }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if evaluations|length > 0 %}
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Period</th>
+                    <th>Type</th>
+                    <th>Average</th>
+                    <th>Evaluators</th>
+                    <th>Performance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in evaluations %}
+                    {% set ev = item.evaluation %}
+                    <tr>
+                        <td>{{ ev.semester|default('') }} {{ ev.schoolYear|default('') }}</td>
+                        <td>{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</td>
+                        <td><strong>{{ item.average|number_format(2) }}</strong></td>
+                        <td>{{ item.evaluators }}</td>
+                        <td>{{ item.level }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-clipboard-x fs-3 d-block mb-2"></i>
+        No SEF evaluations found for this faculty.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

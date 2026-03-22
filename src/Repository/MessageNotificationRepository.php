@@ -47,4 +47,20 @@ class MessageNotificationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function markAllAsReadForUser(int $userId): int
+    {
+        $unread = $this->findUnreadForUser($userId);
+        if (empty($unread)) {
+            return 0;
+        }
+
+        foreach ($unread as $notification) {
+            $notification->markAsRead();
+        }
+
+        $this->getEntityManager()->flush();
+
+        return count($unread);
+    }
 }

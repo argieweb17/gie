@@ -7,25 +7,21 @@
 /* ─── Header ─── */
 .sb-header{border-radius:1.25rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.98),rgba(30,64,175,.92) 40%,rgba(5,150,105,.88) 100%);box-shadow:0 8px 32px rgba(26,86,219,.18);margin-bottom:24px;position:relative;border:1px solid rgba(255,255,255,.06);}
 .sb-header::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at top right, rgba(255,255,255,.05), transparent 60%);pointer-events:none;}
-.sb-header-inner{padding:28px 32px;position:relative;z-index:1;}
-.sb-header-top{display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;}
+.sb-header-inner{padding:24px 30px 18px;position:relative;z-index:1;}
+.sb-header-top{display:flex;align-items:start;justify-content:flex-start;flex-wrap:wrap;gap:16px;}
 .sb-header-left{display:flex;align-items:center;gap:16px;flex:1;}
-.sb-header-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.05));backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.1);}
-.sb-header-content h4{font-size:1.3rem;font-weight:800;color:#fff;margin:0 0 6px;letter-spacing:-.4px;line-height:1.1;}
+.sb-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.sb-header-content h4{font-size:1.25rem;font-weight:800;color:#fff;margin:0 0 4px;letter-spacing:-.4px;line-height:1.1;}
 .sb-header-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);padding:5px 12px;border-radius:22px;font-weight:600;font-size:.78rem;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.sb-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);padding:3px 10px;border-radius:20px;font-weight:600;font-size:.78rem;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
 .sb-meta-filter{background:rgba(251,191,36,.25);color:#fef3c7;border-color:rgba(251,191,36,.4);}
 .sb-header-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);padding:7px 18px;border-radius:24px;font-weight:700;font-size:.78rem;cursor:pointer;backdrop-filter:blur(4px);transition:all .25s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);white-space:nowrap;}
 .sb-header-btn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.35);box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateY(-1px);}
-.sb-stats-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
-.sb-stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;backdrop-filter:blur(6px);transition:all .25s ease;position:relative;overflow:hidden;}
-.sb-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);opacity:0;}
-.sb-stat-card:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateY(-2px);}
-.sb-stat-card:hover::before{opacity:1;animation:shimmer 1.5s infinite;}
-.sb-stat-icon{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:10px;}
-.sb-stat-val{display:block;font-size:1.4rem;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-.4px;}
-.sb-stat-lbl{display:block;font-size:.65rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.9px;margin-top:6px;font-weight:600;}
-.sb-stat-divider{display:none;}
+.sb-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14);}
+.sb-stat{flex:1;text-align:center;}
+.sb-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;letter-spacing:-.2px;}
+.sb-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.58);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;font-weight:700;}
+.sb-stat-divider{width:1px;background:rgba(255,255,255,.14);margin:0 2px;}
 .sb-val-success{color:#86efac!important;}
 @keyframes shimmer{0%,100%{opacity:0;}50%{opacity:1;}}
 
@@ -157,19 +153,19 @@
     .sb-toolbar-right{justify-content:flex-end;margin-left:0;}
     .sb-header-top{flex-direction:column;}
     .sb-header-left{width:100%;}
-    .sb-stats-container{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
+    .sb-stats-row{flex-wrap:wrap;gap:10px;}
+    .sb-stat{min-width:45%;}
+    .sb-stat-divider{display:none;}
 }
 @media(max-width:767.98px){
     .sb-header-inner{padding:20px 20px 24px;}
-    .sb-header-top{margin-bottom:20px;gap:12px;}
+    .sb-header-top{gap:12px;}
     .sb-header-icon{width:48px;height:48px;font-size:1.2rem;}
-    .sb-header-content h4{font-size:1.15rem;}
+    .sb-header-content h4{font-size:1.12rem;}
     .sb-meta-pill{padding:4px 10px;font-size:.72rem;}
-    .sb-stats-container{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;}
-    .sb-stat-card{padding:12px;}
-    .sb-stat-val{font-size:1.2rem;}
-    .sb-stat-lbl{font-size:.6rem;margin-top:4px;}
-    .sb-stat-icon{width:28px;height:28px;font-size:.85rem;margin-bottom:8px;}
+    .sb-stats-row{margin-top:14px;padding-top:12px;}
+    .sb-stat-val{font-size:1rem;}
+    .sb-stat-lbl{font-size:.56rem;margin-top:2px;}
     .sb-dept-header{padding:12px 16px;}
     .sb-table{font-size:.75rem;}
     .sb-table thead th{padding:8px 10px;font-size:.58rem;}
@@ -218,30 +214,21 @@
                     </div>
                 </div>
             </div>
-            <button type="button" class="sb-header-btn" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                <i class="bi bi-plus-circle-fill"></i>Add Subject
-            </button>
         </div>
-        <div class="sb-stats-container">
-            <div class="sb-stat-card">
-                <div class="sb-stat-icon"><i class="bi bi-book"></i></div>
+        <div class="sb-stats-row">
+            <div class="sb-stat">
                 <span class="sb-stat-val">{{ totalSubjects }}</span>
                 <span class="sb-stat-lbl">Total Subjects</span>
             </div>
-            <div class="sb-stat-card">
-                <div class="sb-stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
                 <span class="sb-stat-val sb-val-success">{{ loadedSubjectIds|length }}</span>
                 <span class="sb-stat-lbl">Loaded</span>
             </div>
-            <div class="sb-stat-card">
-                <div class="sb-stat-icon"><i class="bi bi-building"></i></div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat">
                 <span class="sb-stat-val">{{ totalDepts }}</span>
                 <span class="sb-stat-lbl">Departments</span>
-            </div>
-            <div class="sb-stat-card">
-                <div class="sb-stat-icon"><i class="bi bi-hourglass-split"></i></div>
-                <span class="sb-stat-val">{{ (assignedSubjects|length) }}</span>
-                <span class="sb-stat-lbl">Assigned</span>
             </div>
         </div>
     </div>
@@ -636,7 +623,7 @@ if (facultyFirstName && facultyLastName) {
 
 // Try alternatives if both are empty
 if (!facultyFullName) {
-    let altName = '{{ app.user.name|e("js") }}'.trim();
+    let altName = '{{ app.user.fullName|e("js") }}'.trim();
     if (altName) facultyFullName = altName;
 }
 
@@ -650,6 +637,21 @@ if (!facultyFullName) {
 }
 
 window.facultyName = facultyFullName;
+window.facultyNameCandidates = [];
+if (facultyFirstName && facultyLastName) {
+    window.facultyNameCandidates.push((facultyFirstName + ' ' + facultyLastName).toLowerCase());
+    window.facultyNameCandidates.push((facultyLastName + ', ' + facultyFirstName).toLowerCase());
+    window.facultyNameCandidates.push(facultyLastName.toLowerCase());
+}
+if (facultyFullName) {
+    window.facultyNameCandidates.push(facultyFullName.toLowerCase());
+}
+
+// Remove duplicates / empty values
+window.facultyNameCandidates = window.facultyNameCandidates.filter(function(v, i, arr) {
+    return !!v && arr.indexOf(v) === i;
+});
+
 console.log('Faculty Name Resolution:', {
     firstName: '{{ app.user.firstName|e("js") }}',
     lastName: '{{ app.user.lastName|e("js") }}',
@@ -658,10 +660,74 @@ console.log('Faculty Name Resolution:', {
     finalFacultyName: window.facultyName
 });
 
-if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.firstActiveEvalId]) {
-    window.firstEvalName = activeEvaluations[window.firstActiveEvalId].name;
-} else {
-    window.firstEvalName = '';
+function normalizeQrText(value) {
+    return (value || '').toString().trim().toLowerCase();
+}
+
+function getEvalSubjectCode(evalSubject) {
+    if (!evalSubject) return '';
+    var parts = evalSubject.split(' — ');
+    return normalizeQrText(parts[0] || evalSubject);
+}
+
+function facultyMatchesEvaluation(evalData) {
+    var evalFaculty = normalizeQrText(evalData && evalData.faculty ? evalData.faculty : '');
+    if (!evalFaculty) return true;
+    if (!window.facultyNameCandidates || window.facultyNameCandidates.length === 0) return true;
+
+    return window.facultyNameCandidates.some(function(candidate) {
+        return evalFaculty === candidate || evalFaculty.indexOf(candidate) !== -1 || candidate.indexOf(evalFaculty) !== -1;
+    });
+}
+
+function subjectMatchesEvaluation(evalData, subjectCode, subjectName) {
+    var evalSubject = normalizeQrText(evalData && evalData.subject ? evalData.subject : '');
+    if (!evalSubject) return true;
+
+    var code = normalizeQrText(subjectCode);
+    var name = normalizeQrText(subjectName);
+    var evalCode = getEvalSubjectCode(evalData.subject || '');
+
+    return (evalCode && code === evalCode) ||
+        code.indexOf(evalSubject) === 0 ||
+        evalSubject.indexOf(code) === 0 ||
+        name.indexOf(evalSubject) !== -1;
+}
+
+function sectionMatchesEvaluation(evalData, section) {
+    var evalSection = normalizeQrText(evalData && evalData.section ? evalData.section : '');
+    if (!evalSection) return true;
+    return evalSection === normalizeQrText(section);
+}
+
+function findMatchingEvaluationForSubject(subjectCode, subjectName, section) {
+    var entries = Object.entries(window.activeEvaluations || {});
+    var fallbackMatch = null;
+
+    for (var i = 0; i < entries.length; i++) {
+        var evalId = entries[i][0];
+        var evalData = entries[i][1] || {};
+
+        if (!facultyMatchesEvaluation(evalData)) continue;
+        if (!subjectMatchesEvaluation(evalData, subjectCode, subjectName)) continue;
+
+        if (sectionMatchesEvaluation(evalData, section)) {
+            return { id: evalId, data: evalData };
+        }
+
+        if (!fallbackMatch) {
+            fallbackMatch = { id: evalId, data: evalData };
+        }
+    }
+
+    return fallbackMatch;
+}
+
+function escapeHtmlAttr(value) {
+    return (value || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // Debug log
@@ -897,13 +963,9 @@ function updateRowVisual(cb) {
         // Small delay to let polling update the state
         setTimeout(function() {
             console.log('Loading subject:', code);
-            var actionsHtml = '';
-
-            // Add Pick and Unload buttons
-            actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
-            actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + sid + ', \'' + code.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
-
-            if (actionCell) actionCell.innerHTML = actionsHtml;
+            if (typeof window.updateQRButtonsForLoadedSubjects === 'function') {
+                window.updateQRButtonsForLoadedSubjects();
+            }
         }, 200);  // 200ms delay for network fetch to complete
     } else {
         row.classList.remove('is-loaded');
@@ -1145,20 +1207,17 @@ window.pollActiveEvaluations = function(forceImmediate) {
             // Only update if evaluation list actually changed
             if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
                 console.log('Evaluation list changed! Updating UI...');
-                currentActiveEvals = newEvalMap;
-                activeEvaluations = newEvalMap;
-                window.activeEvaluations = newEvalMap;
-                window.firstActiveEvalId = newKeys.length > 0 ? newKeys[0] : null;
-                window.hasActiveEval = newKeys.length > 0;
-                if (window.firstActiveEvalId && newEvalMap[window.firstActiveEvalId]) {
-                    window.firstEvalName = newEvalMap[window.firstActiveEvalId].name;
-                }
-                console.log('Updated hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
                 console.log('Updated activeEvaluations:', newEvalMap);
-
-                // Update QR buttons for all loaded subjects
-                updateQRButtonsForLoadedSubjects();
             }
+
+            currentActiveEvals = newEvalMap;
+            activeEvaluations = newEvalMap;
+            window.activeEvaluations = newEvalMap;
+            window.firstActiveEvalId = newKeys.length > 0 ? newKeys[0] : null;
+            window.hasActiveEval = newKeys.length > 0;
+
+            // Always refresh button data so section/schedule edits and modal info stay in sync.
+            updateQRButtonsForLoadedSubjects();
         })
         .catch(error => {
             console.error('Evaluation poll error:', error);
@@ -1192,35 +1251,18 @@ window.updateQRButtonsForLoadedSubjects = function() {
         const scheduleSelect = row.querySelector('.sb-inline-select');
         const schedule = scheduleSelect ? scheduleSelect.value.trim() : '';
 
-        // Get evaluation data for this subject
-        let evalFaculty = '';
-        if (window.firstActiveEvalId && window.activeEvaluations && window.activeEvaluations[window.firstActiveEvalId]) {
-            evalFaculty = window.activeEvaluations[window.firstActiveEvalId].faculty || '';
-        }
+        const matchedEval = findMatchingEvaluationForSubject(subjectCode, subjectName, section);
+        const evalId = matchedEval ? matchedEval.id : null;
+        const evalData = matchedEval ? (matchedEval.data || {}) : null;
 
-        console.log(`Updating QR buttons for subject ${subjectCode}:`, {subjectCode, subjectName, section, schedule, evalFaculty: evalFaculty, firstEvalName: window.firstEvalName});
-
-        // Update QR column (9th column)
-        const qrCell = row.querySelector('td:nth-child(9)');
-        if (qrCell) {
-            if (window.hasActiveEval && window.firstActiveEvalId) {
-                const dataFaculty = evalFaculty.replace(/"/g, '&quot;');
-                const dataSchoolYear = (window.firstEvalName || '').replace(/"/g, '&quot;');
-                console.log('Creating QR button with data:', {
-                    'data-subject-code': subjectCode,
-                    'data-subject-name': subjectName,
-                    'data-section': section,
-                    'data-schedule': schedule,
-                    'data-eval-id': window.firstActiveEvalId,
-                    'data-faculty': dataFaculty,
-                    'data-school-year': dataSchoolYear
-                    
-                });
-                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectName.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-schedule="' + schedule.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + dataFaculty + '" data-school-year="' + dataSchoolYear + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-            } else {
-                qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
-            }
-        }
+        console.log('Updating QR buttons for subject:', {
+            subjectCode: subjectCode,
+            subjectName: subjectName,
+            section: section,
+            schedule: schedule,
+            evalId: evalId,
+            evalData: evalData
+        });
 
         // Update action buttons (with QR button if evaluation exists)
         const actionCell = row.querySelector('.sb-action-btns');
@@ -1229,12 +1271,12 @@ window.updateQRButtonsForLoadedSubjects = function() {
         let actionsHtml = '';
 
         // Add QR button if there's an active evaluation
-        if (window.hasActiveEval && window.firstActiveEvalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectName.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-schedule="' + schedule.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + evalFaculty.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+        if (evalId) {
+            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + escapeHtmlAttr(subjectCode) + '" data-subject-name="' + escapeHtmlAttr(subjectName) + '" data-section="' + escapeHtmlAttr(section) + '" data-schedule="' + escapeHtmlAttr(schedule) + '" data-eval-id="' + evalId + '" data-eval-type="SET" data-faculty="' + escapeHtmlAttr(evalData.faculty || '') + '" data-school-year="' + escapeHtmlAttr(evalData.schoolYear || evalData.name || '') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
         }
 
         // Add other action buttons
-        actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
+        actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + subjectName.replace(/'/g,"\\'") + '\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
         actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
 
         actionCell.innerHTML = actionsHtml;

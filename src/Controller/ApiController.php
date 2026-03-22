@@ -325,6 +325,10 @@ class ApiController extends AbstractController
                 $result[] = [
                     'id' => $eval->getId(),
                     'name' => $eval->getLabel(),
+                    'faculty' => $eval->getFaculty() ?? '',
+                    'subject' => $eval->getSubject() ?? '',
+                    'section' => $eval->getSection() ?? '',
+                    'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                     'isActive' => true,
                     'startDate' => $eval->getStartDate()->format('Y-m-d'),
                     'endDate' => $eval->getEndDate()->format('Y-m-d'),

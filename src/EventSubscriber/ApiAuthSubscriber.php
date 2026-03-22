@@ -14,6 +14,7 @@ class ApiAuthSubscriber implements EventSubscriberInterface
     private const PUBLIC_ROUTES = [
         'api_login',
         'api_active_evaluations',
+        'active_evaluations',  // Fallback in case class-level prefix doesn't concatenate
     ];
 
     // Role requirements per route name (null = any authenticated user)
@@ -56,6 +57,16 @@ class ApiAuthSubscriber implements EventSubscriberInterface
 
         // Skip OPTIONS (handled by CORS subscriber)
         if ($request->getMethod() === 'OPTIONS') {
+            return;
+        }
+
+        // Public paths that don't require authentication
+        $publicPaths = [
+            '/api/login',
+            '/api/active-evaluations',
+        ];
+
+        if (in_array($path, $publicPaths, true)) {
             return;
         }
 

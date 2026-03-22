@@ -217,7 +217,15 @@
     border-bottom: 1px solid var(--chat-border);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
+}
+.fm-chat-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
 }
 .fm-chat-avatar {
     width: 44px;
@@ -241,10 +249,40 @@
     font-weight: 600;
     color: var(--chat-text-primary);
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .fm-chat-status {
     font-size: .8rem;
     color: var(--chat-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fm-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.fm-chat-delete-btn {
+    border: 1px solid #fecaca;
+    background: #fff;
+    color: #dc2626;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: .78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+    transition: all .15s ease;
+}
+.fm-chat-delete-btn:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
 }
 
 /* Chat Body */
@@ -713,6 +751,12 @@
     .fm-chat-header {
         padding: 12px 16px;
     }
+    .fm-chat-delete-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        justify-content: center;
+    }
     .fm-chat-body {
         padding: 16px;
     }
@@ -794,11 +838,13 @@
             {% endfor %}
         </div>
 
+        {% if messages|length == 0 %}
         <div class="fm-new-msg-wrap">
             <button class="fm-new-msg-btn" data-bs-toggle="modal" data-bs-target="#newMessageModal">
                 <i class="bi bi-plus-lg"></i> New Message
             </button>
         </div>
+        {% endif %}
     </aside>
 
     {# ═══════════════════════════════════════
@@ -809,12 +855,20 @@
         {% set firstMsg = messages|first %}
 
         <header class="fm-chat-header" id="chatHeader">
-            <div class="fm-chat-avatar" id="chatAvatar">
-                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC">
+            <div class="fm-chat-user">
+                <div class="fm-chat-avatar" id="chatAvatar">
+                    <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC">
+                </div>
+                <div class="fm-chat-details">
+                    <h5 id="chatTitle">Administration</h5>
+                    <div class="fm-chat-status" id="chatStatus">{{ firstMsg.subject }}</div>
+                </div>
             </div>
-            <div class="fm-chat-details">
-                <h5 id="chatTitle">Administration</h5>
-                <div class="fm-chat-status" id="chatStatus">{{ firstMsg.subject }}</div>
+            <div class="fm-chat-actions">
+                <button type="button" class="fm-chat-delete-btn" title="Delete chat" data-bs-toggle="modal" data-bs-target="#deleteChatModal">
+                    <i class="bi bi-trash3"></i>
+                    <span class="d-none d-sm-inline">Delete chat</span>
+                </button>
             </div>
         </header>
 
@@ -886,15 +940,6 @@
                 </div>
                 {% endif %}
                 {% endfor %}
-                {% elseif not msg.adminReply %}
-                {# Typing indicator style waiting #}
-                <div class="fm-message incoming fm-waiting">
-                    <div class="fm-typing">
-                        <span class="fm-typing-dot"></span>
-                        <span class="fm-typing-dot"></span>
-                        <span class="fm-typing-dot"></span>
-                    </div>
-                </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -930,9 +975,48 @@
     </main>
 </div>
 
+{% if messages|length > 0 %}
+<div class="modal fade" id="deleteChatModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path('faculty_eval_request') }}">
+                <input type="hidden" name="_action" value="delete_message">
+                <input type="hidden" name="msg_id" id="deleteMsgId" value="{{ firstMsg.id }}">
+                <input type="hidden" name="_token" id="deleteMsgToken" value="{{ csrf_token('delete_msg' ~ firstMsg.id) }}">
+
+                <div class="fm-modal-header" style="background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#06b6d4 100%);">
+                    <div class="fm-modal-icon">
+                        <i class="bi bi-trash3-fill"></i>
+                    </div>
+                    <h5 class="fm-modal-title">Delete Chat</h5>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="fm-modal-body">
+                    <p class="mb-2" style="font-size:.9rem;color:var(--chat-text-secondary);">
+                        Delete this conversation with Administration?
+                    </p>
+                    <div class="p-3 rounded" style="background:var(--chat-bg);border:1px solid var(--chat-border);">
+                        <strong id="deleteChatSubject" style="font-size:.82rem;color:var(--chat-text-primary);">{{ firstMsg.subject }}</strong>
+                    </div>
+                </div>
+
+                <div class="fm-modal-footer">
+                    <button type="button" class="fm-btn fm-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="fm-btn fm-btn-primary" style="min-width:120px;justify-content:center;">
+                        <i class="bi bi-trash3 me-1"></i> Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {# ═══════════════════════════════════════
    NEW MESSAGE MODAL - Clean Style
    ═══════════════════════════════════════ #}
+{% if messages|length == 0 %}
 <div class="modal fade" id="newMessageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
@@ -979,6 +1063,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 {# Flash Messages #}
 {% for label, msgs in app.flashes %}
@@ -1000,12 +1085,17 @@ const messagesData = {
         subject: "{{ msg.subject|e('js') }}",
         message: "{{ msg.message|e('js')|replace({"\n": "\\n", "\r": ""}) }}",
         status: "{{ msg.status }}",
-        createdAt: "{{ msg.createdAt|date('M d, Y') }}"
+        createdAt: "{{ msg.createdAt|date('M d, Y') }}",
+        deleteToken: "{{ csrf_token('delete_msg' ~ msg.id) }}"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 };
 
+let currentMsgId = {{ messages|length > 0 ? messages|first.id : 'null' }};
+
 function selectConversation(el, msgId) {
+    currentMsgId = msgId;
+
     document.querySelectorAll('.fm-conv-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
 
@@ -1020,10 +1110,31 @@ function selectConversation(el, msgId) {
     if (msg) {
         document.getElementById('chatTitle').textContent = 'Administration';
         document.getElementById('chatStatus').textContent = msg.subject;
+        updateDeleteModal(msg);
     }
 
     const chatBody = document.getElementById('chatBody');
     chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function updateDeleteModal(msg) {
+    if (!msg) {
+        return;
+    }
+
+    const idEl = document.getElementById('deleteMsgId');
+    const tokenEl = document.getElementById('deleteMsgToken');
+    const subjectEl = document.getElementById('deleteChatSubject');
+
+    if (idEl) {
+        idEl.value = msg.id;
+    }
+    if (tokenEl) {
+        tokenEl.value = msg.deleteToken || '';
+    }
+    if (subjectEl) {
+        subjectEl.textContent = msg.subject;
+    }
 }
 
 function searchMessages() {
@@ -1034,9 +1145,13 @@ function searchMessages() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function initFacultyEvalRequestPage() {
     const chatBody = document.getElementById('chatBody');
     if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+
+    if (currentMsgId && messagesData[currentMsgId]) {
+        updateDeleteModal(messagesData[currentMsgId]);
+    }
 
     document.querySelectorAll('.fm-textarea').forEach(textarea => {
         textarea.addEventListener('input', function() {
@@ -1046,12 +1161,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.querySelectorAll('.toast').forEach(toast => {
+        if (toast.dataset.flashInit === '1') {
+            return;
+        }
+        toast.dataset.flashInit = '1';
+
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-8px)';
+        toast.style.transition = 'opacity .35s ease, transform .35s ease';
+
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transition = 'opacity .3s';
-            setTimeout(() => toast.remove(), 300);
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 350);
         }, 3000);
     });
-});
+}
+
+document.addEventListener('DOMContentLoaded', initFacultyEvalRequestPage);
+document.addEventListener('turbo:load', initFacultyEvalRequestPage);
 </script>
 {% endblock %}

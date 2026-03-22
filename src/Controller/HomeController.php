@@ -32,6 +32,89 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class HomeController extends AbstractController
 {
     /**
+     * Returns true when there is a currently active SET evaluation that applies
+     * to the given faculty + subject (+ optional section).
+     */
+    private function hasActiveSetEvaluationForLoad(
+        User $faculty,
+        Subject $subject,
+        ?string $section,
+        EvaluationPeriodRepository $evalRepo
+    ): bool {
+        $now = new \DateTime();
+
+        $facultyName = mb_strtolower(trim($faculty->getFirstName() . ' ' . $faculty->getLastName()));
+        $facultyLastFirst = mb_strtolower(trim($faculty->getLastName() . ', ' . $faculty->getFirstName()));
+        $facultyLastName = mb_strtolower(trim($faculty->getLastName()));
+
+        $normalizeCode = static function (?string $value): string {
+            $raw = mb_strtoupper(trim((string) $value));
+            $normalized = preg_replace('/[^A-Z0-9]/u', '', $raw);
+            return $normalized ?? '';
+        };
+
+        $normalizeText = static function (?string $value): string {
+            $raw = mb_strtolower(trim((string) $value));
+            $normalized = preg_replace('/\s+/u', ' ', $raw);
+            return $normalized ?? '';
+        };
+
+        $normalizeSection = static function (?string $value): string {
+            $raw = mb_strtoupper(trim((string) $value));
+            $normalized = preg_replace('/\s+/u', ' ', $raw);
+            return $normalized ?? '';
+        };
+
+        $subjectCode = $normalizeCode($subject->getSubjectCode());
+        $subjectName = $normalizeText($subject->getSubjectName());
+        $targetSection = $normalizeSection($section);
+
+        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
+        foreach ($activeEvals as $eval) {
+            if ($eval->getStartDate() > $now || $eval->getEndDate() < $now) {
+                continue;
+            }
+
+            $evalFaculty = mb_strtolower(trim((string) ($eval->getFaculty() ?? '')));
+            if (
+                $evalFaculty !== '' &&
+                $evalFaculty !== $facultyName &&
+                $evalFaculty !== $facultyLastFirst &&
+                !str_contains($evalFaculty, $facultyLastName)
+            ) {
+                continue;
+            }
+
+            $evalSection = $normalizeSection($eval->getSection());
+            if ($evalSection !== '' && $evalSection !== $targetSection) {
+                continue;
+            }
+
+            $evalSubject = trim((string) ($eval->getSubject() ?? ''));
+            if ($evalSubject === '') {
+                // Faculty-wide active evaluation applies.
+                return true;
+            }
+
+            $parts = preg_split('/\s*[—-]\s*/u', $evalSubject, 2);
+            $evalCode = $normalizeCode($parts[0] ?? $evalSubject);
+            $evalSubjectNorm = $normalizeText($evalSubject);
+
+            $matchesByCode = $evalCode !== '' && $evalCode === $subjectCode;
+            $matchesByText = ($evalSubjectNorm !== '' && (
+                str_contains($evalSubjectNorm, $subjectCode) ||
+                str_contains($evalSubjectNorm, $subjectName)
+            ));
+
+            if ($matchesByCode || $matchesByText) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Scope faculty views to all departments in the same college.
      * Fallback to own department when college is not set.
      *
@@ -73,6 +156,8 @@ class HomeController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
         QuestionRepository $questionRepo,
         DepartmentRepository $deptRepo,
         AuditLogRepository $auditRepo,
@@ -95,7 +180,7 @@ class HomeController extends AbstractController
         }
 
         if ($this->isGranted('ROLE_FACULTY')) {
-            return $this->facultyDashboard($user, $subjectRepo, $evalRepo, $responseRepo);
+            return $this->facultyDashboard($user, $subjectRepo, $evalRepo, $responseRepo, $ayRepo, $fslRepo);
         }
 
         // Student (ROLE_USER)
@@ -466,12 +551,33 @@ class HomeController extends AbstractController
     }
 
     private function facultyDashboard(
-        $user,
+        User $user,
         SubjectRepository $subjectRepo,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
     ): Response {
-        $subjects = $subjectRepo->findByFaculty($user->getId());
+        $currentAY = $ayRepo->findCurrent();
+
+        // Subject loads are primarily tracked in FacultySubjectLoad. Merge with legacy direct links.
+        $subjectsById = [];
+
+        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        foreach ($savedLoads as $load) {
+            $subject = $load->getSubject();
+            $subjectsById[$subject->getId()] = $subject;
+        }
+
+        $directSubjects = $subjectRepo->findByFaculty($user->getId());
+        foreach ($directSubjects as $subject) {
+            $subjectsById[$subject->getId()] = $subject;
+        }
+
+        /** @var Subject[] $subjects */
+        $subjects = array_values($subjectsById);
+        usort($subjects, static fn(Subject $a, Subject $b) => strcmp($a->getSubjectCode(), $b->getSubjectCode()));
+
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
         $facultyName = $user->getFullName();
         $allOpenEvals = $evalRepo->findOpen();
@@ -689,6 +795,7 @@ class HomeController extends AbstractController
                     'name' => $eval->getLabel(),
                     'faculty' => $eval->getFaculty(),
                     'subject' => $eval->getSubject(),
+                    'section' => $eval->getSection(),
                     'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                     'isActive' => true,
                     'startDate' => $eval->getStartDate(),
@@ -728,6 +835,7 @@ class HomeController extends AbstractController
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
         EvaluationPeriodRepository $evalRepo,
+        EvaluationResponseRepository $responseRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         /** @var User $user */
@@ -802,31 +910,67 @@ class HomeController extends AbstractController
 
         // Find active SET evaluations matching the faculty's subjects
         $openEvals = $evalRepo->findActive('SET');
-        $facultyName = mb_strtolower(trim($user->getFullName()));
+        $facultyName = mb_strtolower(trim($user->getFirstName() . ' ' . $user->getLastName()));
+        $facultyLastFirst = mb_strtolower(trim($user->getLastName() . ', ' . $user->getFirstName()));
+        $facultyLastName = mb_strtolower(trim($user->getLastName()));
+
+        $normalizeCode = static function (?string $value): string {
+            $raw = mb_strtoupper(trim((string) $value));
+            $normalized = preg_replace('/[^A-Z0-9]/u', '', $raw);
+            return $normalized ?? '';
+        };
+
+        $normalizeSection = static function (?string $value): string {
+            $raw = mb_strtoupper(trim((string) $value));
+            $normalized = preg_replace('/\s+/u', ' ', $raw);
+            return $normalized ?? '';
+        };
+
         $subjectEvalMap = [];
         foreach ($openEvals as $eval) {
-            $evalFaculty = $eval->getFaculty();
-            if ($evalFaculty && mb_strtolower(trim($evalFaculty)) === $facultyName) {
-                $evalSubjectStr = $eval->getSubject();
-                if ($evalSubjectStr) {
-                    $parts = explode(' — ', $evalSubjectStr, 2);
-                    $code = strtoupper(trim($parts[0]));
-                    $section = strtoupper(trim($eval->getSection() ?? ''));
-                    // Key by code+section for exact match, and code-only as fallback
-                    $subjectEvalMap[$code . '|' . $section] = $eval;
-                    if (!isset($subjectEvalMap[$code . '|'])) {
-                        $subjectEvalMap[$code . '|'] = $eval;
-                    }
+            $evalFaculty = mb_strtolower(trim((string) ($eval->getFaculty() ?? '')));
+            if (
+                $evalFaculty !== '' &&
+                $evalFaculty !== $facultyName &&
+                $evalFaculty !== $facultyLastFirst &&
+                !str_contains($evalFaculty, $facultyLastName)
+            ) {
+                continue;
+            }
+
+            $evalSection = $normalizeSection($eval->getSection());
+            $evalSubjectStr = trim((string) ($eval->getSubject() ?? ''));
+
+            // Faculty-wide active evaluation (no specific subject) applies to all subjects.
+            if ($evalSubjectStr === '') {
+                $subjectEvalMap['*|' . $evalSection] = $eval;
+                if (!isset($subjectEvalMap['*|'])) {
+                    $subjectEvalMap['*|'] = $eval;
                 }
+                continue;
+            }
+
+            $parts = preg_split('/\s*[—-]\s*/u', $evalSubjectStr, 2);
+            $code = $normalizeCode($parts[0] ?? $evalSubjectStr);
+            if ($code === '') {
+                continue;
+            }
+
+            // Key by normalized code+section for exact match, and code-only as fallback.
+            $subjectEvalMap[$code . '|' . $evalSection] = $eval;
+            if (!isset($subjectEvalMap[$code . '|'])) {
+                $subjectEvalMap[$code . '|'] = $eval;
             }
         }
 
         // Attach evaluation to each loaded item (exact section match first, then fallback)
         foreach ($loadedItems as &$item) {
-            $code = strtoupper(trim($item['subject']->getSubjectCode()));
-            $section = strtoupper(trim($item['section'] ?? ''));
+            $code = $normalizeCode($item['subject']->getSubjectCode());
+            $section = $normalizeSection((string) ($item['section'] ?? ''));
             $item['evaluation'] = $subjectEvalMap[$code . '|' . $section]
                 ?? $subjectEvalMap[$code . '|']
+                ?? $subjectEvalMap['*|' . $section]
+                ?? $subjectEvalMap['*|']
                 ?? null;
         }
         unset($item);
@@ -843,6 +987,7 @@ class HomeController extends AbstractController
                     'name' => $eval->getLabel(),
                     'faculty' => $eval->getFaculty(),
                     'subject' => $eval->getSubject(),
+                    'section' => $eval->getSection(),
                     'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                     'isActive' => true,
                     'startDate' => $eval->getStartDate(),
@@ -850,6 +995,52 @@ class HomeController extends AbstractController
                 ];
             }
         }
+
+        // Build previous SET evaluation history for this faculty.
+        $historyRows = $responseRepo->getEvaluatedSubjectsWithRating($user->getId());
+        $historyPeriodIds = array_values(array_unique(array_filter(array_map(
+            static fn(array $row): int => (int) ($row['evaluationPeriodId'] ?? 0),
+            $historyRows
+        ))));
+
+        $historyPeriodMap = [];
+        if (!empty($historyPeriodIds)) {
+            foreach ($evalRepo->findBy(['id' => $historyPeriodIds]) as $period) {
+                $historyPeriodMap[$period->getId()] = $period;
+            }
+        }
+
+        $previousEvaluations = [];
+        foreach ($historyRows as $row) {
+            $periodId = (int) ($row['evaluationPeriodId'] ?? 0);
+            $period = $historyPeriodMap[$periodId] ?? null;
+
+            // Keep only previous (ended) evaluations on this page.
+            if ($period && $period->getEndDate() >= $now) {
+                continue;
+            }
+
+            $subjectCode = trim((string) ($row['subjectCode'] ?? ''));
+            $subjectName = trim((string) ($row['subjectName'] ?? ''));
+            $sectionRaw = trim((string) ($row['section'] ?? ''));
+
+            $previousEvaluations[] = [
+                'periodId' => $periodId,
+                'subjectId' => isset($row['subjectId']) ? (int) $row['subjectId'] : null,
+                'subjectCode' => $subjectCode !== '' ? $subjectCode : 'N/A',
+                'subjectName' => $subjectName !== '' ? $subjectName : 'Unknown Subject',
+                'section' => $sectionRaw !== '' ? strtoupper($sectionRaw) : 'N/A',
+                'semester' => $period?->getSemester() ?: 'N/A',
+                'schoolYear' => $period?->getSchoolYear() ?: 'N/A',
+                'evaluatorCount' => (int) ($row['evaluatorCount'] ?? 0),
+                'avgRating' => round((float) ($row['avgRating'] ?? 0), 2),
+                'periodEnd' => $period?->getEndDate()?->format('Y-m-d H:i:s') ?? '',
+            ];
+        }
+
+        usort($previousEvaluations, static function (array $a, array $b): int {
+            return strcmp((string) ($b['periodEnd'] ?? ''), (string) ($a['periodEnd'] ?? ''));
+        });
 
         return $this->render('admin/loaded_subjects.html.twig', [
             'subjects' => $loadedItems,
@@ -859,6 +1050,7 @@ class HomeController extends AbstractController
             'currentAY' => $currentAY,
             'semesterEnded' => $semesterEnded,
             'activeEvalMap' => $activeEvalMap,
+            'previousEvaluations' => $previousEvaluations,
         ]);
     }
 
@@ -920,6 +1112,7 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -931,26 +1124,45 @@ class HomeController extends AbstractController
 
         // Unload subjects where this user is the direct owner
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
+        $blockedCodes = [];
+        $unloadedCount = 0;
         foreach ($loadedSubjects as $subject) {
+            if ($this->hasActiveSetEvaluationForLoad($user, $subject, $subject->getSection(), $evalRepo)) {
+                $blockedCodes[] = $subject->getSubjectCode();
+                continue;
+            }
             $subject->setFaculty(null);
             $subject->setSchedule(null);
             $subject->setSection(null);
+            $unloadedCount++;
         }
 
         // Also remove all from faculty_subject_load for current AY (includes shared subjects)
         $currentAY = $ayRepo->findCurrent();
-        $count = count($loadedSubjects);
         if ($currentAY) {
             $loads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY->getId());
-            $count = max($count, count($loads));
             foreach ($loads as $fsl) {
+                if ($this->hasActiveSetEvaluationForLoad($user, $fsl->getSubject(), $fsl->getSection(), $evalRepo)) {
+                    $blockedCodes[] = $fsl->getSubject()->getSubjectCode();
+                    continue;
+                }
                 $em->remove($fsl);
+                $unloadedCount++;
             }
         }
 
         $em->flush();
 
-        $this->addFlash('success', $count . ' subject' . ($count !== 1 ? 's' : '') . ' unloaded.');
+        if (!empty($blockedCodes)) {
+            $blockedCodes = array_values(array_unique($blockedCodes));
+            $this->addFlash('warning', 'Some subjects were not unloaded because evaluation is active: ' . implode(', ', $blockedCodes) . '.');
+        }
+
+        if ($unloadedCount > 0) {
+            $this->addFlash('success', $unloadedCount . ' subject' . ($unloadedCount !== 1 ? 's' : '') . ' unloaded.');
+        } else {
+            $this->addFlash('info', 'No subjects were unloaded.');
+        }
         return $this->redirectToRoute('faculty_loaded_subjects');
     }
 
@@ -963,6 +1175,7 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -992,6 +1205,21 @@ class HomeController extends AbstractController
 
         if (!$isDirectOwner && !$hasFslEntry) {
             $this->addFlash('danger', 'Subject not assigned to you.');
+            return $this->redirectToRoute('faculty_loaded_subjects');
+        }
+
+        // Block unload while a matching active SET evaluation exists.
+        $effectiveSection = $subject->getSection();
+        if ($currentAY) {
+            foreach ($fslEntries as $fsl) {
+                if ($fsl->getSubject()->getId() === $subject->getId()) {
+                    $effectiveSection = $fsl->getSection() ?? $effectiveSection;
+                    break;
+                }
+            }
+        }
+        if ($this->hasActiveSetEvaluationForLoad($user, $subject, $effectiveSection, $evalRepo)) {
+            $this->addFlash('danger', 'Cannot unload "' . $subject->getSubjectCode() . '" because evaluation is currently active.');
             return $this->redirectToRoute('faculty_loaded_subjects');
         }
 
@@ -1197,6 +1425,7 @@ class HomeController extends AbstractController
         int $id,
         Request $request,
         FacultySubjectLoadRepository $fslRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -1210,6 +1439,11 @@ class HomeController extends AbstractController
         if (!$fsl || $fsl->getFaculty()->getId() !== $user->getId()) {
             $this->addFlash('danger', 'Load entry not found or not yours.');
             return $this->redirectToRoute('faculty_subjects');
+        }
+
+        if ($this->hasActiveSetEvaluationForLoad($user, $fsl->getSubject(), $fsl->getSection(), $evalRepo)) {
+            $this->addFlash('danger', 'Cannot unload "' . $fsl->getSubject()->getSubjectCode() . ($fsl->getSection() ? ' — Section ' . $fsl->getSection() : '') . '" because evaluation is currently active.');
+            return $this->redirectToRoute('faculty_loaded_subjects');
         }
 
         $code = $fsl->getSubject()->getSubjectCode();
@@ -1605,6 +1839,7 @@ class HomeController extends AbstractController
                 'name' => $eval->getLabel(),
                 'faculty' => $eval->getFaculty(),
                 'subject' => $eval->getSubject(),
+                    'section' => $eval->getSection(),
                 'schoolYear' => $eval->getSchoolYear() ?? $eval->getLabel(),
                 'isActive' => true,
                 'startDate' => $eval->getStartDate(),
@@ -1846,6 +2081,13 @@ class HomeController extends AbstractController
                     'evaluators' => $count,
                 ];
             }
+        }
+
+        // Viewing the chat page means the faculty has seen message notifications.
+        try {
+            $notifRepo->markAllAsReadForUser($user->getId());
+        } catch (\Throwable) {
+            // Do not block chat rendering if notification cleanup fails.
         }
 
         $myMessages = $msgRepo->findBySenderRecentActivity($user->getId());

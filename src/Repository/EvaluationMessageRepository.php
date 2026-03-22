@@ -79,6 +79,19 @@ class EvaluationMessageRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function hasConversationBySender(int $userId): bool
+    {
+        $count = (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->andWhere('m.sender = :uid')
+            ->andWhere('m.parentMessage IS NULL')
+            ->setParameter('uid', $userId)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
     /** @return EvaluationMessage[] */
     public function findAttachmentsForUser(int $userId): array
     {
