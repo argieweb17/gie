@@ -1502,12 +1502,24 @@ class AdminController extends AbstractController
 
         // SEF results table should show department heads/chairs (evaluators), not evaluated faculty rows.
         $headQb = $userRepo->createQueryBuilder('u')
-            ->where('u.roles LIKE :role')
+            ->where('(u.roles LIKE :facultyRole OR u.roles LIKE :superiorRole)')
             ->andWhere('u.accountStatus = :status')
-            ->andWhere('(LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :head OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :chair)')
-            ->setParameter('role', '%ROLE_FACULTY%')
+            ->andWhere('(
+                LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :vicePresident
+                OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :president
+                OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :director
+                OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :dean
+                OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :head
+                OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :chair
+            )')
+            ->setParameter('facultyRole', '%ROLE_FACULTY%')
+            ->setParameter('superiorRole', '%ROLE_SUPERIOR%')
             ->setParameter('status', 'active')
             ->setParameter('blank', '')
+            ->setParameter('vicePresident', '%vice president%')
+            ->setParameter('president', '%president%')
+            ->setParameter('director', '%director%')
+            ->setParameter('dean', '%dean%')
             ->setParameter('head', '%head%')
             ->setParameter('chair', '%chair%')
             ->orderBy('u.lastName', 'ASC')

@@ -156,66 +156,6 @@
 {% set isReadOnly = readOnly|default(false) %}
 {% set baseRoute = isReadOnly ? 'faculty_department_subjects' : (prefix ~ '_subjects') %}
 {# ═══════════════════════════════════════
-   COMPUTE STATS
-   ═══════════════════════════════════════ #}
-{% set totalSubjects = subjects|length %}
-{% set totalUnits = 0 %}
-{% set deptSet = [] %}
-{% for s in subjects %}
-    {% set totalUnits = totalUnits + (s.units ?? 0) %}
-    {% if s.department and s.department.departmentName not in deptSet %}
-        {% set deptSet = deptSet|merge([s.department.departmentName]) %}
-    {% endif %}
-{% endfor %}
-
-{# ═══════════════════════════════════════
-   PROFESSIONAL HEADER
-   ═══════════════════════════════════════ #}
-<div class="sb-header">
-    <div class="sb-header-inner">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="sb-header-icon">
-                    <i class="bi bi-book-half"></i>
-                </div>
-                <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Subject Management</h4>
-                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="sb-meta-pill"><i class="bi bi-database me-1"></i>{{ totalFiltered }} Record{{ totalFiltered != 1 ? 's' : '' }}</span>
-                        {% if filterDept or filterSemester or filterCollege %}
-                            <span class="sb-meta-pill sb-meta-filter"><i class="bi bi-funnel-fill me-1"></i>Filtered</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if not isReadOnly %}
-            <div class="d-flex gap-2 mt-1">
-                <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                    <i class="bi bi-plus-lg me-1"></i>Add Subject
-                </button>
-            </div>
-            {% endif %}
-        </div>
-        <div class="sb-stats-row">
-            <div class="sb-stat">
-                <span class="sb-stat-val">{{ totalSubjects }}</span>
-                <span class="sb-stat-lbl">Total Subjects</span>
-            </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
-                <span class="sb-stat-val">{{ totalUnits }}</span>
-                <span class="sb-stat-lbl">Total Units</span>
-            </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
-                <span class="sb-stat-val">{{ deptSet|length }}</span>
-                <span class="sb-stat-lbl">Departments</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════
    FILTER / SEARCH BAR
    ═══════════════════════════════════════ #}
 <div class="sb-toolbar">

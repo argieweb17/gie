@@ -22,7 +22,6 @@
                     <tr>
                         <th class="ps-3 text-center" style="width:60px">#</th>
                         <th>Name</th>
-                        <th>Department</th>
                         <th class="text-center">Avg. Rating</th>
                         <th class="text-center">Evaluators</th>
                         <th class="text-center">Performance</th>
@@ -34,7 +33,6 @@
                     <tr>
                         <td class="ps-3 text-center fw-bold">{{ i + 1 }}</td>
                         <td class="fw-semibold">{{ item.evaluatee.fullName }}</td>
-                        <td>{{ item.evaluatee.department ? item.evaluatee.department.departmentName : '—' }}</td>
                         <td class="text-center">
                             <span class="fw-bold">{{ item.average }}</span>
                             <small class="text-muted">/ 5</small>

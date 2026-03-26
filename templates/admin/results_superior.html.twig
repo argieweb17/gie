@@ -132,18 +132,19 @@
 
 /* ── Toolbar ── */
 .rs-toolbar {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: .75rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
     margin-bottom: 1.25rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    box-shadow: none;
 }
 .rs-toolbar-row {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: nowrap;
+    justify-content: flex-end;
 }
 .rs-filter-select {
     font-size: .8rem;
@@ -159,7 +160,8 @@
 .rs-filter-select:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
 .rs-search-box {
     position: relative;
-    flex: 1;
+    flex: 0 1 420px;
+    width: 100%;
     min-width: 200px;
 }
 .rs-search-icon {
@@ -209,7 +211,7 @@
     margin-bottom: 1.5rem;
 }
 .rs-table-bar {
-    background: linear-gradient(135deg, #1e1042 0%, #3b1f6e 35%, #6d28d9 60%, #a855f7 100%);
+    background: #1e40af;
     color: #fff;
     padding: .7rem 1.25rem;
     font-size: .85rem;
@@ -407,7 +409,7 @@
 @media print {
     .rs-header, .rs-stats, .rs-toolbar, .no-print { display: none !important; }
     .rs-table-wrap { border: none; box-shadow: none; }
-    .rs-table-bar { background: #3b1f6e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rs-table-bar { background: #1e40af !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 /* ── Animation ── */
@@ -450,38 +452,6 @@
 {% endfor %}
 {% set overallAvg = totalFaculty > 0 ? (sumAvg / totalFaculty) : 0 %}
 
-{# ── Header ── #}
-<div class="rs-header no-print">
-    <div class="rs-header-bg"></div>
-    <div class="rs-header-inner">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rs-header-icon">
-                    <i class="bi bi-bar-chart-line-fill"></i>
-                </div>
-                <div>
-                    <h4 class="rs-title">SEF Evaluation Results</h4>
-                    <p class="rs-subtitle">Superior Evaluation for Faculty</p>
-                    <div class="rs-meta">
-                        <span class="rs-meta-tag"><i class="bi bi-calendar-event"></i> {{ evaluations|length }} Periods</span>
-                        <span class="rs-meta-tag"><i class="bi bi-buildings"></i> {{ departments|length }} Departments</span>
-                        {% if selectedEvaluation %}
-                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} Faculty</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if selectedEvaluation %}
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
-                    <i class="bi bi-printer me-1"></i>Print
-                </button>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
 {# ── Stats Row ── #}
 {% if totalFaculty > 0 %}
 <div class="rs-stats no-print">
@@ -519,35 +489,11 @@
 {# ── Filter Toolbar ── #}
 <div class="rs-toolbar no-print">
     <div class="rs-toolbar-row">
-        <form method="get" action="{{ staffMode|default(false) ? path('staff_results') : path('admin_results_superior') }}" class="rs-toolbar-row" style="flex:1;">
-            {% if staffMode|default(false) %}
-                <input type="hidden" name="view" value="sef">
-            {% endif %}
-            <select name="evaluation" class="rs-filter-select" onchange="this.form.submit()">
-                <option value="">All SEF Periods</option>
-                {% for eval in evaluations %}
-                    <option value="{{ eval.id }}" {{ selectedEvaluation == eval.id ? 'selected' }}>
-                        {{ eval.semester ?? '' }} — {{ eval.schoolYear ?? '' }}
-                        {% if eval.faculty %} ({{ eval.faculty }}){% endif %}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
-        <select class="rs-filter-select" id="rsFilterCollege" onchange="applyFilters()">
-            <option value="">All Colleges</option>
-            {% for col in colleges %}
-                <option value="{{ col }}">{{ col }}</option>
-            {% endfor %}
-        </select>
         <div class="rs-search-box">
             <i class="bi bi-search rs-search-icon"></i>
             <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
         </div>
-        <button type="button" class="rs-reset-btn" id="resetFilters">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-        </button>
     </div>
-    <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
 </div>
 
 {# ── Results Table ── #}
@@ -555,7 +501,7 @@
     <div class="rs-table-bar">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-trophy"></i>
-            <span>SEF Department Head Rankings</span>
+            <span>Superior Rankings</span>
         </div>
         <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
     </div>
@@ -564,8 +510,7 @@
             <thead>
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
-                    <th>Department Head</th>
-                    <th>Department</th>
+                    <th>Superior</th>
                     <th class="text-center">Rating</th>
                     <th class="text-center" style="width:100px">Progress</th>
                     <th class="text-center">Personnel Evaluated</th>
@@ -603,11 +548,6 @@
                             </div>
                         </div>
                     </td>
-                    <td>
-                        <span class="rs-dept-tag">
-                            <i class="bi bi-building"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
-                        </span>
-                    </td>
                     <td class="text-center">
                         <span class="rs-rating-num">{{ r.average|number_format(2) }}</span>
                         <span class="rs-rating-of">/ 5</span>
@@ -641,7 +581,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8" class="text-center py-5">
+                    <td colspan="7" class="text-center py-5">
                         <div class="rs-empty-icon mx-auto mb-2"><i class="bi bi-inbox"></i></div>
                         <span class="text-muted">No SEF results found for this evaluation period.</span>
                     </td>
@@ -656,32 +596,25 @@
 
 
 {# ═══════════════════════════════════════
-   JAVASCRIPT — SEARCH / COLLEGE FILTER
+   JAVASCRIPT — SEARCH FILTER
    ═══════════════════════════════════════ #}
 <script>
 function applyFilters() {
     var searchInput = document.getElementById('facultySearch');
-    var collegeSelect = document.getElementById('rsFilterCollege');
-    var countEl = document.getElementById('resultCount');
     var tbody = document.querySelector('.result-row') ? document.querySelector('.result-row').parentElement : null;
     if (!tbody) return;
 
     var rows = Array.from(tbody.querySelectorAll('.result-row'));
     var search = searchInput.value.toLowerCase().trim();
-    var college = collegeSelect.value;
     var visible = 0;
 
     rows.forEach(function(row) {
         var name = row.getAttribute('data-name');
-        var rowCollege = row.getAttribute('data-college');
         var show = true;
         if (search && name.indexOf(search) === -1) show = false;
-        if (college && rowCollege !== college) show = false;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
     });
-
-    countEl.textContent = 'Showing ' + visible + ' of ' + rows.length + ' result(s)';
 
     var rank = 1;
     rows.forEach(function(row) {
@@ -695,18 +628,8 @@ function applyFilters() {
 
 (function() {
     var searchInput = document.getElementById('facultySearch');
-    var collegeSelect = document.getElementById('rsFilterCollege');
-    var resetBtn = document.getElementById('resetFilters');
 
     if (searchInput) searchInput.addEventListener('input', applyFilters);
-    if (collegeSelect) collegeSelect.addEventListener('change', applyFilters);
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            if (searchInput) searchInput.value = '';
-            if (collegeSelect) collegeSelect.value = '';
-            applyFilters();
-        });
-    }
     applyFilters();
 })();
 </script>

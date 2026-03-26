@@ -251,59 +251,6 @@
 {% endfor %}
 
 {# ═══════════════════════════════════════
-   PROFESSIONAL HEADER
-   ═══════════════════════════════════════ #}
-<div class="ls-header">
-    <div class="ls-header-inner">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="ls-header-icon">
-                    <i class="bi bi-journal-bookmark-fill"></i>
-                </div>
-                <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Schedule</h4>
-                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="ls-meta-pill"><i class="bi bi-person-fill me-1"></i>{{ app.user.firstName }} {{ app.user.lastName }}</span>
-                        {% if app.user.department %}
-                            <span class="ls-meta-pill"><i class="bi bi-bank me-1"></i>{{ app.user.department.departmentName }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if subjects|length > 0 %}
-            <form method="post" action="{{ path('faculty_unload_all_subjects') }}" class="js-unload-all-form" style="display:inline" data-confirm-message="Are you sure you want to unload all {{ subjects|length }} subject{{ subjects|length != 1 ? 's' : '' }}?">
-                <input type="hidden" name="_token" value="{{ csrf_token('unload_all_subjects') }}">
-                <button type="submit" class="ls-print-btn" style="background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);" title="Unload All Subjects">
-                    <i class="bi bi-x-circle-fill me-1"></i> Unload All
-                </button>
-            </form>
-            {% endif %}
-        </div>
-        <div class="ls-stats-row">
-            <div class="ls-stat">
-                <span class="ls-stat-val">{{ totalSubjects }}</span>
-                <span class="ls-stat-lbl">Total Subjects</span>
-            </div>
-            <div class="ls-stat-divider"></div>
-            <div class="ls-stat">
-                <span class="ls-stat-val">{{ totalUnits }}</span>
-                <span class="ls-stat-lbl">Total Units</span>
-            </div>
-            <div class="ls-stat-divider"></div>
-            <div class="ls-stat">
-                <span class="ls-stat-val ls-val-accent">{{ totalSections }}</span>
-                <span class="ls-stat-lbl">Sections</span>
-            </div>
-            <div class="ls-stat-divider"></div>
-            <div class="ls-stat">
-                <span class="ls-stat-val">{{ semSet|length }}</span>
-                <span class="ls-stat-lbl">Semesters</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════
    PREVIOUS LOAD — Current AY (unsaved)
    ═══════════════════════════════════════ #}
 {% set hasPreviousLoadHistory = (previousLoads is defined and previousLoads|length > 0) or (pastLoadsByAY is defined and pastLoadsByAY|length > 0) %}

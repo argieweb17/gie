@@ -9,15 +9,15 @@
    CSS VARIABLES - Modern Chat Style
    ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 :root {
-    --chat-blue: #2f4ea4;
-    --chat-blue-light: #0f9d79;
+    --chat-blue: #1e40af;
+    --chat-blue-light: #1e40af;
     --chat-bg: #f8f9fa;
     --chat-sidebar-bg: #ffffff;
     --chat-border: #e5e7eb;
     --chat-text-primary: #1f2937;
     --chat-text-secondary: #6b7280;
     --chat-text-muted: #9ca3af;
-    --chat-bubble-out: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
+    --chat-bubble-out: #1e40af;
     --chat-bubble-in: #ffffff;
     --chat-radius: 20px;
     --chat-radius-sm: 12px;
@@ -181,7 +181,7 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6b83cb 0%, #2f4ea4 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -208,6 +208,13 @@
     justify-content: space-between;
     margin-bottom: 2px;
 }
+.fm-conv-name-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
 .fm-conv-name {
     font-size: .9rem;
     font-weight: 600;
@@ -220,6 +227,42 @@
     font-size: .7rem;
     color: var(--chat-text-muted);
     flex-shrink: 0;
+}
+.fm-role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e9f5ee;
+    color: #166534;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fm-college-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e8efff;
+    color: #1d4ed8;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .fm-conv-preview {
     font-size: .8rem;
@@ -272,7 +315,7 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6b83cb 0%, #2f4ea4 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -296,9 +339,16 @@
     font-weight: 600;
     color: var(--chat-text-primary);
     margin: 0 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fm-chat-name-text {
+    display: inline-block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 280px;
 }
 .fm-chat-meta {
     font-size: .75rem;
@@ -326,7 +376,7 @@
     text-transform: uppercase;
 }
 .fm-status-pending { background: #fef3c7; color: #b45309; }
-.fm-status-reviewed { background: #e5edfb; color: #2f4ea4; }
+.fm-status-reviewed { background: #e5edfb; color: #1e40af; }
 .fm-status-resolved { background: #d1fae5; color: #059669; }
 .fm-action-btn {
     width: 36px;
@@ -461,7 +511,7 @@
     justify-content: flex-end;
 }
 .fm-message-time .read-icon {
-    color: #6b83cb;
+    color: #1e40af;
 }
 
 /* Attachment */
@@ -689,7 +739,7 @@
 }
 .fm-send-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(47,78,164,.3);
+    box-shadow: 0 4px 12px rgba(30,64,175,.3);
 }
 .fm-file-name {
     font-size: .72rem;
@@ -701,7 +751,7 @@
 
 /* Delete Modal */
 .fm-modal-danger-header {
-    background: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
+    background: var(--chat-bubble-out);
     padding: 18px 20px;
     display: flex;
     align-items: center;
@@ -724,7 +774,7 @@
     padding: 8px 18px;
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
+    background: var(--chat-bubble-out);
 }
 .fm-delete-confirm-btn:hover {
     color: #fff;
@@ -827,6 +877,21 @@
 
         <div class="fm-conv-list" id="convList">
             {% for msg in messages %}
+            {% set senderRankRaw = ((msg.sender.position ?? '') ~ ' ' ~ (msg.sender.employmentStatus ?? ''))|lower %}
+            {% set senderDeptName = msg.sender.department ? msg.sender.department.departmentName : '' %}
+            {% set senderCollegeName = msg.sender.department and msg.sender.department.collegeName ? msg.sender.department.collegeName : '' %}
+            {% set senderSuperiorLabel = 'FACULTY' %}
+            {% if 'vice president' in senderRankRaw %}
+                {% set senderSuperiorLabel = 'VICE PRESIDENT' %}
+            {% elseif 'president' in senderRankRaw %}
+                {% set senderSuperiorLabel = 'PRESIDENT' %}
+            {% elseif 'campus director' in senderRankRaw %}
+                {% set senderSuperiorLabel = 'CAMPUS DIRECTOR' %}
+            {% elseif 'dean' in senderRankRaw %}
+                {% set senderSuperiorLabel = 'DEAN' %}
+            {% elseif 'head' in senderRankRaw or 'chair' in senderRankRaw %}
+                {% set senderSuperiorLabel = senderDeptName != '' ? 'DEPT HEAD - ' ~ senderDeptName : 'DEPT HEAD' %}
+            {% endif %}
             {% set lastMessage = msg.message %}
             {% if repliesMap[msg.id] is defined and repliesMap[msg.id]|length > 0 %}
                 {% set lastReply = repliesMap[msg.id]|last %}
@@ -844,7 +909,15 @@
                 </div>
                 <div class="fm-conv-info">
                     <div class="fm-conv-header">
-                        <span class="fm-conv-name">{{ msg.sender.fullName }}</span>
+                        <span class="fm-conv-name-wrap">
+                            <span class="fm-conv-name">{{ msg.sender.fullName }}</span>
+                            {% if senderSuperiorLabel != '' %}
+                            <span class="fm-role-badge">{{ senderSuperiorLabel }}</span>
+                            {% endif %}
+                            {% if senderCollegeName != '' %}
+                            <span class="fm-college-badge" data-college-full="{{ senderCollegeName|e('html_attr') }}" title="{{ senderCollegeName }}"></span>
+                            {% endif %}
+                        </span>
                         <span class="fm-conv-time">{{ msg.createdAt|date('M d') }}</span>
                     </div>
                     <div class="fm-conv-preview">
@@ -871,6 +944,21 @@
     <main class="fm-chat">
         {% if messages|length > 0 %}
         {% set firstMsg = messages|first %}
+        {% set firstRankRaw = ((firstMsg.sender.position ?? '') ~ ' ' ~ (firstMsg.sender.employmentStatus ?? ''))|lower %}
+        {% set firstDeptName = firstMsg.sender.department ? firstMsg.sender.department.departmentName : '' %}
+        {% set firstCollegeName = firstMsg.sender.department and firstMsg.sender.department.collegeName ? firstMsg.sender.department.collegeName : '' %}
+        {% set firstSuperiorLabel = 'FACULTY' %}
+        {% if 'vice president' in firstRankRaw %}
+            {% set firstSuperiorLabel = 'VICE PRESIDENT' %}
+        {% elseif 'president' in firstRankRaw %}
+            {% set firstSuperiorLabel = 'PRESIDENT' %}
+        {% elseif 'campus director' in firstRankRaw %}
+            {% set firstSuperiorLabel = 'CAMPUS DIRECTOR' %}
+        {% elseif 'dean' in firstRankRaw %}
+            {% set firstSuperiorLabel = 'DEAN' %}
+        {% elseif 'head' in firstRankRaw or 'chair' in firstRankRaw %}
+            {% set firstSuperiorLabel = firstDeptName != '' ? 'DEPT HEAD - ' ~ firstDeptName : 'DEPT HEAD' %}
+        {% endif %}
 
         <header class="fm-chat-header" id="chatHeader">
             <div class="fm-chat-user">
@@ -878,7 +966,11 @@
                     <img src="{{ asset('images/' ~ firstMsg.sender.profilePictureOrDefault) }}" alt="">
                 </div>
                 <div class="fm-chat-details">
-                    <h5 id="chatName">{{ firstMsg.sender.fullName }}</h5>
+                    <h5>
+                        <span id="chatName" class="fm-chat-name-text">{{ firstMsg.sender.fullName }}</span>
+                        <span id="chatRoleBadge" class="fm-role-badge">{{ firstSuperiorLabel }}</span>
+                        <span id="chatCollegeBadge" class="fm-college-badge{% if firstCollegeName == '' %} d-none{% endif %}" data-college-full="{{ firstCollegeName|e('html_attr') }}" title="{{ firstCollegeName }}"></span>
+                    </h5>
                     <div class="fm-chat-meta">
                         {% if firstMsg.sender.department %}
                         <span id="chatDept"><i class="bi bi-building"></i>{{ firstMsg.sender.department.departmentName }}</span>
@@ -1078,7 +1170,9 @@ const messagesData = {
         id: {{ msg.id }},
         senderName: "{{ msg.sender.fullName|e('js') }}",
         senderPhoto: "{{ asset('images/' ~ msg.sender.profilePictureOrDefault) }}",
+        superiorRank: "{% set senderRankRaw = ((msg.sender.position ?? '') ~ ' ' ~ (msg.sender.employmentStatus ?? ''))|lower %}{% if 'vice president' in senderRankRaw %}vice_president{% elseif 'president' in senderRankRaw %}president{% elseif 'campus director' in senderRankRaw %}campus_director{% elseif 'dean' in senderRankRaw %}dean{% elseif 'head' in senderRankRaw or 'chair' in senderRankRaw %}department_head{% endif %}",
         department: {% if msg.sender.department %}"{{ msg.sender.department.departmentName|e('js') }}"{% else %}null{% endif %},
+        college: {% if msg.sender.department and msg.sender.department.collegeName %}"{{ msg.sender.department.collegeName|e('js') }}"{% else %}null{% endif %},
         subject: "{{ msg.subject|e('js') }}",
         status: "{{ msg.status }}",
         createdAt: "{{ msg.createdAt|date('M d, Y') }}",
@@ -1090,6 +1184,88 @@ const messagesData = {
 };
 
 let currentMsgId = {{ messages|length > 0 ? messages|first.id : 'null' }};
+
+function formatCollegeShortcut(college) {
+    if (!college) {
+        return '';
+    }
+
+    const trimmed = String(college).trim();
+    if (!trimmed) {
+        return '';
+    }
+
+    const compact = trimmed.replace(/[()]/g, '');
+    const compactUpper = compact.toUpperCase();
+    if (compactUpper === 'ASC') {
+        return '(CAS)';
+    }
+
+    if (/^[A-Z]{2,8}$/.test(compactUpper)) {
+        return '(' + compactUpper + ')';
+    }
+
+    const stopWords = new Set(['of', 'and', 'the', 'for', 'in', 'on', 'at', 'campus', 'college']);
+    const words = compact.split(/[\s\-\/,&]+/).filter(Boolean);
+
+    let code = '';
+    words.forEach(word => {
+        const lower = word.toLowerCase();
+        if (!stopWords.has(lower)) {
+            code += word.charAt(0).toUpperCase();
+        }
+    });
+
+    if (!code && words.length > 0) {
+        code = words.map(word => word.charAt(0).toUpperCase()).join('');
+    }
+
+    if (!code) {
+        code = compact.slice(0, 4).toUpperCase();
+    }
+
+    if (code === 'ASC') {
+        code = 'CAS';
+    }
+
+    return '(' + code + ')';
+}
+
+function hydrateCollegeBadges() {
+    document.querySelectorAll('.fm-college-badge[data-college-full]').forEach(el => {
+        const fullCollege = (el.dataset.collegeFull || '').trim();
+        const shortLabel = formatCollegeShortcut(fullCollege);
+        el.textContent = shortLabel;
+        el.classList.toggle('d-none', !shortLabel);
+        if (fullCollege) {
+            el.title = fullCollege;
+        }
+    });
+}
+
+function getSuperiorLabel(rank, department) {
+    if (!rank) {
+        return 'FACULTY';
+    }
+
+    if (rank === 'vice_president') {
+        return 'VICE PRESIDENT';
+    }
+    if (rank === 'president') {
+        return 'PRESIDENT';
+    }
+    if (rank === 'campus_director') {
+        return 'CAMPUS DIRECTOR';
+    }
+    if (rank === 'dean') {
+        return 'DEAN';
+    }
+    if (rank === 'department_head') {
+        return department ? ('DEPT HEAD - ' + department) : 'DEPT HEAD';
+    }
+
+    return 'FACULTY';
+}
 
 function selectConversation(el, msgId) {
     currentMsgId = msgId;
@@ -1111,6 +1287,22 @@ function selectConversation(el, msgId) {
         avatarEl.innerHTML = '<img src="' + msg.senderPhoto + '" alt="">';
 
         document.getElementById('chatName').textContent = msg.senderName;
+
+        const roleBadgeEl = document.getElementById('chatRoleBadge');
+        if (roleBadgeEl) {
+            const superiorLabel = getSuperiorLabel(msg.superiorRank, msg.department);
+            roleBadgeEl.textContent = superiorLabel;
+            roleBadgeEl.classList.toggle('d-none', !superiorLabel);
+        }
+
+        const collegeBadgeEl = document.getElementById('chatCollegeBadge');
+        if (collegeBadgeEl) {
+            const shortCollege = formatCollegeShortcut(msg.college);
+            collegeBadgeEl.textContent = shortCollege;
+            collegeBadgeEl.classList.toggle('d-none', !shortCollege);
+            collegeBadgeEl.dataset.collegeFull = msg.college || '';
+            collegeBadgeEl.title = msg.college || '';
+        }
 
         const deptEl = document.getElementById('chatDept');
         if (deptEl) {
@@ -1184,6 +1376,20 @@ document.querySelectorAll('.fm-textarea').forEach(textarea => {
 function initFacultyMessagesPage() {
     const chatBody = document.getElementById('chatBody');
     if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+
+    hydrateCollegeBadges();
+
+    if (currentMsgId && messagesData[currentMsgId]) {
+        const headerCollegeEl = document.getElementById('chatCollegeBadge');
+        if (headerCollegeEl) {
+            const currentCollege = messagesData[currentMsgId].college;
+            const shortCollege = formatCollegeShortcut(currentCollege);
+            headerCollegeEl.textContent = shortCollege;
+            headerCollegeEl.classList.toggle('d-none', !shortCollege);
+            headerCollegeEl.dataset.collegeFull = currentCollege || '';
+            headerCollegeEl.title = currentCollege || '';
+        }
+    }
 
     document.querySelectorAll('.toast').forEach(toast => {
         if (toast.dataset.flashInit === '1') {

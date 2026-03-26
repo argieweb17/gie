@@ -458,6 +458,10 @@ class SuperiorController extends AbstractController
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
     ): array {
+        if ($this->resolveSuperiorRank($evaluator) === self::RANK_DEPARTMENT_HEAD) {
+            return $this->buildCoFacultyRowsForDepartmentHead($eval, $evaluator, $userRepo, $subjectRepo, $fslRepo, $ayRepo);
+        }
+
         $targetRank = $this->resolveTargetSuperiorRank($evaluator);
         if ($targetRank === null) {
             return [];
@@ -502,6 +506,71 @@ class SuperiorController extends AbstractController
                 'user' => $candidate,
                 'type' => $this->resolveEvaluateeTypeByRank($targetRank),
                 'label' => $this->resolveEvaluateeLabelByRank($targetRank),
+                'subjects' => $subjects,
+                'subjectCount' => count($subjects),
+                'subjectPreview' => !empty($previewItems)
+                    ? implode(', ', $previewItems) . (count($subjects) > 3 ? ' +' . (count($subjects) - 3) . ' more' : '')
+                    : '',
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Department heads evaluate co-faculty in the evaluation scope department.
+     *
+     * @return array<int, array{user: User, type: string, label: string, subjects: array<int, array{code: string, name: string, semester: string, section: string, schedule: string}>, subjectCount: int, subjectPreview: string}>
+     */
+    private function buildCoFacultyRowsForDepartmentHead(
+        EvaluationPeriod $eval,
+        User $evaluator,
+        UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
+    ): array {
+        $scopeDept = $eval->getDepartment() ?: $evaluator->getDepartment();
+        if (!$scopeDept) {
+            return [];
+        }
+
+        $users = $userRepo->createQueryBuilder('u')
+            ->andWhere('u.accountStatus = :status')
+            ->andWhere('u.department = :dept')
+            ->setParameter('status', 'active')
+            ->setParameter('dept', $scopeDept)
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $rows = [];
+        foreach ($users as $candidate) {
+            if (!$candidate instanceof User) {
+                continue;
+            }
+
+            if ($candidate->getId() === $evaluator->getId()) {
+                continue;
+            }
+
+            if (!in_array('ROLE_FACULTY', $candidate->getRoles(), true)) {
+                continue;
+            }
+
+            // Co-faculty only: skip users that map to the superior chain.
+            if ($this->resolveSuperiorRank($candidate) !== null) {
+                continue;
+            }
+
+            $subjects = $this->resolveFacultySubjects($candidate, $subjectRepo, $fslRepo, $ayRepo);
+            $previewItems = array_map(static fn(array $s): string => $s['code'] . ($s['section'] !== '' ? ' (' . $s['section'] . ')' : ''), array_slice($subjects, 0, 3));
+
+            $rows[] = [
+                'user' => $candidate,
+                'type' => 'faculty',
+                'label' => 'Faculty Member',
                 'subjects' => $subjects,
                 'subjectCount' => count($subjects),
                 'subjectPreview' => !empty($previewItems)
