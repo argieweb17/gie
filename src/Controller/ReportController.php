@@ -1473,6 +1473,15 @@ class ReportController extends AbstractController
         $filterFaculty  = $request->query->get('faculty');
         $filterDept     = $request->query->get('department');
         $filterSemester = $request->query->get('semester');
+        $filterYearLevelRaw = trim((string) $request->query->get('yearLevel', ''));
+        $filterYearLevel = match ($filterYearLevelRaw) {
+            '1', '1st Year', 'First Year' => '1',
+            '2', '2nd Year', 'Second Year' => '2',
+            '3', '3rd Year', 'Third Year' => '3',
+            '4', '4th Year', 'Fourth Year' => '4',
+            '5', '5th Year', 'Fifth Year' => '5',
+            default => '',
+        };
         $filterTerm     = $request->query->get('term');
         $filterCollege  = $request->query->get('college');
         $page           = max(1, (int) $request->query->get('page', 1));
@@ -1490,6 +1499,19 @@ class ReportController extends AbstractController
         }
         if ($filterSemester) {
             $qb->andWhere('s.semester = :sem')->setParameter('sem', $filterSemester);
+        }
+        if ($filterYearLevel) {
+            $yearLevelAliases = match ($filterYearLevel) {
+                '1' => ['1st Year', 'First Year'],
+                '2' => ['2nd Year', 'Second Year'],
+                '3' => ['3rd Year', 'Third Year'],
+                '4' => ['4th Year', 'Fourth Year'],
+                '5' => ['5th Year', 'Fifth Year'],
+                default => [],
+            };
+            if (!empty($yearLevelAliases)) {
+                $qb->andWhere('s.yearLevel IN (:yearLevels)')->setParameter('yearLevels', $yearLevelAliases);
+            }
         }
         if ($filterTerm) {
             $qb->andWhere('s.term = :term')->setParameter('term', $filterTerm);
@@ -1524,6 +1546,7 @@ class ReportController extends AbstractController
             'filterFaculty'   => $filterFaculty,
             'filterDept'      => $filterDept,
             'filterSemester'  => $filterSemester,
+            'filterYearLevel' => $filterYearLevel,
             'filterTerm'      => $filterTerm,
             'filterCollege'   => $filterCollege,
             'currentPage'     => $page,

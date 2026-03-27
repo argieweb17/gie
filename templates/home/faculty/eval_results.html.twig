@@ -4,18 +4,6 @@
 
 {% block stylesheets %}
 <style>
-/* ─── Header ─── */
-.er-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
-.er-header-inner{padding:22px 26px 18px;}
-.er-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
-.er-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
-.er-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
-.er-stat{flex:1;text-align:center;}
-.er-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
-.er-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
-.er-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
-.er-val-accent{color:#34d399!important;}
-
 /* ─── Toolbar ─── */
 .er-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .er-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
@@ -66,8 +54,6 @@
 
 /* ─── Responsive ─── */
 @media(max-width:768px){
-    .er-header-inner{padding:16px 18px 14px;}
-    .er-header-icon{width:42px;height:42px;font-size:1.1rem;border-radius:11px;}
     .er-table{font-size:.75rem;}
     .er-table thead th{padding:8px 10px;font-size:.62rem;}
     .er-table tbody td{padding:8px 10px;}
@@ -77,7 +63,7 @@
 }
 
 /* ─── Animations ─── */
-.er-header,.er-toolbar,.er-period-card,.er-table-wrap{animation:erFadeIn .25s ease;}
+.er-toolbar,.er-period-card,.er-table-wrap{animation:erFadeIn .25s ease;}
 @keyframes erFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 {% endblock %}
@@ -85,45 +71,9 @@
 {% block body %}
 
 {% set totalSubjects = 0 %}
-{% set totalEvaluators = 0 %}
 {% for p in periods %}
     {% set totalSubjects = totalSubjects + p.subjects|length %}
-    {% for subj in p.subjects %}
-        {% set totalEvaluators = totalEvaluators + subj.evaluatorCount %}
-    {% endfor %}
 {% endfor %}
-
-{# ── Gradient Header Card ── #}
-<div class="er-header">
-    <div class="er-header-inner">
-        <div class="d-flex align-items-center gap-3">
-            <div class="er-header-icon"><i class="bi bi-clipboard-data-fill"></i></div>
-            <div>
-                <h5 class="mb-0 text-white fw-bold" style="font-size:1.1rem;">Evaluation Results</h5>
-                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                    <span class="er-meta-pill" style="font-size:.72rem;"><i class="bi bi-calendar-event me-1"></i>{{ periods|length }} period{{ periods|length != 1 ? 's' : '' }}</span>
-                    <span class="er-meta-pill" style="font-size:.72rem;"><i class="bi bi-book me-1"></i>{{ totalSubjects }} subject{{ totalSubjects != 1 ? 's' : '' }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="er-stats-row">
-            <div class="er-stat">
-                <span class="er-stat-val">{{ periods|length }}</span>
-                <span class="er-stat-lbl">Periods</span>
-            </div>
-            <div class="er-stat-divider"></div>
-            <div class="er-stat">
-                <span class="er-stat-val er-val-accent">{{ totalSubjects }}</span>
-                <span class="er-stat-lbl">Subjects</span>
-            </div>
-            <div class="er-stat-divider"></div>
-            <div class="er-stat">
-                <span class="er-stat-val" style="color:#93c5fd;">{{ totalEvaluators }}</span>
-                <span class="er-stat-lbl">Evaluators</span>
-            </div>
-        </div>
-    </div>
-</div>
 
 {% if periods|length > 0 %}
 {# ── Toolbar ── #}

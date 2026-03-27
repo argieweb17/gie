@@ -1850,6 +1850,15 @@ class HomeController extends AbstractController
         $filterDept = $request->query->get('department');
 
         $filterSemester = $request->query->get('semester');
+        $filterYearLevelRaw = trim((string) $request->query->get('yearLevel', ''));
+        $filterYearLevel = match ($filterYearLevelRaw) {
+            '1', '1st Year', 'First Year' => '1',
+            '2', '2nd Year', 'Second Year' => '2',
+            '3', '3rd Year', 'Third Year' => '3',
+            '4', '4th Year', 'Fourth Year' => '4',
+            '5', '5th Year', 'Fifth Year' => '5',
+            default => '',
+        };
         $page = max(1, (int) $request->query->get('page', 1));
         $limit = 50;
 
@@ -1875,6 +1884,19 @@ class HomeController extends AbstractController
 
         if ($filterSemester) {
             $qb->andWhere('s.semester = :sem')->setParameter('sem', $filterSemester);
+        }
+        if ($filterYearLevel) {
+            $yearLevelAliases = match ($filterYearLevel) {
+                '1' => ['1st Year', 'First Year'],
+                '2' => ['2nd Year', 'Second Year'],
+                '3' => ['3rd Year', 'Third Year'],
+                '4' => ['4th Year', 'Fourth Year'],
+                '5' => ['5th Year', 'Fifth Year'],
+                default => [],
+            };
+            if (!empty($yearLevelAliases)) {
+                $qb->andWhere('s.yearLevel IN (:yearLevels)')->setParameter('yearLevels', $yearLevelAliases);
+            }
         }
 
         $totalFiltered = (int) (clone $qb)->select('COUNT(s.id)')->getQuery()->getSingleScalarResult();
@@ -1908,6 +1930,7 @@ class HomeController extends AbstractController
             'filterFaculty'   => null,
             'filterDept'      => ($filterDept !== null && $filterDept !== '') ? (int) $filterDept : null,
             'filterSemester'  => $filterSemester,
+            'filterYearLevel' => $filterYearLevel,
             'filterTerm'      => null,
             'filterCollege'   => $filterCollege,
             'currentPage'     => $page,

@@ -32,8 +32,6 @@
 .sb-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
 .sb-clear-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:.75rem;text-decoration:none;transition:all .15s;}
 .sb-clear-btn:hover{background:#fee2e2;color:#dc2626;}
-.sb-toolbar-info{margin-left:auto;}
-.sb-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
 
 /* ─── Table ─── */
 .sb-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
@@ -191,15 +189,23 @@
                 <option value="Summer" {{ filterSemester == 'Summer' ? 'selected' }}>Summer</option>
             </select>
         </div>
-        {% if filterDept or filterSemester or filterCollege %}
+        <div class="sb-filter-group">
+            <i class="bi bi-bar-chart-steps sb-filter-icon"></i>
+            <select name="yearLevel" class="sb-filter-select" onchange="this.form.submit()" style="min-width:160px;">
+                <option value="">All Year Levels</option>
+                <option value="1" {{ filterYearLevel == '1' ? 'selected' }}>1st Year</option>
+                <option value="2" {{ filterYearLevel == '2' ? 'selected' }}>2nd Year</option>
+                <option value="3" {{ filterYearLevel == '3' ? 'selected' }}>3rd Year</option>
+                <option value="4" {{ filterYearLevel == '4' ? 'selected' }}>4th Year</option>
+                <option value="5" {{ filterYearLevel == '5' ? 'selected' }}>5th Year</option>
+            </select>
+        </div>
+        {% if filterDept or filterSemester or filterCollege or filterYearLevel %}
             <a href="{{ path(baseRoute) }}" class="sb-clear-btn" title="Clear all filters">
                 <i class="bi bi-x-lg"></i>
             </a>
         {% endif %}
     </form>
-    <div class="sb-toolbar-info">
-        <span class="sb-result-count" id="sbResultCount">{{ totalFiltered }} result{{ totalFiltered != 1 ? 's' : '' }}</span>
-    </div>
 </div>
 
 {# ═══════════════════════════════════════
@@ -578,7 +584,6 @@ function sbFilterTable() {
         r.style.display = match ? '' : 'none';
         if (match) count++;
     });
-    document.getElementById('sbResultCount').textContent = count + ' result' + (count !== 1 ? 's' : '');
     document.getElementById('sbNoResults').style.display = count === 0 && q.length > 0 ? '' : 'none';
 }
 

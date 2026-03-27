@@ -25,21 +25,22 @@
                 </button>
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
                 <div class="d-flex align-items-center ms-auto gap-2">
-                    {% set showNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff) %}
-                    {% if showNotifBell and app.user.isFaculty %}
-                    <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
-                        <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
-                        {% set notifCount = unread_message_notifications() %}
+                    {% set showNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff or app.user.hasAssignedRole('ROLE_SUPERIOR') or app.user.isSuperior) %}
+                    {% set mobileMessageRoute = app.user.isStaff ? path('staff_faculty_messages') : path('faculty_eval_request') %}
+                    {% if showNotifBell %}
+                    {% set notifCount = unread_message_notifications() %}
+                    {% set mobileBellRoute = app.user.isStaff ? path('staff_evaluations') : mobileMessageRoute %}
+                    {% set mobileBellCount = app.user.isStaff ? (sc.evaluation_responses|default(0)) : notifCount %}
+                    <a href="{{ mobileMessageRoute }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Messages">
+                        <i class="bi bi-chat-dots-fill fs-5 mobile-notif-icon"></i>
                         {% if notifCount > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;background:#dc3545;color:#fff;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
-                    {% elseif showNotifBell and app.user.isStaff %}
-                    <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
+                    <a href="{{ mobileBellRoute }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
                         <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
-                        {% set notifCount = unread_message_notifications() %}
-                        {% if notifCount > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
+                        {% if mobileBellCount > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;background:#dc3545;color:#fff;">{{ mobileBellCount }}</span>
                         {% endif %}
                     </a>
                     {% endif %}
@@ -376,20 +377,50 @@
             {% endif %}
             <div class="topbar-right">
                 {# ── Message Notifications Bell ── #}
-                {% set showTopbarNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff) %}
+                {% set showTopbarNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff or app.user.hasAssignedRole('ROLE_SUPERIOR') or app.user.isSuperior) %}
                 {% if showTopbarNotifBell %}
                 {% set messageNotifCount = unread_message_notifications() %}
+                {% set topbarMessageCount = messageNotifCount %}
+                {% if app.user.isStaff %}
+                    {% set topbarMessageCount = (sc.faculty_messages|default(0)) + messageNotifCount %}
+                {% endif %}
+                {% set topbarMessageRoute = app.user.isFaculty ? path('faculty_eval_request') : path('staff_faculty_messages') %}
+                {% if app.user.isStaff %}
+                    {% set topbarMessageRoute = path('staff_faculty_messages') %}
+                {% else %}
+                    {% set topbarMessageRoute = path('faculty_eval_request') %}
+                {% endif %}
+                {% set topbarBellRoute = topbarMessageRoute %}
+                {% set topbarBellCount = messageNotifCount %}
+                {% if app.user.isStaff %}
+                    {% set topbarBellRoute = path('staff_evaluations') %}
+                    {% set topbarBellCount = sc.evaluation_responses|default(0) %}
+                {% endif %}
+                <a href="{{ topbarMessageRoute }}" class="topbar-message-btn{% if topbarMessageCount > 0 %} has-unread{% endif %}" title="Messages" style="position:relative;background:none;border:none;font-size:1.2rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                    <i class="bi bi-chat-dots"></i>
+                    {% if topbarMessageCount > 0 %}
+                    <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ topbarMessageCount }}</span>
+                    {% endif %}
+                </a>
+                {% if app.user.isStaff %}
+                <a href="{{ topbarBellRoute }}" class="topbar-notif-btn{% if topbarBellCount > 0 %} has-unread{% endif %}" title="Evaluation Responses" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                    <i class="bi bi-bell topbar-notif-icon{% if topbarBellCount > 0 %} topbar-bell-ring{% endif %}"></i>
+                    {% if topbarBellCount > 0 %}
+                        <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ topbarBellCount }}</span>
+                    {% endif %}
+                </a>
+                {% else %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
                     <button class="topbar-notif-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <i class="bi bi-bell topbar-notif-icon{% if messageNotifCount > 0 %} topbar-bell-ring{% endif %}"></i>
                         {% if messageNotifCount > 0 %}
-                            <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">{{ messageNotifCount }}</span>
+                            <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ messageNotifCount }}</span>
                         {% endif %}
                     </button>
                     <div class="topbar-notif-dropdown" id="topbarMessageNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
                         <div class="topbar-notif-header" style="padding:12px 16px;font-weight:600;font-size:.85rem;color:#1E293B;border-bottom:1px solid #F1F5F9;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;">
                             <span><i class="bi bi-bell-fill me-1"></i> Notifications</span>
-                            <a href="{% if app.user.isFaculty %}{{ path('faculty_eval_request') }}{% else %}{{ path('staff_faculty_messages') }}{% endif %}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
+                            <a href="{{ topbarMessageRoute }}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
                         </div>
                         {% if messageNotifCount > 0 %}
                             <div class="topbar-notif-list" style="max-height:300px;overflow-y:auto;padding:12px 16px;">
@@ -405,6 +436,7 @@
                         {% endif %}
                     </div>
                 </div>
+                {% endif %}
                 {% endif %}
                 <div class="topbar-profile">
                     <div class="topbar-profile-avatar">

@@ -6,11 +6,13 @@ use App\Repository\AcademicYearRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\EvaluationMessageRepository;
+use App\Repository\EvaluationResponseRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\FacultyNotificationReadRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionRepository;
+use App\Repository\SuperiorEvaluationRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -34,6 +36,8 @@ class AppExtension extends AbstractExtension
         private FacultyNotificationReadRepository $notifReadRepo,
         private MessageNotificationRepository $messageNotifRepo,
         private FacultySubjectLoadRepository $fslRepo,
+        private EvaluationResponseRepository $evalResponseRepo,
+        private SuperiorEvaluationRepository $superiorEvalRepo,
     ) {}
 
     public function getFunctions(): array
@@ -100,6 +104,9 @@ class AppExtension extends AbstractExtension
             }
         }
 
+        $totalEvaluationResponses = array_sum($this->evalResponseRepo->countEvaluatorsByPeriod())
+            + array_sum($this->superiorEvalRepo->countEvaluatorsByPeriod());
+
         $this->cachedCounts = [
             'users' => count($allUsers),
             'pending_approvals' => $pendingApprovals,
@@ -115,6 +122,7 @@ class AppExtension extends AbstractExtension
             'questions' => count($this->questionRepo->findAll()),
             'audit_logs' => count($this->auditLogRepo->findAll()),
             'faculty_messages' => $this->evalMessageRepo->countPending(),
+            'evaluation_responses' => $totalEvaluationResponses,
         ];
 
         return $this->cachedCounts;
