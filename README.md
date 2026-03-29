@@ -1,4 +1,4 @@
-# QUAMC Evaluation System
+# SET-SEF Evaluation System
 
 ## System Overview
 
@@ -61,50 +61,6 @@ reports, and correspondence ID tracking with saved PDF artifacts.
 - templates: Twig views and print templates
 - migrations: database migration files
 - public/uploads/correspondence: saved correspondence artifacts (HTML/PDF)
-
-## Local Setup
-
-1. Install dependencies:
-
-```bash
-composer install
-```
-
-2. Configure environment values in .env or .env.local:
-
-- DATABASE_URL
-- APP_SECRET
-
-3. Create database schema:
-
-```bash
-php bin/console doctrine:database:create --if-not-exists
-php bin/console doctrine:migrations:migrate -n
-```
-
-4. Run the app:
-
-```bash
-symfony server:start
-```
-
-## Docker Setup
-
-Use Docker Compose to run PostgreSQL quickly:
-
-```bash
-docker compose up -d
-```
-
-Then run migrations from the app environment.
-
-## Useful Commands
-
-```bash
-php bin/console debug:router
-php bin/console cache:clear
-php bin/phpunit
-```
 
 ## Notes
 
