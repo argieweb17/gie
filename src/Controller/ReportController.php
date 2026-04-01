@@ -3475,6 +3475,9 @@ class ReportController extends AbstractController
         if ($releaseDateInput !== '') {
             $releaseDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $releaseDateInput);
             if (!$releaseDate instanceof \DateTimeImmutable) {
+                $releaseDate = \DateTimeImmutable::createFromFormat('!d/m/Y', $releaseDateInput);
+            }
+            if (!$releaseDate instanceof \DateTimeImmutable) {
                 $this->addFlash('danger', 'Invalid release date format.');
 
                 return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
@@ -3500,7 +3503,7 @@ class ReportController extends AbstractController
 
         $this->addFlash('success', 'Correspondence record released.');
 
-        return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+        return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_release_files_superior' : 'staff_release_files_faculty');
     }
 
     #[Route('/correspondence/file/{id}', name: 'staff_correspondence_file', methods: ['GET'])]
