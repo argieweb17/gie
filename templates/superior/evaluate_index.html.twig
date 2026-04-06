@@ -123,13 +123,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
-    border-radius: 8px;
-    padding: .2rem .42rem;
+    min-width: 0;
+    border-radius: 0;
+    padding: 0;
     font-size: .72rem;
     font-weight: 700;
     color: #0f53d7;
-    background: #dbeafe;
+    background: transparent;
 }
 
 .sp-person {
@@ -158,8 +158,8 @@
     display: inline-flex;
     align-items: center;
     gap: .28rem;
-    border-radius: 8px;
-    padding: .2rem .42rem;
+    border-radius: 0;
+    padding: 0;
     font-size: .72rem;
     font-weight: 600;
     letter-spacing: .02em;
@@ -168,9 +168,9 @@
     max-width: 100%;
     white-space: nowrap;
 }
-.sp-role-dean { background: #fef3c7; color: #92400e; }
-.sp-role-head { background: #d9e9ff; color: #0c5f99; }
-.sp-role-lead { background: #f3e8ff; color: #6b21a8; }
+.sp-role-dean { background: transparent; color: #92400e; }
+.sp-role-head { background: transparent; color: #0c5f99; }
+.sp-role-lead { background: transparent; color: #6b21a8; }
 .sp-role i {
     margin-top: 0;
     flex-shrink: 0;
@@ -181,12 +181,12 @@
     display: inline-flex;
     align-items: center;
     gap: .28rem;
-    border-radius: 8px;
-    padding: .2rem .42rem;
+    border-radius: 0;
+    padding: 0;
     font-size: .72rem;
     font-weight: 600;
-    background: #e9eef5;
-    border: 1px solid #d5deea;
+    background: transparent;
+    border: none;
     color: #25364f;
     line-height: 1;
     width: fit-content;
@@ -203,13 +203,13 @@
     display: inline-flex;
     align-items: center;
     gap: .24rem;
-    border-radius: 999px;
-    padding: .16rem .5rem;
+    border-radius: 0;
+    padding: 0;
     font-size: .64rem;
     font-weight: 600;
 }
-.sp-status-submitted { background: #dcfce7; color: #166534; }
-.sp-status-pending { background: #f1f5f9; color: #475569; }
+.sp-status-submitted { background: transparent; color: #166534; }
+.sp-status-pending { background: transparent; color: #475569; }
 .sp-status-note {
     margin-top: .14rem;
     color: #6b7280;
@@ -237,11 +237,11 @@
 .sp-action-evaluate { background: #059669; color: #fff; }
 .sp-action-evaluate:hover { background: #047857; color: #fff; }
 .sp-action-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: 1px solid #cfd9e6;
-    background: #fff;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     color: #315b93;
     display: inline-flex;
     align-items: center;
@@ -250,8 +250,7 @@
     font-size: .78rem;
 }
 .sp-action-icon:hover {
-    background: #edf3fe;
-    border-color: #b7c9e5;
+    background: transparent;
     color: #1d4ed8;
 }
 

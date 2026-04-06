@@ -30,6 +30,13 @@ class ApiAuthSubscriber implements EventSubscriberInterface
         'api_evaluation_submit'    => ['ROLE_STUDENT', 'ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_ADMIN'],
         'api_my_results'           => ['ROLE_FACULTY'],
         'api_my_subjects'          => ['ROLE_FACULTY'],
+        'api_faculty_profile'      => ['ROLE_FACULTY', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'api_faculty_summary'      => ['ROLE_FACULTY', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'staff_api_profile'        => ['ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'staff_api_summary'        => ['ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'staff_api_faculty_subjects' => ['ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'superior_api_profile'     => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'superior_api_summary'     => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
     ];
 
     public function __construct(
@@ -53,8 +60,17 @@ class ApiAuthSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
         $path = $request->getPathInfo();
 
-        // Only handle /api routes
-        if (!str_starts_with($path, '/api')) {
+        // Only handle API-like routes that rely on Bearer token auth
+        $protectedPrefixes = ['/api', '/reports/api', '/superior/api'];
+        $isProtectedPath = false;
+        foreach ($protectedPrefixes as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $isProtectedPath = true;
+                break;
+            }
+        }
+
+        if (!$isProtectedPath) {
             return;
         }
 

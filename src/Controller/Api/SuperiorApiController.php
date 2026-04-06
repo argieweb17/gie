@@ -9,20 +9,88 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/superior')]
-#[IsGranted('ROLE_SUPERIOR')]
 class SuperiorApiController extends AbstractController
 {
+    private function resolveSuperiorUser(Request $request): User|JsonResponse
+    {
+        $apiUser = $request->attributes->get('_api_user');
+        $user = $apiUser instanceof User ? $apiUser : $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Authentication required.'], 401);
+        }
+
+        $roles = $user->getRoles();
+        if (!in_array('ROLE_SUPERIOR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true)) {
+            return $this->json(['error' => 'Access denied. Insufficient permissions.'], 403);
+        }
+
+        return $user;
+    }
+
+    #[Route('/api/profile', name: 'superior_api_profile', methods: ['GET'])]
+    public function profile(Request $request): JsonResponse
+    {
+        $user = $this->resolveSuperiorUser($request);
+        if ($user instanceof JsonResponse) {
+            return $user;
+        }
+
+        $this->assertDepartmentHeadSuperior($user);
+
+        return $this->json([
+            'id' => $user->getId(),
+            'schoolId' => $user->getSchoolId(),
+            'fullName' => $user->getFullName(),
+            'email' => $user->getEmail(),
+            'department' => $user->getDepartment()?->getDepartmentName(),
+            'roles' => $user->getRoles(),
+        ]);
+    }
+
+    #[Route('/api/summary', name: 'superior_api_summary', methods: ['GET'])]
+    public function summary(Request $request, UserRepository $userRepo): JsonResponse
+    {
+        $user = $this->resolveSuperiorUser($request);
+        if ($user instanceof JsonResponse) {
+            return $user;
+        }
+
+        $this->assertDepartmentHeadSuperior($user);
+
+        $department = $user->getDepartment();
+        $evaluatees = $department ? $userRepo->findBy(['department' => $department]) : [];
+
+        $evaluateeCount = 0;
+        foreach ($evaluatees as $evaluatee) {
+            if ($evaluatee->getId() === $user->getId()) {
+                continue;
+            }
+            if ($evaluatee->isAdmin() || $evaluatee->isStaff()) {
+                continue;
+            }
+            $evaluateeCount++;
+        }
+
+        return $this->json([
+            'department' => $department ? $department->getDepartmentName() : null,
+            'evaluateeCount' => $evaluateeCount,
+        ]);
+    }
+
     #[Route('/results/detail', name: 'superior_results_detail', methods: ['GET'])]
     public function resultsDetail(
         Request $request,
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
     ): JsonResponse {
-        /** @var User $user */
-        $user = $this->getUser();
+        $user = $this->resolveSuperiorUser($request);
+        if ($user instanceof JsonResponse) {
+            return $user;
+        }
+
         $this->assertDepartmentHeadSuperior($user);
 
         $evalId = (int) $request->query->get('evalId');

@@ -363,7 +363,7 @@
                             <div class="sb-action-btns">
                                 {% if isLoaded %}
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section" {% if semesterLocked %}disabled style="opacity:.55;cursor:not-allowed;"{% endif %}>
-                                        <i  class="bi bi-plus-circle-fill"></i> Pick
+                                        <i class="bi bi-plus-lg"></i> Pick
                                     </button>
                                 {% else %}
                                     {% if semesterLocked %}
@@ -372,7 +372,7 @@
                                         </button>
                                     {% else %}
                                         <button type="button" class="sb-btn-pick" onclick="quickLoadSubject({{ subject.id }})">
-                                            <i  class="bi bi-plus-circle-fill"></i> Pick
+                                            <i class="bi bi-plus-lg"></i> Pick
                                         </button>
                                     {% endif %}
                                 {% endif %}
@@ -485,7 +485,7 @@
                 <div class="modal-header border-0 pb-0" style="background:#1e40af;padding:20px 24px 16px;">
                     <div class="d-flex align-items-center gap-2">
                         <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(255,255,255,.15);">
-                            <i  class="bi bi-plus-circle-fill text-white"></i>
+                            <i class="bi bi-plus-lg text-white"></i>
                         </div>
                         <div>
                             <h6 class="fw-bold text-white mb-0" style="font-size:.95rem;">Pick Again</h6>
@@ -525,7 +525,7 @@
                 <div class="modal-footer border-0 pt-0" style="padding:0 24px 20px;">
                     <button type="button" class="btn btn-sm btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="font-size:.78rem;">Cancel</button>
                     <button type="submit" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:#1e40af;">
-                        <i  class="bi bi-plus-circle-fill me-1"></i>Add Section
+                        <i class="bi bi-plus-lg me-1"></i>Add Section
                     </button>
                 </div>
             </form>
@@ -920,7 +920,7 @@ function updateRowVisual(cb) {
         row.classList.remove('is-loaded');
         if (statusCell) statusCell.innerHTML = '<span class="sb-status-badge available"><i  class="bi bi-circle-fill"></i> Available</span>';
 
-        if (actionCell) actionCell.innerHTML = '<button type="button" class="sb-btn-pick" onclick="quickLoadSubject(' + sid + ')"><i  class="bi bi-plus-circle-fill"></i> Pick</button>';
+        if (actionCell) actionCell.innerHTML = '<button type="button" class="sb-btn-pick" onclick="quickLoadSubject(' + sid + ')"><i class="bi bi-plus-lg"></i> Pick</button>';
     }
 }
 
@@ -1216,6 +1216,7 @@ window.updateQRButtonsForLoadedSubjects = function() {
         // Add other action buttons
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + subjectName.replace(/'/g,"\\'") + '\')" title="Pick again with different section"><i  class="bi bi-plus-circle-fill"></i> Pick</button>';
 
+        actionsHtml = actionsHtml.replace(/bi bi-plus-circle-fill/g, 'bi bi-plus-lg');
         actionCell.innerHTML = actionsHtml;
     });
 };
@@ -1256,7 +1257,7 @@ setInterval(pollActiveEvaluations, 30000);  // Then every 30 seconds with deboun
                 <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#1E3A8A,#1E40AF);padding:20px 24px 16px;">
                     <div class="d-flex align-items-center gap-2">
                         <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(255,255,255,.15);">
-                            <i  class="bi bi-plus-circle-fill text-white"></i>
+                            <i class="bi bi-plus-lg text-white"></i>
                         </div>
                         <h6 class="fw-bold text-white mb-0" style="font-size:.95rem;">Add New Subject</h6>
                     </div>

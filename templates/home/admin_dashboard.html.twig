@@ -382,6 +382,14 @@
             }
         };
 
+        const safeCursorHandler = (event, elements) => {
+            const target = event && event.native && event.native.target ? event.native.target : null;
+            if (target) {
+                target.style.cursor = elements.length ? 'pointer' : 'default';
+            }
+        };
+
+        try {
         if (trendsCanvas) {
             const ctx = trendsCanvas.getContext('2d');
             const setGradient = createGradient(ctx, 'rgba(37, 99, 235, 0.3)', 'rgba(37, 99, 235, 0.02)');
@@ -470,7 +478,11 @@
                 });
             }
         }
+        } catch (e) {
+            console.error('Failed to render trends chart:', e);
+        }
 
+        try {
         if (deptCanvas) {
             let deptRaw = [
                 {% for dept in departments %}
@@ -538,9 +550,7 @@
                             }
                         }
                     },
-                    onHover: (event, elements) => {
-                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                    }
+                    onHover: safeCursorHandler
                 },
                 plugins: [{
                     id: 'valueLabels',
@@ -565,7 +575,11 @@
                 }]
             });
         }
+        } catch (e) {
+            console.error('Failed to render department chart:', e);
+        }
 
+        try {
         if (userCanvas) {
             const roleData = [
                 { label: 'Students', value: {{ studentCount|default(0) }}, color: '#3b82f6' },
@@ -605,9 +619,7 @@
                             }
                         }
                     },
-                    onHover: (event, elements) => {
-                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                    }
+                    onHover: safeCursorHandler
                 }
             });
 
@@ -628,16 +640,33 @@
                 });
             }
         }
+        } catch (e) {
+            console.error('Failed to render user distribution chart:', e);
+        }
+    };
+
+    const renderWhenChartReady = (attempt = 0) => {
+        if (typeof Chart !== 'undefined') {
+            renderAdminDashboardCharts();
+            return;
+        }
+
+        if (attempt >= 20) {
+            console.warn('Chart.js was not available for admin dashboard charts.');
+            return;
+        }
+
+        window.setTimeout(() => renderWhenChartReady(attempt + 1), 120);
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderAdminDashboardCharts, { once: true });
+        document.addEventListener('DOMContentLoaded', () => renderWhenChartReady(), { once: true });
     } else {
-        renderAdminDashboardCharts();
+        renderWhenChartReady();
     }
 
     if (!window.__adminDashboardChartHandlersBound) {
-        document.addEventListener('turbo:load', renderAdminDashboardCharts);
+        document.addEventListener('turbo:load', () => renderWhenChartReady());
         document.addEventListener('turbo:before-cache', destroyAdminDashboardCharts);
         window.__adminDashboardChartHandlersBound = true;
     }

@@ -175,7 +175,7 @@
 .sl-brand-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 40%, #059669 100%);
+    background: #1E3A8A;
     z-index: 0;
 }
 .sl-brand-bg::before {
@@ -213,14 +213,14 @@
 .sl-brand-logo-wrap {
     width: 90px;
     height: 90px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 1.25rem;
+    background: transparent;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     margin-bottom: 1.5rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    box-shadow: none;
     animation: scaleIn 0.6s ease 0.2s both;
 }
 .sl-brand-logo {
@@ -261,8 +261,8 @@
 .sl-feature-icon {
     width: 40px;
     height: 40px;
-    border-radius: 0.625rem;
-    background: rgba(255,255,255,0.15);
+    border-radius: 0;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -441,7 +441,7 @@
     padding: 0.8rem;
     border: none;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg, #1E3A8A, #1E40AF 50%, #059669);
+    background: #1E3A8A;
     color: #fff;
     font-size: 1rem;
     font-weight: 700;
@@ -472,7 +472,7 @@
 }
 .sl-submit-btn.sl-btn-loading {
     pointer-events: none;
-    background: linear-gradient(135deg, #1a3279, #1a38a0 50%, #047857);
+    background: #1A3279;
     box-shadow: 0 4px 15px rgba(37,99,235,0.35);
 }
 .sl-submit-btn.sl-btn-loading::before {
@@ -618,8 +618,7 @@
         display: none;
     }
     .sl-page {
-        background: linear-gradient(135deg, rgba(30,58,138,0.92), rgba(30,64,175,0.88) 40%, rgba(5,150,105,0.82) 100%),
-                    url('/images/norsu.jpg') center 8%/cover no-repeat;
+        background: #1E3A8A;
         justify-content: center;
         align-items: center;
         height: 100vh;

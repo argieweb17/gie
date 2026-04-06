@@ -1267,12 +1267,6 @@ function getSuperiorLabel(rank, department) {
     return 'FACULTY';
 }
 
-function refreshLucideIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-    }
-}
-
 function selectConversation(el, msgId) {
     currentMsgId = msgId;
 
@@ -1343,7 +1337,6 @@ function selectConversation(el, msgId) {
 
     const chatBody = document.getElementById('chatBody');
     chatBody.scrollTop = chatBody.scrollHeight;
-    refreshLucideIcons();
 }
 
 function filterMessages(status, btn) {
@@ -1371,7 +1364,6 @@ function updateFileName(input, msgId) {
     } else {
         nameEl.innerHTML = '';
     }
-    refreshLucideIcons();
 }
 
 document.querySelectorAll('.fm-textarea').forEach(textarea => {
@@ -1421,7 +1413,6 @@ function initFacultyMessagesPage() {
         }, 3000);
     });
 
-    refreshLucideIcons();
 }
 
 document.addEventListener('DOMContentLoaded', initFacultyMessagesPage);

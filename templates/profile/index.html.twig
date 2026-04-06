@@ -2,6 +2,19 @@
 
 {% block title %}My Profile | SET-SEF Evaluation{% endblock %}
 
+{% block stylesheets %}
+<style>
+.pf-chip{display:inline-flex;align-items:center;gap:.25rem;padding:0;border-radius:0;background:transparent;font-weight:600;font-size:.9rem}
+.pf-chip-admin{color:#DC2626}
+.pf-chip-superior{color:#2563EB}
+.pf-chip-faculty{color:#B45309}
+.pf-chip-staff{color:#0891B2}
+.pf-chip-student{color:#2563EB}
+.pf-chip-active{color:#16A34A}
+.pf-chip-inactive{color:#64748B}
+</style>
+{% endblock %}
+
 {% block body %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i  class="bi bi-person-circle me-2"></i>My Profile</h4>
@@ -23,15 +36,15 @@
                 <h5 class="fw-bold mb-1">{{ user.fullName }}</h5>
                 <p class="text-muted mb-2">{{ user.email }}</p>
                 {% if 'ROLE_ADMIN' in user.roles %}
-                    <span class="badge bg-danger"><i  class="bi bi-shield-check me-1"></i>Administrator</span>
+                    <span class="pf-chip pf-chip-admin"><i  class="bi bi-shield-check me-1"></i>Administrator</span>
                 {% elseif user.hasAssignedRole('ROLE_SUPERIOR') %}
-                    <span class="badge bg-primary"><i  class="bi bi-star-fill me-1"></i>Superior</span>
+                    <span class="pf-chip pf-chip-superior"><i  class="bi bi-star-fill me-1"></i>Superior</span>
                 {% elseif 'ROLE_FACULTY' in user.roles %}
-                    <span class="badge bg-warning text-dark"><i  class="bi bi-mortarboard me-1"></i>Faculty</span>
+                    <span class="pf-chip pf-chip-faculty"><i  class="bi bi-mortarboard me-1"></i>Faculty</span>
                 {% elseif 'ROLE_STAFF' in user.roles %}
-                    <span class="badge bg-info"><i  class="bi bi-card-checklist me-1"></i>Staff</span>
+                    <span class="pf-chip pf-chip-staff"><i  class="bi bi-card-checklist me-1"></i>Staff</span>
                 {% else %}
-                    <span class="badge bg-primary"><i  class="bi bi-person me-1"></i>Student</span>
+                    <span class="pf-chip pf-chip-student"><i  class="bi bi-person me-1"></i>Student</span>
                 {% endif %}
 
                 {# Upload Picture #}
@@ -105,19 +118,19 @@
                             <td class="text-muted"><i  class="bi bi-shield me-2"></i>Role</td>
                             <td>
                                 {% if 'ROLE_ADMIN' in user.roles %}
-                                    <span class="badge bg-danger me-1">Admin</span>
+                                    <span class="pf-chip pf-chip-admin me-1">Admin</span>
                                 {% endif %}
                                 {% if user.hasAssignedRole('ROLE_SUPERIOR') %}
-                                    <span class="badge bg-primary me-1">Superior</span>
+                                    <span class="pf-chip pf-chip-superior me-1">Superior</span>
                                 {% endif %}
                                 {% if 'ROLE_FACULTY' in user.roles %}
-                                    <span class="badge bg-warning text-dark me-1">Faculty</span>
+                                    <span class="pf-chip pf-chip-faculty me-1">Faculty</span>
                                 {% endif %}
                                 {% if 'ROLE_STAFF' in user.roles %}
-                                    <span class="badge bg-info me-1">Staff</span>
+                                    <span class="pf-chip pf-chip-staff me-1">Staff</span>
                                 {% endif %}
                                 {% if not ('ROLE_ADMIN' in user.roles or 'ROLE_FACULTY' in user.roles or 'ROLE_STAFF' in user.roles) %}
-                                    <span class="badge bg-primary me-1">Student</span>
+                                    <span class="pf-chip pf-chip-student me-1">Student</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -125,9 +138,9 @@
                             <td class="text-muted"><i  class="bi bi-check-circle-fill me-2"></i>Account Status</td>
                             <td>
                                 {% if user.accountStatus == 'active' %}
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="pf-chip pf-chip-active">Active</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactive</span>
+                                    <span class="pf-chip pf-chip-inactive">Inactive</span>
                                 {% endif %}
                             </td>
                         </tr>

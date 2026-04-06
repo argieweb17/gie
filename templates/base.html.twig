@@ -21,7 +21,7 @@
         <nav class="navbar navbar-dark navbar-norsu navbar-mobile-only fixed-top d-lg-none">
             <div class="container-fluid px-3">
                 <button class="btn btn-link text-white me-2 p-0" id="sidebarToggle" type="button" aria-label="Toggle sidebar">
-                    <i class="bi bi-list fs-4"></i>
+                    <i class="fs-4 bi bi-list"></i>
                 </button>
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
                 <div class="d-flex align-items-center ms-auto gap-2">
@@ -32,13 +32,13 @@
                     {% set mobileBellRoute = app.user.isStaff ? path('staff_evaluations') : mobileMessageRoute %}
                     {% set mobileBellCount = app.user.isStaff ? (sc.evaluation_responses|default(0)) : notifCount %}
                     <a href="{{ mobileMessageRoute }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Messages">
-                        <i class="bi bi-chat-dots-fill fs-5 mobile-notif-icon"></i>
+                        <i class="fs-5 mobile-notif-icon bi bi-chat-dots"></i>
                         {% if notifCount > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;background:#dc3545;color:#fff;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
                     <a href="{{ mobileBellRoute }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
-                        <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
+                        <i class="fs-5 mobile-notif-icon bi bi-bell"></i>
                         {% if mobileBellCount > 0 %}
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;background:#dc3545;color:#fff;">{{ mobileBellCount }}</span>
                         {% endif %}
@@ -66,7 +66,7 @@
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_login') }}"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>
+                                <a class="nav-link" href="{{ path('app_login') }}"><i class="me-1 bi bi-box-arrow-in-right"></i>Login</a>
                             </li>
                             <li class="nav-item">
                                 <a class="btn btn-norsu-gold btn-sm ms-2 mt-1" href="{{ path('app_register') }}">Register</a>
@@ -96,14 +96,14 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}"
                    href="{{ path('app_dashboard') }}">
-                    <i class="bi bi-speedometer2 sidebar-icon"></i> Dashboard
+                    <i class="sidebar-icon bi bi-speedometer2"></i> Dashboard
                 </a>
 
                 {# ── Student: SET Evaluation ── #}
                 {% if not app.user.isFaculty and not app.user.isStaff and not app.user.isAdmin %}
                     <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('evaluation_history') }}">
-                        <i class="bi bi-clock-history sidebar-icon"></i> Evaluation History
+                        <i class="sidebar-icon bi bi-clock-history"></i> Evaluation History
                     </a>
 
                 {% endif %}
@@ -113,16 +113,16 @@
                     <div class="sidebar-header">Subject Management</div>
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
-                        <i class="bi bi-book-fill sidebar-icon"></i> Subject Load
+                        <i class="sidebar-icon bi bi-book"></i> Subject Load
                         <span class="sidebar-count">{{ faculty_subjects()|length }}</span>
                     </a>
                     <a class="nav-link {% if 'faculty_department_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('faculty_department_subjects') }}">
-                        <i class="bi bi-building sidebar-icon"></i> Department
+                        <i class="sidebar-icon bi bi-buildings"></i> Department
                     </a>
                     <a class="nav-link {% if 'faculty_loaded_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('faculty_loaded_subjects') }}">
-                        <i class="bi bi-journal-bookmark-fill sidebar-icon"></i> Schedule
+                        <i class="sidebar-icon bi bi-bookmark-check"></i> Schedule
                     </a>
                 {% endif %}
 
@@ -135,17 +135,17 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_eval_request') }}">
-                    <i class="bi bi-send sidebar-icon"></i> Request
+                    <i class="sidebar-icon bi bi-send"></i> Request
                     {% if unread_message_notifications() > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ unread_message_notifications() }}</span>{% endif %}
                 </a>
                 <a class="nav-link {% if 'faculty_eval_results' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_eval_results') }}">
-                    <i class="bi bi-clipboard-data sidebar-icon"></i> Result
+                    <i class="sidebar-icon bi bi-clipboard-check"></i> Result
                 </a>
                 {% if app.user.isDepartmentHeadFaculty and not app.user.isStaff and not app.user.isAdmin %}
                 <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('superior_evaluate_index') }}">
-                    <i class="bi bi-diagram-3-fill sidebar-icon"></i> Superior Access
+                    <i class="sidebar-icon bi bi-diagram-3"></i> Superior Access
                 </a>
                 {% endif %}
             </nav>
@@ -154,7 +154,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_audit_log') }}">
-                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                    <i class="sidebar-icon bi bi-journal-text"></i> Audit Log
                 </a>
             </nav>
             {% endif %}
@@ -165,7 +165,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('superior_evaluate_index') }}">
-                    <i class="bi bi-diagram-3-fill sidebar-icon"></i> Evaluate Personnel
+                    <i class="sidebar-icon bi bi-diagram-3"></i> Evaluate Personnel
                 </a>
             </nav>
 
@@ -173,7 +173,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_eval_request') }}">
-                    <i class="bi bi-send sidebar-icon"></i> Request
+                    <i class="sidebar-icon bi bi-send"></i> Request
                     {% if unread_message_notifications() > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ unread_message_notifications() }}</span>{% endif %}
                 </a>
             </nav>
@@ -182,7 +182,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_audit_log') }}">
-                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                    <i class="sidebar-icon bi bi-journal-text"></i> Audit Log
                 </a>
             </nav>
             {% endif %}
@@ -193,12 +193,12 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'staff_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_evaluations') }}">
-                    <i class="bi bi-calendar-event sidebar-icon"></i> Evaluation Periods
+                    <i class="sidebar-icon bi bi-calendar3"></i> Evaluation Periods
                     <span class="sidebar-count">{{ sc.eval_periods }}</span>
                 </a>
                 <a class="nav-link {% if 'staff_question' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_questions') }}">
-                    <i class="bi bi-list-check sidebar-icon"></i> Questionnaire
+                    <i class="sidebar-icon bi bi-list-check"></i> Questionnaire
                     <span class="sidebar-count">{{ sc.questions }}</span>
                 </a>
                 {% set _staff_results_routes = ['staff_results','staff_results_faculty_detail','staff_results_export'] %}
@@ -206,17 +206,17 @@
                 {% set _staff_set_active = _staff_results_route in _staff_results_routes %}
                 <div class="sidebar-dropdown {% if _staff_results_route in _staff_results_routes %}open{% endif %}">
                     <a class="nav-link sidebar-dropdown-toggle {% if _staff_results_route in _staff_results_routes %}active{% endif %}" href="#">
-                        <i class="bi bi-clipboard-data sidebar-icon"></i> Results
-                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                        <i class="sidebar-icon bi bi-clipboard-check"></i> Results
+                        <i class="sidebar-dropdown-arrow bi bi-chevron-down"></i>
                     </a>
                     <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
                         <a class="sidebar-sub-link {% if 'staff_results' == app.request.attributes.get('_route')|default('') and app.request.query.get('view', '') != 'sef' %}active{% endif %}"
                            href="{{ path('staff_results') }}">
-                            <i class="bi bi-mortarboard me-1"></i> SET Results
+                            <i class="me-1 bi bi-mortarboard"></i> SET Results
                         </a>
                         <a class="sidebar-sub-link {% if 'staff_results' == app.request.attributes.get('_route')|default('') and app.request.query.get('view', '') == 'sef' %}active{% endif %}"
                            href="{{ path('staff_results', {view: 'sef'}) }}">
-                            <i class="bi bi-person-up me-1"></i> SEF Results
+                            <i class="me-1 bi bi-person-gear"></i> SEF Results
                         </a>
                     </div>
                 </div>
@@ -224,17 +224,17 @@
                 {% set _staff_correspondence_route = app.request.attributes.get('_route')|default('') %}
                 <div class="sidebar-dropdown {% if _staff_correspondence_route in _staff_correspondence_routes %}open{% endif %}">
                     <a class="nav-link sidebar-dropdown-toggle {% if _staff_correspondence_route in _staff_correspondence_routes %}active{% endif %}" href="#">
-                        <i class="bi bi-folder2-open sidebar-icon"></i> Correspondence
-                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                        <i class="sidebar-icon bi bi-folder2-open"></i> Correspondence
+                        <i class="sidebar-dropdown-arrow bi bi-chevron-down"></i>
                     </a>
                     <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
                         <a class="sidebar-sub-link {% if 'staff_correspondence_set_ids' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                            href="{{ path('staff_correspondence_set_ids') }}">
-                            <i class="bi bi-hash me-1"></i> SET ID
+                            <i class="me-1 bi bi-hash"></i> SET ID
                         </a>
                         <a class="sidebar-sub-link {% if 'staff_correspondence_sef_ids' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                            href="{{ path('staff_correspondence_sef_ids') }}">
-                            <i class="bi bi-hash me-1"></i> SEF ID
+                            <i class="me-1 bi bi-hash"></i> SEF ID
                         </a>
                     </div>
                 </div>
@@ -242,24 +242,24 @@
                 {% set _staff_release_route = app.request.attributes.get('_route')|default('') %}
                 <div class="sidebar-dropdown {% if _staff_release_route in _staff_release_routes %}open{% endif %}">
                     <a class="nav-link sidebar-dropdown-toggle {% if _staff_release_route in _staff_release_routes %}active{% endif %}" href="#">
-                        <i class="bi bi-folder-check sidebar-icon"></i> Release
-                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                        <i class="sidebar-icon bi bi-folder"></i> Release
+                        <i class="sidebar-dropdown-arrow bi bi-chevron-down"></i>
                     </a>
                     <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
                         <a class="sidebar-sub-link {% if 'staff_release_files_faculty' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                            href="{{ path('staff_release_files_faculty') }}">
-                            <i class="bi bi-mortarboard me-1"></i> Faculty
+                            <i class="me-1 bi bi-mortarboard"></i> Faculty
                         </a>
                         <a class="sidebar-sub-link {% if 'staff_release_files_superior' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                            href="{{ path('staff_release_files_superior') }}">
-                            <i class="bi bi-person-up me-1"></i> Superior
+                            <i class="me-1 bi bi-person-gear"></i> Superior
                         </a>
                     </div>
                 </div>
                 <div class="sidebar-header">Navigation</div>
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">
-                    <i class="bi bi-envelope-fill sidebar-icon"></i> Messages
+                    <i class="sidebar-icon bi bi-envelope"></i> Messages
                     {% set notifCount = unread_message_notifications() %}
                     {% if sc.faculty_messages > 0 or notifCount > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ (sc.faculty_messages + notifCount) }}</span>{% endif %}
                 </a>
@@ -269,7 +269,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'staff_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_audit_log') }}">
-                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                    <i class="sidebar-icon bi bi-journal-text"></i> Audit Log
                 </a>
             </nav>
             {% endif %}
@@ -280,7 +280,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_users' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_users') }}#pending-approvals">
-                    <i class="bi bi-person-check-fill sidebar-icon"></i> Approval
+                    <i class="sidebar-icon bi bi-person-check"></i> Approval
                     {% if sc.pending_approvals > 0 %}
                         <span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.pending_approvals }}</span>
                     {% else %}
@@ -289,22 +289,22 @@
                 </a>
                 <a class="nav-link {% if 'admin_students' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_students') }}">
-                    <i class="bi bi-backpack-fill sidebar-icon"></i> Students
+                    <i class="sidebar-icon bi bi-briefcase"></i> Students
                     <span class="sidebar-count">{{ sc.students }}</span>
                 </a>
                 <a class="nav-link {% if 'admin_faculty_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_faculty_list') }}">
-                    <i class="bi bi-mortarboard-fill sidebar-icon"></i> Faculty
+                    <i class="sidebar-icon bi bi-mortarboard"></i> Faculty
                     <span class="sidebar-count">{{ sc.faculty }}</span>
                 </a>
                 <a class="nav-link {% if 'admin_staff_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_staff_list') }}">
-                    <i class="bi bi-clipboard-data sidebar-icon"></i> Staff
+                    <i class="sidebar-icon bi bi-clipboard-check"></i> Staff
                     <span class="sidebar-count">{{ sc.staff }}</span>
                 </a>
                 <a class="nav-link {% if 'admin_superior_list' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_superior_list') }}">
-                    <i class="bi bi-star-fill sidebar-icon"></i> Superiors
+                    <i class="sidebar-icon bi bi-star"></i> Superiors
                     <span class="sidebar-count">{{ sc.superiors }}</span>
                 </a>
             </nav>
@@ -313,18 +313,18 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_curricula') }}">
-                    <i class="bi bi-file-earmark-text sidebar-icon"></i> Curriculum
+                    <i class="sidebar-icon bi bi-file-text"></i> Curriculum
                     <span class="sidebar-count">{{ sc.curricula }}</span>
                 </a>
 
                 <a class="nav-link {% if 'admin_subject' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_subjects') }}">
-                    <i class="bi bi-book-fill sidebar-icon"></i> Subjects
+                    <i class="sidebar-icon bi bi-book"></i> Subjects
                     <span class="sidebar-count">{{ sc.subjects }}</span>
                 </a>
                 <a class="nav-link {% if 'admin_academic_year' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_academic_years') }}">
-                    <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
+                    <i class="sidebar-icon bi bi-calendar3"></i> Academic Year
                     <span class="sidebar-count">{{ sc.academic_years }}</span>
                 </a>
             </nav>
@@ -333,7 +333,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_migration' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_migration') }}">
-                    <i class="bi bi-database-fill-gear sidebar-icon"></i> Migration
+                    <i class="sidebar-icon bi bi-database"></i> Migration
                 </a>
             </nav>
 
@@ -341,7 +341,7 @@
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_audit_log' == app.request.attributes.get('_route') %}active{% endif %}"
                    href="{{ path('admin_audit_log') }}">
-                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                    <i class="sidebar-icon bi bi-journal-text"></i> Audit Log
                     <span class="sidebar-count">{{ sc.audit_logs }}</span>
                 </a>
             </nav>
@@ -376,10 +376,10 @@
                 <nav class="nav flex-column mb-3">
                     <a class="nav-link {% if 'app_profile' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('app_profile') }}">
-                        <i class="bi bi-person-gear sidebar-icon"></i> My Profile
+                        <i class="sidebar-icon bi bi-person-gear"></i> My Profile
                     </a>
                     <a class="nav-link text-danger" href="{{ path('app_secure_logout') }}">
-                        <i class="bi bi-box-arrow-left sidebar-icon"></i> Logout
+                        <i class="sidebar-icon bi bi-box-arrow-right"></i> Logout
                     </a>
                 </nav>
             </div>
@@ -408,7 +408,7 @@
             {% set cay_topbar = current_academic_year() %}
             {% if cay_topbar %}
             <div class="topbar-center">
-                <span class="topbar-ay-label"><i class="bi bi-mortarboard-fill me-1"></i>{{ cay_topbar.label }}</span>
+                <span class="topbar-ay-label"><i class="me-1 bi bi-mortarboard"></i>{{ cay_topbar.label }}</span>
             </div>
             {% endif %}
             <div class="topbar-right">
@@ -440,7 +440,7 @@
                 </a>
                 {% if app.user.isStaff %}
                 <a href="{{ topbarBellRoute }}" class="topbar-notif-btn{% if topbarBellCount > 0 %} has-unread{% endif %}" title="Evaluation Responses" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;text-decoration:none;">
-                    <i class="bi bi-bell topbar-notif-icon{% if topbarBellCount > 0 %} topbar-bell-ring{% endif %}"></i>
+                    <i class="topbar-notif-icon bi bi-bell{% if topbarBellCount > 0 %} topbar-bell-ring{% endif %}"></i>
                     {% if topbarBellCount > 0 %}
                         <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ topbarBellCount }}</span>
                     {% endif %}
@@ -448,20 +448,20 @@
                 {% else %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
                     <button class="topbar-notif-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-bell topbar-notif-icon{% if messageNotifCount > 0 %} topbar-bell-ring{% endif %}"></i>
+                        <i class="topbar-notif-icon bi bi-bell{% if messageNotifCount > 0 %} topbar-bell-ring{% endif %}"></i>
                         {% if messageNotifCount > 0 %}
                             <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ messageNotifCount }}</span>
                         {% endif %}
                     </button>
                     <div class="topbar-notif-dropdown" id="topbarMessageNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
                         <div class="topbar-notif-header" style="padding:12px 16px;font-weight:600;font-size:.85rem;color:#1E293B;border-bottom:1px solid #F1F5F9;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;">
-                            <span><i class="bi bi-bell-fill me-1"></i> Notifications</span>
+                            <span><i class="me-1 bi bi-bell"></i> Notifications</span>
                             <a href="{{ topbarMessageRoute }}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
                         </div>
                         {% if messageNotifCount > 0 %}
                             <div class="topbar-notif-list" style="max-height:300px;overflow-y:auto;padding:12px 16px;">
                                 <div style="text-align:center;color:#64748B;font-size:.85rem;">
-                                    <i class="bi bi-bell-exclamation"></i> You have {{ messageNotifCount }} new notification{{ messageNotifCount > 1 ? 's' : '' }}
+                                    <i class="bi bi-bell-fill"></i> You have {{ messageNotifCount }} new notification{{ messageNotifCount > 1 ? 's' : '' }}
                                 </div>
                             </div>
                         {% else %}
@@ -682,7 +682,7 @@
 
                         <div class="mt-4">
                             <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">
-                                <i class="bi bi-check2 me-1"></i>OK
+                                <i class="me-1 bi bi-check"></i>OK
                             </button>
                         </div>
                     </div>
@@ -691,9 +691,17 @@
         </div>
         <script>
         (function() {
+            var hasShownSuccessModal = false;
+
             function showSuccessModal() {
+                if (hasShownSuccessModal) return;
                 var m = document.getElementById('globalSuccessModal');
                 if (!m) return;
+                if (m.dataset.shown === '1') return;
+
+                hasShownSuccessModal = true;
+                m.dataset.shown = '1';
+
                 var modal = bootstrap.Modal.getOrCreateInstance(m);
                 if (typeof window.playSuccessModalSound === 'function') {
                     window.playSuccessModalSound();
@@ -716,3 +724,4 @@
         {% endif %}
     </body>
 </html>
+

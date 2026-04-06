@@ -1,6 +1,6 @@
 import './stimulus_bootstrap.js';
 /*
- * NORSU Alumni Tracker — main JS entry point
+ * Quamc SET - SEF Evaluation — main JS entry point
  * Loaded via importmap (ES module = executes exactly once).
  */
 import './styles/app.css';
@@ -50,10 +50,105 @@ function updateActiveLink() {
     });
 }
 
+function parseCountValue(rawValue) {
+    const numeric = String(rawValue || '').replace(/[^\d-]/g, '');
+    const parsed = Number.parseInt(numeric, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatCountValue(value) {
+    return Math.max(0, Math.floor(value)).toLocaleString('en-US');
+}
+
+function finalizeStatCounters() {
+    document.querySelectorAll('.fes-stat-number').forEach((el) => {
+        const target = parseCountValue(el.dataset.countTarget || el.textContent);
+        el.dataset.countTarget = String(target);
+        el.textContent = formatCountValue(target);
+    });
+}
+
+function animateStatCounters() {
+    const counters = document.querySelectorAll('.fes-stat-number');
+    if (!counters.length) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        finalizeStatCounters();
+        return;
+    }
+
+    counters.forEach((el, index) => {
+        const target = parseCountValue(el.dataset.countTarget || el.textContent);
+        el.dataset.countTarget = String(target);
+
+        if (target <= 0) {
+            el.textContent = '0';
+            return;
+        }
+
+        const duration = 900;
+        const delay = Math.min(index * 80, 320);
+        let startTime;
+
+        el.textContent = '0';
+
+        const step = (timestamp) => {
+            if (startTime === undefined) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(target * eased);
+            el.textContent = formatCountValue(current);
+
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                el.textContent = formatCountValue(target);
+            }
+        };
+
+        window.setTimeout(() => window.requestAnimationFrame(step), delay);
+    });
+}
+
+function syncHomeHeroPanel() {
+    const heroPanels = document.querySelectorAll('[data-hero-view]');
+    if (!heroPanels.length) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedView = params.get('view');
+    const allowedViews = new Set(['home', 'about', 'faq', 'contact']);
+    const activeView = window.location.hash === '#about'
+        ? 'about'
+        : (allowedViews.has(String(requestedView)) ? String(requestedView) : 'home');
+    heroPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.heroView !== activeView;
+    });
+}
+
+window.addEventListener('hashchange', syncHomeHeroPanel);
+window.addEventListener('popstate', syncHomeHeroPanel);
+
 /* ═══════════════════════════════════════════════════════════════
    EVENT DELEGATION (click) — survives every Turbo body swap
    ═══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (e) => {
+    const heroNav = e.target.closest('.fes-nav-link[data-fes-hero-nav]');
+    if (heroNav) {
+        const targetUrl = new URL(heroNav.href, window.location.origin);
+        if (targetUrl.pathname === window.location.pathname) {
+            e.preventDefault();
+            const targetView = heroNav.dataset.fesHeroNav;
+            const nextUrl = targetView === 'about'
+                ? `${window.location.pathname}${window.location.search}#about`
+                : `${window.location.pathname}${window.location.search}`;
+            window.history.pushState({}, '', nextUrl);
+            syncHomeHeroPanel();
+            return;
+        }
+    }
+
     /* Sidebar toggle button */
     if (e.target.closest('#sidebarToggle')) {
         toggleSidebar();
@@ -111,6 +206,10 @@ document.addEventListener('turbo:before-cache', () => {
     document.querySelectorAll('.auth-animate').forEach(el => el.classList.remove('auth-animate'));
     /* Strip sb-animate so subject page animations don't replay from cache */
     document.querySelectorAll('.sb-animate').forEach(el => el.classList.remove('sb-animate'));
+    /* Close account dropdown menus before caching */
+    document.querySelectorAll('.fes-account-dropdown[open]').forEach(el => el.removeAttribute('open'));
+    /* Ensure stat counters are cached with final values */
+    finalizeStatCounters();
     /* Reset main-content opacity so cached snapshot is clean */
     const mc = document.querySelector('.main-content');
     if (mc) { mc.style.opacity = '0'; mc.style.animation = 'none'; }
@@ -164,6 +263,13 @@ document.addEventListener('turbo:load', () => {
     document.querySelectorAll('.main-content .modal').forEach(el => {
         document.body.appendChild(el);
     });
+
+    /* 7. Animate welcome page stat counters */
+    animateStatCounters();
+
+    /* 8. Toggle home/about content inside hero area based on URL hash */
+    syncHomeHeroPanel();
+
 });
 
 /*

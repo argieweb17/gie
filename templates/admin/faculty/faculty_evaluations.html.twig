@@ -745,7 +745,6 @@ document.addEventListener('DOMContentLoaded', function() {
         selectMode = true;
         toggleBtn.classList.add('active');
         toggleBtn.innerHTML = '<i  class="bi bi-x-lg me-1"></i>Cancel Selection';
-        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         selectAllWrap.style.display = 'flex';
         thChecks.forEach(th => th.style.display = 'table-cell');
         tdChecks.forEach(td => td.style.display = 'table-cell');
@@ -757,7 +756,6 @@ document.addEventListener('DOMContentLoaded', function() {
         selectMode = false;
         toggleBtn.classList.remove('active');
         toggleBtn.innerHTML = '<i  class="bi bi-check2-square me-1"></i>Choose the subject to print';
-        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         selectAllWrap.style.display = 'none';
         thChecks.forEach(th => th.style.display = 'none');
         tdChecks.forEach(td => td.style.display = 'none');

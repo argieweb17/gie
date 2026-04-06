@@ -568,7 +568,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #e5edfb 0%, #d7f2e9 100%);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1078,12 +1078,6 @@ const messagesData = {
 
 let currentMsgId = {{ messages|length > 0 ? messages|first.id : 'null' }};
 
-function refreshLucideIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-    }
-}
-
 function selectConversation(el, msgId) {
     currentMsgId = msgId;
 
@@ -1106,7 +1100,6 @@ function selectConversation(el, msgId) {
 
     const chatBody = document.getElementById('chatBody');
     chatBody.scrollTop = chatBody.scrollHeight;
-    refreshLucideIcons();
 }
 
 function updateDeleteModal(msg) {
@@ -1174,7 +1167,6 @@ function initFacultyEvalRequestPage() {
         }, 3000);
     });
 
-    refreshLucideIcons();
 }
 
 document.addEventListener('DOMContentLoaded', initFacultyEvalRequestPage);

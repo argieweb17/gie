@@ -47,34 +47,37 @@
 
 /* Code cell */
 .ls-code-cell{display:flex;align-items:center;gap:10px;}
-.ls-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e40af;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
-.ls-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+.ls-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.ls-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 .ls-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
 
 /* Pills */
-.ls-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.ls-pill-sem{background:#ecfdf5;color:#059669;}
-.ls-pill-term{background:#fef3c7;color:#b45309;}
-.ls-pill-yl{background:#eef2ff;color:#4338ca;}
-.ls-pill-section{background:#f0fdf4;color:#166534;}\n.ls-pill-sched{background:#fff7ed;color:#c2410c;}
+.ls-pill{display:inline-flex;align-items:center;padding:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.ls-pill-sem{background:transparent!important;color:#059669;padding:0!important;border-radius:0!important;border:none!important;}
+.ls-pill-term{background:transparent!important;color:#b45309;padding:0!important;border-radius:0!important;border:none!important;}
+.ls-pill-yl{background:transparent!important;color:#4338ca;padding:0!important;border-radius:0!important;border:none!important;}
+.ls-pill-section{background:transparent!important;color:#166534;padding:0!important;border-radius:0!important;border:none!important;}
+.ls-pill-sched{background:transparent!important;color:#c2410c;padding:0!important;border-radius:0!important;border:none!important;}
 
 .ls-text-muted{color:#64748b;font-size:.78rem;}
 .ls-empty{color:#cbd5e1;font-size:.78rem;}
 
 /* Badges */
-.ls-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
-.ls-dept-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#6366f1;background:#eef2ff;padding:3px 10px;border-radius:6px;}
-.ls-eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:6px;letter-spacing:.02em;}
-.ls-eval-active{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
-.ls-eval-none{background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;}
+.ls-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0!important;background:transparent!important;border:none!important;box-shadow:none!important;color:#b45309;font-weight:800;font-size:.78rem;padding:0!important;}
+.ls-dept-tag{display:inline-block;font-size:.7rem;font-weight:500;color:#6366f1;background:transparent!important;padding:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;}
+.ls-eval-badge{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;padding:0!important;border-radius:0!important;border:none!important;box-shadow:none!important;letter-spacing:.02em;}
+.ls-eval-active{background:transparent!important;color:#15803d;border:none!important;}
+.ls-eval-none{background:transparent!important;color:#94a3b8;border:none!important;}
 
 /* Actions (hidden) */
 .ls-action-btn{width:30px;height:30px;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s ease;background:transparent;color:#94a3b8;}
 .ls-action-view{color:#059669;}
 .ls-action-view:hover{background:#ecfdf5;color:#047857;transform:scale(1.1);}
-.ls-action-qr{color:#0d9488;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;width:auto;padding:2px 10px;font-size:.72rem;font-weight:600;gap:4px;display:inline-flex;align-items:center;}
-.ls-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;transform:scale(1.05);}
+.ls-action-qr{color:#0d9488;background:transparent!important;border:none!important;border-radius:0!important;width:auto;height:auto;padding:0!important;font-size:.72rem;font-weight:600;gap:4px;display:inline-flex;align-items:center;box-shadow:none!important;}
+.ls-action-qr:hover{background:transparent!important;color:#0f766e;border-color:transparent!important;transform:none;}
+.ls-action-unload{width:auto;height:auto;padding:0!important;border:none!important;background:transparent!important;border-radius:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;color:#dc2626;box-shadow:none!important;}
+.ls-action-unload:hover{color:#b91c1c;background:transparent!important;border:none!important;}
 
 /* Unload blocked modal */
 .ls-blocked-modal .modal-content{border:0;border-radius:14px;overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.16);}
@@ -266,7 +269,7 @@
             <span>Previous Subject Load / Schedule</span>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <label for="lsPreviousAyFilter" class="ls-filter-label mb-0"><i class="bi bi-calendar3 me-1"></i>Academic Year:</label>
+            <label for="lsPreviousAyFilter" class="ls-filter-label mb-0"><i class="me-1 bi bi-calendar3"></i>Academic Year:</label>
             <select id="lsPreviousAyFilter" class="ls-prev-filter-select">
                 <option value="all">All Academic Years</option>
                 {% if previousLoads is defined and previousLoads|length > 0 %}
@@ -295,10 +298,10 @@
             <form method="post" action="{{ path('faculty_restore_load') }}" onclick="event.stopPropagation();">
                 <input type="hidden" name="_token" value="{{ csrf_token('restore_load') }}">
                 <button type="submit" class="ls-restore-btn">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                    <i class="me-1 bi bi-arrow-counterclockwise"></i> Restore
                 </button>
             </form>
-            <i class="bi bi-chevron-down ls-prev-chevron" id="prevChevronprevCurrentAY"></i>
+            <i class="ls-prev-chevron bi bi-chevron-down" id="prevChevronprevCurrentAY"></i>
         </div>
     </div>
     <div class="ls-prev-load-body ls-prev-collapsible" id="prevCurrentAY" style="display:none;">
@@ -316,8 +319,8 @@
                 <tr>
                     <td><code class="ls-code-text" style="font-size:.74rem;">{{ fsl.subject.subjectCode }}</code></td>
                     <td style="font-weight:600;color:#1e293b;font-size:.8rem;">{{ fsl.subject.subjectName }}</td>
-                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
-                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="me-1 bi bi-people"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="me-1 bi bi-clock"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -345,10 +348,10 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('restore_load') }}">
                 <input type="hidden" name="ay_id" value="{{ ayGroup.ayId }}">
                 <button type="submit" class="ls-restore-btn ls-restore-past">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                    <i class="me-1 bi bi-arrow-counterclockwise"></i> Restore
                 </button>
             </form>
-            <i class="bi bi-chevron-down ls-prev-chevron" id="prevChevronprevPast{{ ayGroup.ayId }}"></i>
+            <i class="ls-prev-chevron bi bi-chevron-down" id="prevChevronprevPast{{ ayGroup.ayId }}"></i>
         </div>
     </div>
     <div class="ls-prev-load-body ls-prev-collapsible" id="prevPast{{ ayGroup.ayId }}" style="display:none;">
@@ -366,8 +369,8 @@
                 <tr>
                     <td><code class="ls-code-text" style="font-size:.74rem;">{{ fsl.subject.subjectCode }}</code></td>
                     <td style="font-weight:600;color:#1e293b;font-size:.8rem;">{{ fsl.subject.subjectName }}</td>
-                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
-                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.section %}<span class="ls-pill ls-pill-section"><i class="me-1 bi bi-people"></i>{{ fsl.section|upper }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
+                    <td>{% if fsl.schedule %}<span class="ls-pill ls-pill-sched"><i class="me-1 bi bi-clock"></i>{{ fsl.schedule }}</span>{% else %}<span class="ls-empty">—</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -386,14 +389,14 @@
    ═══════════════════════════════════════ #}
 <div class="ls-toolbar">
     <div class="ls-filter-row">
-        <span class="ls-filter-label"><i class="bi bi-calendar3 me-1"></i>Academic Year:</span>
+        <span class="ls-filter-label"><i class="me-1 bi bi-calendar3"></i>Academic Year:</span>
         <select id="lsAyFilter" class="ls-ay-select" onchange="lsApplyAyFilter(this.value)">
             {% for ay in academicYears|default([]) %}
                 {% set ayLabel = ay.yearLabel ~ (ay.semester ? ' · ' ~ ay.semester : '') %}
                 <option value="{{ ay.id }}" {{ (selectedAyId|default(0)) == ay.id ? 'selected' : '' }}>{{ ayLabel }}</option>
             {% endfor %}
         </select>
-        <span class="ls-filter-label"><i class="bi bi-funnel-fill me-1"></i>Semester:</span>
+        <span class="ls-filter-label"><i class="me-1 bi bi-funnel"></i>Semester:</span>
         <div class="ls-sem-pills">
             <button type="button" class="ls-sem-pill active" data-sem="all" onclick="lsSemFilter(this)">All</button>
             {% for sem in semSet %}
@@ -415,14 +418,14 @@
         <thead>
             <tr>
                 <th class="ls-th" onclick="lsSort('code')">
-                    <span class="ls-sort-label">Code <i class="bi bi-arrow-down-up ls-sort-icon" data-col="code"></i></span>
+                    <span class="ls-sort-label">Code <i class="ls-sort-icon bi bi-arrow-down-up" data-col="code"></i></span>
                 </th>
                 <th class="ls-th" onclick="lsSort('name')">
-                    <span class="ls-sort-label">Subject Name <i class="bi bi-arrow-down-up ls-sort-icon" data-col="name"></i></span>
+                    <span class="ls-sort-label">Subject Name <i class="ls-sort-icon bi bi-arrow-down-up" data-col="name"></i></span>
                 </th>
                 <th class="ls-th">Semester</th>
                 <th class="ls-th" onclick="lsSort('units')">
-                    <span class="ls-sort-label">Units <i class="bi bi-arrow-down-up ls-sort-icon" data-col="units"></i></span>
+                    <span class="ls-sort-label">Units <i class="ls-sort-icon bi bi-arrow-down-up" data-col="units"></i></span>
                 </th>
                 <th class="ls-th">Year Level</th>
                 <th class="ls-th">Section</th>
@@ -481,14 +484,14 @@
                 </td>
                 <td>
                     {% if s.section %}
-                        <span class="ls-pill ls-pill-section"><i class="bi bi-people-fill me-1"></i>{{ s.section|upper }}</span>
+                        <span class="ls-pill ls-pill-section"><i class="me-1 bi bi-people"></i>{{ s.section|upper }}</span>
                     {% else %}
                         <span class="ls-empty">—</span>
                     {% endif %}
                 </td>
                 <td>
                     {% if s.schedule %}
-                        <span class="ls-pill ls-pill-sched"><i class="bi bi-clock me-1"></i>{{ s.schedule }}</span>
+                        <span class="ls-pill ls-pill-sched"><i class="me-1 bi bi-clock"></i>{{ s.schedule }}</span>
                     {% else %}
                         <span class="ls-empty">—</span>
                     {% endif %}
@@ -504,7 +507,7 @@
                     {% if isHistoricalView|default(false) %}
                         <span class="ls-eval-badge ls-eval-none"><i class="bi bi-clock-history"></i> Historical</span>
                     {% elseif s.evaluation is defined and s.evaluation is not null %}
-                        <span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+                        <span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle"></i> Active</span>
                     {% else %}
                         <span class="ls-eval-badge ls-eval-none"><i class="bi bi-dash-circle"></i> No Evaluation</span>
                     {% endif %}
@@ -523,22 +526,21 @@
                             data-eval-section="{{ s.section|default('')|e('js') }}"
                             data-eval-schedule="{{ s.schedule|default('')|e('js') }}"
                             data-eval-school-year="{{ s.evaluation.schoolYear ?? s.evaluation.label ?? '' }}"
-                            title="Generate QR Code"
-                            style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;">
+                            title="Generate QR Code">
                             <i class="bi bi-qr-code-scan"></i>
                         </button>
                     {% endif %}
                     {% if s.fslId %}
                     <form method="post" action="{{ path('faculty_subject_unload_fsl', {id: s.fslId}) }}" class="js-unload-form" style="display:inline" data-subject-label="{{ s.subject.subjectCode }} — Section {{ s.section|default('') }}" data-confirm-message="Unload {{ s.subject.subjectCode }} — Section {{ s.section|default('') }}?">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_fsl_' ~ s.fslId) }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
+                        <button type="submit" class="btn btn-sm ls-action-unload" title="Unload subject">
                             <i class="bi bi-x-circle"></i>
                         </button>
                     </form>
                     {% else %}
                     <form method="post" action="{{ path('faculty_subject_unload', {id: s.subject.id}) }}" class="js-unload-form" style="display:inline" data-subject-label="{{ s.subject.subjectCode }} — {{ s.subject.subjectName }}" data-confirm-message="Unload {{ s.subject.subjectCode }} — {{ s.subject.subjectName }}?">
                         <input type="hidden" name="_token" value="{{ csrf_token('unload_subject_' ~ s.subject.id) }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Unload subject" style="padding:2px 8px;font-size:.75rem;border-radius:6px">
+                        <button type="submit" class="btn btn-sm ls-action-unload" title="Unload subject">
                             <i class="bi bi-x-circle"></i>
                         </button>
                     </form>
@@ -551,7 +553,7 @@
             <tr>
                 <td colspan="{{ isHistoricalView|default(false) ? 9 : 10 }}" class="text-center py-5">
                     <div class="ls-empty-state">
-                        <div class="ls-empty-icon"><i class="bi bi-journal-x"></i></div>
+                        <div class="ls-empty-icon"><i class="bi bi-journal-text"></i></div>
                         <h6 class="fw-bold text-muted">No loaded subjects</h6>
                         <p class="text-muted small mb-0">You currently have no subjects assigned to you.</p>
                     </div>
@@ -573,7 +575,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <div class="ls-blocked-head">
-                <div class="ls-blocked-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div class="ls-blocked-icon"><i class="bi bi-shield"></i></div>
                 <div>
                     <div class="fw-bold" style="font-size:.9rem;line-height:1;">Unload Blocked</div>
                     <small style="opacity:.85;">Active evaluation detected</small>
@@ -675,7 +677,7 @@
                             <span class="qr-info-value" id="lsQrDetails"></span>
                         </div>
                     </div>
-                    <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
+                    <div class="qr-url-label"><i class="me-1 bi bi-link-45deg"></i>Evaluation Link</div>
                     <div class="qr-url-box" id="lsQrUrl"></div>
                     <div class="qr-actions">
                         <button type="button" class="qr-action-btn qr-btn-download" onclick="lsDownloadQR()">
@@ -687,11 +689,11 @@
                     </div>
                 </div>
                 <div class="qr-modal-right">
-                    <div class="qr-preview-label"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div class="qr-preview-label"><i class="me-1 bi bi-eye"></i>Live Preview</div>
                     <div class="qr-code-frame">
                         <img id="lsQrImage" src="" alt="QR Code">
                     </div>
-                    <div class="qr-scan-hint"><i class="bi bi-phone me-1"></i>Scan with any camera app</div>
+                    <div class="qr-scan-hint"><i class="me-1 bi bi-phone"></i>Scan with any camera app</div>
                 </div>
             </div>
         </div>
@@ -1070,7 +1072,7 @@ function lsPrint() {
         navigator.clipboard.writeText(currentQrUrl).then(function() {
             var btn = document.querySelector('#lsQrModal .qr-btn-copy');
             var orig = btn.innerHTML;
-            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            btn.innerHTML = '<i class="me-1 bi bi-check"></i>Copied!';
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
         });
     };
@@ -1227,13 +1229,13 @@ function lsPrint() {
             }
 
             if (statusCell) {
-                statusCell.innerHTML = '<span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle-fill"></i> Active</span>';
+                statusCell.innerHTML = '<span class="ls-eval-badge ls-eval-active"><i class="bi bi-check-circle"></i> Active</span>';
             }
 
             const evalData = match.data || {};
             const evalId = match.id;
 
-            const qrButtonHtml = '<button type="button" class="btn btn-sm ls-action-qr ls-qr-btn" data-bs-toggle="modal" data-bs-target="#lsQrModal" data-eval-id="' + evalId + '" data-eval-faculty="' + escapeAttr(evalData.faculty || '') + '" data-eval-subject="' + escapeAttr(code + ' — ' + name) + '" data-eval-subject-id="' + escapeAttr(subjectId) + '" data-eval-section="' + escapeAttr(section) + '" data-eval-schedule="' + escapeAttr(schedule) + '" data-eval-school-year="' + escapeAttr(evalData.schoolYear || evalData.name || '') + '" title="Generate QR Code" style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;"><i class="bi bi-qr-code-scan"></i></button>';
+            const qrButtonHtml = '<button type="button" class="btn btn-sm ls-action-qr ls-qr-btn" data-bs-toggle="modal" data-bs-target="#lsQrModal" data-eval-id="' + evalId + '" data-eval-faculty="' + escapeAttr(evalData.faculty || '') + '" data-eval-subject="' + escapeAttr(code + ' — ' + name) + '" data-eval-subject-id="' + escapeAttr(subjectId) + '" data-eval-section="' + escapeAttr(section) + '" data-eval-schedule="' + escapeAttr(schedule) + '" data-eval-school-year="' + escapeAttr(evalData.schoolYear || evalData.name || '') + '" title="Generate QR Code"><i class="bi bi-qr-code-scan"></i></button>';
 
             if (existingQrBtn) {
                 existingQrBtn.outerHTML = qrButtonHtml;
@@ -1249,3 +1251,4 @@ function lsPrint() {
 })();
 </script>
 {% endblock %}
+
