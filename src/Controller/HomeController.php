@@ -249,6 +249,7 @@ class HomeController extends AbstractController
 
     #[Route('/dashboard', name: 'app_dashboard')]
     public function dashboard(
+        Request $request,
         UserRepository $userRepo,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
@@ -285,7 +286,7 @@ class HomeController extends AbstractController
         }
 
         // Student (ROLE_USER)
-        return $this->studentDashboard($user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo);
+        return $this->studentDashboard($request, $user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo, $subjectRepo);
     }
 
     private function adminDashboard(
@@ -2507,17 +2508,187 @@ class HomeController extends AbstractController
     }
 
     private function studentDashboard(
+        Request $request,
         $user,
         CurriculumRepository $curriculumRepo,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
     ): Response {
         $openEvals = $evalRepo->findOpen();
 
         $pending = [];
         $completed = [];
+        $subjectsMap = [];
         $studentYearLevel = $this->normalizeYearLevel($user->getYearLevel());
+
+        $session = $request->getSession();
+
+        $normalizeCode = static function (?string $value): string {
+            $raw = strtoupper(trim((string) $value));
+            return (string) preg_replace('/[^A-Z0-9]/u', '', $raw);
+        };
+
+        $normalizeText = static function (?string $value): string {
+            return strtolower(trim((string) $value));
+        };
+
+        $normalizeStudentNumber = static function (?string $value): string {
+            $raw = strtoupper(trim((string) $value));
+            $raw = str_replace(
+                ['O', 'Q', 'D', 'I', 'L', '|', '!', 'S', 'B', 'Z', 'G'],
+                ['0', '0', '0', '1', '1', '1', '1', '5', '8', '2', '6'],
+                $raw
+            );
+            return (string) preg_replace('/[^0-9]/u', '', $raw);
+        };
+
+        $extractNormalizedSubjectCode = static function (?string $label) use ($normalizeCode): string {
+            $raw = trim((string) $label);
+            if ($raw === '') {
+                return '';
+            }
+
+            $parts = preg_split('/\s*[—-]\s*/u', $raw, 2);
+            $primary = trim((string) ($parts[0] ?? ''));
+            $primaryCode = $normalizeCode($primary);
+            if ($primaryCode !== '') {
+                return $primaryCode;
+            }
+
+            if (preg_match('/^\s*([A-Za-z]{2,}\s*\d+[A-Za-z0-9]*)/u', $raw, $matches) === 1) {
+                return $normalizeCode((string) ($matches[1] ?? ''));
+            }
+
+            return '';
+        };
+
+        $schoolId = $normalizeStudentNumber((string) ($user->getSchoolId() ?? ''));
+        $loadslipCodes = (array) $session->get('student_loadslip_codes', []);
+        $loadslipRows = (array) $session->get('student_loadslip_rows', []);
+        $sessionStudentNumber = $normalizeStudentNumber((string) $session->get('student_loadslip_student_number', ''));
+        $isLoadslipVerified = (bool) $session->get('student_loadslip_verified', false);
+
+        $hydratePersistedLoadslip = function () use (
+            $schoolId,
+            &$loadslipCodes,
+            &$loadslipRows,
+            &$sessionStudentNumber,
+            &$isLoadslipVerified,
+            $normalizeStudentNumber,
+            $session
+        ): void {
+            if ($schoolId === '') {
+                return;
+            }
+
+            $projectDir = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/');
+            $filePath = $projectDir . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'loadslip-verifications' . DIRECTORY_SEPARATOR . $schoolId . '.json';
+            if (!is_file($filePath)) {
+                return;
+            }
+
+            $json = @file_get_contents($filePath);
+            if (!is_string($json) || $json === '') {
+                return;
+            }
+
+            $data = json_decode($json, true);
+            if (!is_array($data)) {
+                $repaired = (string) preg_replace('/\[\s*,/u', '[', $json);
+                $repaired = (string) preg_replace('/,\s*\]/u', ']', $repaired);
+                $data = json_decode($repaired, true);
+            }
+            if (!is_array($data)) {
+                return;
+            }
+
+            $persistedStudentNumber = $normalizeStudentNumber((string) ($data['studentNumber'] ?? ''));
+            if ($persistedStudentNumber === '' || $persistedStudentNumber !== $schoolId) {
+                return;
+            }
+
+            $persistedCodes = is_array($data['codes'] ?? null) ? (array) $data['codes'] : [];
+            $persistedRows = is_array($data['rows'] ?? null) ? (array) $data['rows'] : [];
+            if (empty($persistedCodes) && empty($persistedRows)) {
+                return;
+            }
+
+            $loadslipCodes = $persistedCodes;
+            $loadslipRows = $persistedRows;
+            $sessionStudentNumber = $persistedStudentNumber;
+            $isLoadslipVerified = (bool) ($data['verified'] ?? true);
+
+            $session->set('student_loadslip_codes', $loadslipCodes);
+            $session->set('student_loadslip_rows', $loadslipRows);
+            $session->set('student_loadslip_student_number', $persistedStudentNumber);
+            $session->set('student_loadslip_verified', $isLoadslipVerified);
+        };
+
+        if ($schoolId !== '') {
+            if ($sessionStudentNumber !== '' && $sessionStudentNumber !== $schoolId) {
+                $session->remove('student_loadslip_codes');
+                $session->remove('student_loadslip_rows');
+                $session->remove('student_loadslip_student_number');
+                $session->remove('student_loadslip_verified');
+                $loadslipCodes = [];
+                $loadslipRows = [];
+                $sessionStudentNumber = '';
+                $isLoadslipVerified = false;
+            }
+
+            if ((empty($loadslipCodes) && empty($loadslipRows)) || ($isLoadslipVerified && $sessionStudentNumber === '')) {
+                $hydratePersistedLoadslip();
+            }
+
+            if ($sessionStudentNumber !== '' && $sessionStudentNumber === $schoolId) {
+                $isLoadslipVerified = true;
+                $session->set('student_loadslip_verified', true);
+            }
+        }
+
+        $loadslipCodeMap = [];
+        $loadslipRowsByCode = [];
+        foreach ($loadslipCodes as $code) {
+            $normalizedCode = $normalizeCode((string) $code);
+            if ($normalizedCode !== '') {
+                $loadslipCodeMap[$normalizedCode] = true;
+            }
+        }
+
+        foreach ($loadslipRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $rowCodeRaw = trim((string) ($row['code'] ?? ''));
+            $rowCode = $normalizeCode($rowCodeRaw);
+            if ($rowCode === '') {
+                continue;
+            }
+
+            $loadslipCodeMap[$rowCode] = true;
+
+            $entry = [
+                'code' => $rowCodeRaw,
+                'section' => strtoupper(trim((string) ($row['section'] ?? ''))),
+                'description' => trim((string) ($row['description'] ?? '')),
+                'schedule' => trim((string) ($row['schedule'] ?? '')),
+                'units' => trim((string) ($row['units'] ?? '')),
+            ];
+
+            $loadslipRowsByCode[$rowCode] ??= [];
+            $loadslipRowsByCode[$rowCode][] = $entry;
+        }
+
+        $subjectsByNormalizedCode = [];
+        foreach ($subjectRepo->findAll() as $knownSubject) {
+            $knownCode = $normalizeCode((string) $knownSubject->getSubjectCode());
+            if ($knownCode !== '' && !isset($subjectsByNormalizedCode[$knownCode])) {
+                $subjectsByNormalizedCode[$knownCode] = $knownSubject;
+            }
+        }
 
         foreach ($openEvals as $eval) {
             if ($eval->getEvaluationType() !== 'SET') {
@@ -2546,27 +2717,100 @@ class HomeController extends AbstractController
             // ── Get faculty and subject from evaluation ──
             $faculty = null;
             $subject = null;
-            $subjectLabel = $eval->getSubject() ?? '';
+            $subjectLabel = trim((string) ($eval->getSubject() ?? ''));
 
-            if ($eval->getFaculty()) {
-                $faculty = $userRepo->findOneByFullName($eval->getFaculty());
+            $normalizedEvalSubjectCode = $extractNormalizedSubjectCode($subjectLabel);
+            if ($normalizedEvalSubjectCode !== '' && isset($subjectsByNormalizedCode[$normalizedEvalSubjectCode])) {
+                $subject = $subjectsByNormalizedCode[$normalizedEvalSubjectCode];
             }
 
-            if (!$faculty || !$subjectLabel) {
+            if (!$subject && $subjectLabel !== '') {
+                $parts = preg_split('/\s*[—-]\s*/u', $subjectLabel, 2);
+                $subjectCodePart = trim((string) ($parts[0] ?? ''));
+                $subjectCodeNorm = $normalizeCode($subjectCodePart);
+
+                if ($subjectCodeNorm !== '' && isset($subjectsByNormalizedCode[$subjectCodeNorm])) {
+                    $subject = $subjectsByNormalizedCode[$subjectCodeNorm];
+                } elseif ($subjectCodePart !== '') {
+                    $subject = $subjectRepo->findOneBy(['subjectCode' => $subjectCodePart]);
+                }
+            }
+
+            if ($subject) {
+                $faculty = $subject->getFaculty();
+            }
+
+            if (!$faculty && $eval->getFaculty()) {
+                $faculty = $userRepo->findOneByFullName(trim((string) $eval->getFaculty()));
+            }
+
+            if (!$faculty || !$subject) {
                 continue;
             }
+
+            if ($isLoadslipVerified && !empty($loadslipCodeMap)) {
+                $subjectCode = $normalizeCode((string) $subject->getSubjectCode());
+                if (!isset($loadslipCodeMap[$subjectCode])) {
+                    continue;
+                }
+            }
+
+            $subjectCode = $normalizeCode((string) $subject->getSubjectCode());
+            $matchedLoadslipRow = [
+                'code' => (string) $subject->getSubjectCode(),
+                'section' => '',
+                'description' => (string) ($subject->getSubjectName() ?? ''),
+                'schedule' => '',
+                'units' => '',
+            ];
+
+            if (isset($loadslipRowsByCode[$subjectCode])) {
+                $evalSection = strtoupper(trim((string) ($eval->getSection() ?? '')));
+                $evalScheduleNorm = $normalizeText((string) ($eval->getTime() ?? ''));
+
+                $best = null;
+                foreach ($loadslipRowsByCode[$subjectCode] as $candidate) {
+                    $candidateSection = strtoupper(trim((string) ($candidate['section'] ?? '')));
+                    $candidateScheduleNorm = $normalizeText((string) ($candidate['schedule'] ?? ''));
+
+                    $score = 0;
+                    if ($evalSection !== '' && $candidateSection !== '' && $candidateSection === $evalSection) {
+                        $score += 3;
+                    }
+                    if ($evalScheduleNorm !== '' && $candidateScheduleNorm !== '' && $candidateScheduleNorm === $evalScheduleNorm) {
+                        $score += 2;
+                    }
+                    if ($candidateSection !== '') {
+                        $score += 1;
+                    }
+                    if ($candidateScheduleNorm !== '') {
+                        $score += 1;
+                    }
+
+                    if ($best === null || $score > $best['score']) {
+                        $best = ['score' => $score, 'row' => $candidate];
+                    }
+                }
+
+                if ($best !== null && is_array($best['row'] ?? null)) {
+                    $matchedLoadslipRow = $best['row'];
+                }
+            }
+
+            $subjectsMap[(string) $subject->getId()] = $subject;
 
             $submitted = $responseRepo->hasSubmitted(
                 $user->getId(),
                 $eval->getId(),
                 $faculty->getId(),
-                0, // No subject ID needed now
+                $subject->getId(),
             );
 
             $item = [
                 'evaluation' => $eval,
-                'subject' => $subjectLabel,
+                'subject' => $subject,
                 'faculty' => $faculty,
+                'loadslipRow' => $matchedLoadslipRow,
             ];
 
             if ($submitted) {
@@ -2575,6 +2819,8 @@ class HomeController extends AbstractController
                 $pending[] = $item;
             }
         }
+
+        $enrolledSubjects = array_values($subjectsMap);
 
         return $this->render('home/student_dashboard.html.twig', [
             'subjects' => $enrolledSubjects ?? [],

@@ -1545,6 +1545,34 @@ class EvaluationController extends AbstractController
         $targetSection = $this->normalizeSectionValue($section);
         $targetSchedule = $this->normalizeScheduleValue($schedule);
         $targetDescription = $this->normalizeDescriptionForMatch($description, $targetCode);
+        $session = $request->getSession();
+
+        $buildFallbackEntry = function (array $row) use ($targetCode): array {
+            $rowCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+            if ($rowCode === '') {
+                $rowCode = $targetCode;
+            }
+
+            return [
+                'code' => $rowCode,
+                'section' => trim((string) ($row['section'] ?? '')),
+                'description' => $this->normalizeLoadslipDescription((string) ($row['description'] ?? ''), $rowCode),
+                'schedule' => trim((string) ($row['schedule'] ?? '')),
+                'units' => trim((string) ($row['units'] ?? '')),
+            ];
+        };
+
+        $buildSyntheticMatch = function () use ($targetCode, $subjectCode, $section, $schedule, $description): array {
+            $normalizedDescription = $this->normalizeLoadslipDescription((string) $description, $targetCode);
+
+            return [[
+                'code' => $targetCode !== '' ? $targetCode : trim((string) $subjectCode),
+                'section' => trim((string) ($section ?? '')),
+                'description' => $normalizedDescription !== '' ? $normalizedDescription : trim((string) ($description ?? '')),
+                'schedule' => trim((string) ($schedule ?? '')),
+                'units' => '',
+            ]];
+        };
 
         $collect = function (array $rows) use ($targetCode, $targetSection, $targetSchedule, $targetDescription): array {
             $matches = [];
@@ -1606,18 +1634,82 @@ class EvaluationController extends AbstractController
             return $matches;
         };
 
-        $sessionRows = (array) $request->getSession()->get('student_loadslip_rows', []);
+        $collectCodeOnly = function (array $rows) use ($targetCode, $buildFallbackEntry): array {
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $rowCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+                if (!$this->subjectCodesAreCompatible($targetCode, $rowCode)) {
+                    continue;
+                }
+
+                return [$buildFallbackEntry($row)];
+            }
+
+            return [];
+        };
+
+        $normalizeCodeList = fn(array $codes): array => array_values(array_unique(array_filter(array_map(
+            fn($code) => $this->normalizeSubjectCode((string) $code),
+            $codes
+        ))));
+
+        $sessionRows = (array) $session->get('student_loadslip_rows', []);
         $matched = $collect($sessionRows);
         if (!empty($matched)) {
             return $matched;
         }
 
-        $persisted = $this->readLoadslipVerificationData($schoolId);
-        if ($persisted === null) {
-            return [];
+        $codeOnlyMatches = $collectCodeOnly($sessionRows);
+        if (!empty($codeOnlyMatches)) {
+            return $codeOnlyMatches;
         }
 
-        return $collect((array) ($persisted['rows'] ?? []));
+        $sessionCodes = $normalizeCodeList((array) $session->get('student_loadslip_codes', []));
+        if ($this->codeListContainsCompatibleSubject($sessionCodes, $targetCode)) {
+            return $buildSyntheticMatch();
+        }
+
+        $persisted = $this->readLoadslipVerificationData($schoolId);
+        if ($persisted !== null) {
+            $persistedRows = (array) ($persisted['rows'] ?? []);
+            $matched = $collect($persistedRows);
+            if (!empty($matched)) {
+                return $matched;
+            }
+
+            $codeOnlyMatches = $collectCodeOnly($persistedRows);
+            if (!empty($codeOnlyMatches)) {
+                return $codeOnlyMatches;
+            }
+
+            $persistedCodes = $normalizeCodeList((array) ($persisted['codes'] ?? []));
+            if ($this->codeListContainsCompatibleSubject($persistedCodes, $targetCode)) {
+                return $buildSyntheticMatch();
+            }
+        }
+
+        if ($this->recoverVerifiedRowsFromStoredPreview($request, $schoolId)) {
+            $recoveredRows = (array) $session->get('student_loadslip_rows', []);
+            $matched = $collect($recoveredRows);
+            if (!empty($matched)) {
+                return $matched;
+            }
+
+            $codeOnlyMatches = $collectCodeOnly($recoveredRows);
+            if (!empty($codeOnlyMatches)) {
+                return $codeOnlyMatches;
+            }
+
+            $recoveredCodes = $normalizeCodeList((array) $session->get('student_loadslip_codes', []));
+            if ($this->codeListContainsCompatibleSubject($recoveredCodes, $targetCode)) {
+                return $buildSyntheticMatch();
+            }
+        }
+
+        return [];
     }
 
     private function recoverVerifiedRowsFromStoredPreview(Request $request, string $schoolId): bool
@@ -2644,7 +2736,7 @@ class EvaluationController extends AbstractController
         $rowTrace = [];
         $rejectedTrace = [];
         $subjectCodeTrace = [];
-        $maxParsedRows = 7;
+        $maxParsedRows = 10;
         $passStats = [
             'line' => 0,
             'line_pair' => 0,
@@ -2663,9 +2755,14 @@ class EvaluationController extends AbstractController
         // Extract student number using robust detection
         $studentNumber = $this->extractStudentNumber($text, $expectedStudentNumber);
 
+        $currentUser = $this->getUser();
+        $studentUser = $currentUser instanceof \App\Entity\User ? $currentUser : null;
+        $curriculumCodeMap = $this->getCurriculumSubjectCodeMapForUser($studentUser, $this->curriculumRepo);
+        $knownCodeByCompact = $this->buildKnownSubjectCodeByCompact($this->subjectRepo, $curriculumCodeMap);
+
         $rowSeen = [];
         $rowIndexByCodeSchedule = [];
-        $addParsedRow = function (array $row, string $pass, string $source, array $traceMeta = []) use (&$parsedRows, &$rawCandidates, &$codes, &$rowSeen, &$rowIndexByCodeSchedule, &$passStats, &$rowTrace, &$subjectCodeTrace, $pushTrace, $maxParsedRows, $sanitizeTraceSource): bool {
+        $addParsedRow = function (array $row, string $pass, string $source, array $traceMeta = []) use (&$parsedRows, &$rawCandidates, &$codes, &$rowSeen, &$rowIndexByCodeSchedule, &$passStats, &$rowTrace, &$subjectCodeTrace, $pushTrace, $maxParsedRows, $sanitizeTraceSource, $knownCodeByCompact, $curriculumCodeMap): bool {
             $rawCode = trim((string) ($row['code'] ?? ''));
             $code = $this->normalizeSubjectCode($rawCode);
             $rawSection = trim((string) ($row['section'] ?? ''));
@@ -2732,33 +2829,46 @@ class EvaluationController extends AbstractController
             }
 
             $strictOcrCode = $this->isLikelyOcrSubjectCode($code);
+            $acceptedKnownShortTail = false;
             if (!$strictOcrCode) {
                 if (!$this->isLikelySubjectCode($code)) {
                     $traceDecision(false, 'invalid_subject_code_shape');
                     return false;
                 }
 
-                $looseTail = $this->extractSubjectCodeLooseNumericTail($code);
-                $prefix = $this->extractSubjectCodePrefix($code);
-                if ($looseTail === '' || strlen($looseTail) > 2) {
-                    $traceDecision(false, 'weak_tail_not_recoverable');
-                    return false;
+                $resolvedKnownCode = $this->resolveToKnownSubjectCode($code, $knownCodeByCompact);
+                $isKnownShortTailCode = $resolvedKnownCode !== ''
+                    && (empty($curriculumCodeMap) || isset($curriculumCodeMap[$resolvedKnownCode]));
+
+                if ($isKnownShortTailCode) {
+                    $code = $resolvedKnownCode;
+                    $description = $this->normalizeLoadslipDescription($description, $code);
+                    $acceptedKnownShortTail = true;
                 }
 
-                if (in_array($prefix, ['TH', 'T', 'M', 'W', 'F', 'SU', 'AM', 'PM', 'OO', 'OF', 'BY'], true)) {
-                    $traceDecision(false, 'noise_prefix_short_tail');
-                    return false;
-                }
+                if (!$acceptedKnownShortTail) {
+                    $looseTail = $this->extractSubjectCodeLooseNumericTail($code);
+                    $prefix = $this->extractSubjectCodePrefix($code);
+                    if ($looseTail === '' || strlen($looseTail) > 2) {
+                        $traceDecision(false, 'weak_tail_not_recoverable');
+                        return false;
+                    }
 
-                $descUpper = strtoupper($description);
-                if ($descUpper === '' || !preg_match('/[A-Z]{4,}/u', $descUpper)) {
-                    $traceDecision(false, 'short_tail_without_description_context');
-                    return false;
-                }
+                    if (in_array($prefix, ['TH', 'T', 'M', 'W', 'F', 'SU', 'AM', 'PM', 'OO', 'OF', 'BY'], true)) {
+                        $traceDecision(false, 'noise_prefix_short_tail');
+                        return false;
+                    }
 
-                if (preg_match('/\b(STUDENT|DATE|PRINTED|ENCODED|ANONYM|NUMBER|BIRTH|ENROLLED|SCHOLAR)\b/u', $descUpper)) {
-                    $traceDecision(false, 'metadata_context_row');
-                    return false;
+                    $descUpper = strtoupper($description);
+                    if ($descUpper === '' || !preg_match('/[A-Z]{4,}/u', $descUpper)) {
+                        $traceDecision(false, 'short_tail_without_description_context');
+                        return false;
+                    }
+
+                    if (preg_match('/\b(STUDENT|DATE|PRINTED|ENCODED|ANONYM|NUMBER|BIRTH|ENROLLED|SCHOLAR)\b/u', $descUpper)) {
+                        $traceDecision(false, 'metadata_context_row');
+                        return false;
+                    }
                 }
             }
 
@@ -2890,7 +3000,13 @@ class EvaluationController extends AbstractController
                 'source' => $sourcePreview,
             ], 240);
 
-            $traceDecision(true, $strictOcrCode ? 'accepted_strict' : 'accepted_tentative_short_tail');
+            $acceptReason = 'accepted_tentative_short_tail';
+            if ($strictOcrCode) {
+                $acceptReason = 'accepted_strict';
+            } elseif ($acceptedKnownShortTail) {
+                $acceptReason = 'accepted_known_short_tail';
+            }
+            $traceDecision(true, $acceptReason);
 
             return true;
         };
@@ -3388,7 +3504,7 @@ class EvaluationController extends AbstractController
                 } else {
                     $student = $userRepo->findOneBy(['schoolId' => $schoolId]);
                     if (!$student || !$student->isStudent()) {
-                        $error = 'Student ID not found. Please contact your administrator.';
+                        $error = 'Student ID not found. Please create an account.';
                     } elseif ($student->getAccountStatus() !== 'active') {
                         $error = 'Your account is inactive. Please contact your administrator.';
                     } else {

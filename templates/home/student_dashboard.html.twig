@@ -243,9 +243,13 @@
         <thead>
             <tr>
                 <th>Subject</th>
+                <th>Section</th>
+                <th>Description</th>
+                <th>Unit</th>
+                <th>SET Subject</th>
                 <th>Faculty</th>
                 <th>Schedule</th>
-                <th>Section</th>
+                <th>Eval Section</th>
                 <th>Period</th>
                 <th>Status</th>
                 <th style="text-align:right">Action</th>
@@ -254,6 +258,10 @@
         <tbody>
             {% for item in pending %}
             <tr class="ev-row">
+                <td class="ev-td-meta">{{ item.loadslipRow.code|default('—') }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.section ? item.loadslipRow.section|upper : '—' }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.description|default('—') }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.units|default('—') }}</td>
                 <td class="ev-td-subject">
                     <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
                     {{ item.subject.subjectName }}
@@ -303,9 +311,13 @@
         <thead>
             <tr>
                 <th>Subject</th>
+                <th>Section</th>
+                <th>Description</th>
+                <th>Unit</th>
+                <th>SET Subject</th>
                 <th>Faculty</th>
                 <th>Schedule</th>
-                <th>Section</th>
+                <th>Eval Section</th>
                 <th>Period</th>
                 <th>Status</th>
             </tr>
@@ -313,6 +325,10 @@
         <tbody>
             {% for item in completed %}
             <tr class="ev-row">
+                <td class="ev-td-meta">{{ item.loadslipRow.code|default('—') }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.section ? item.loadslipRow.section|upper : '—' }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.description|default('—') }}</td>
+                <td class="ev-td-meta">{{ item.loadslipRow.units|default('—') }}</td>
                 <td class="ev-td-subject">
                     <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
                     {{ item.subject.subjectName }}

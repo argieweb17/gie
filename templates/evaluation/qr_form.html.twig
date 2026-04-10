@@ -36,6 +36,37 @@
 .eval-form-actions-bar{display:flex;gap:10px;padding:16px 0;justify-content:center;}
 .btn-norsu{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border:0;border-radius:8px;padding:10px 32px;font-weight:600;font-size:.9rem;transition:all .2s;}
 .btn-norsu:hover{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.3);}
+.student-gate-card{background:#fff;border:1px solid #dbe3f0;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.08);margin-bottom:16px;}
+.student-gate-head{position:relative;padding:14px 18px;background:linear-gradient(132deg,#1e3a8a 0%,#1d4ed8 55%,#3b82f6 100%);color:#fff;}
+.student-gate-head::after{content:'';position:absolute;top:-56px;right:-44px;width:170px;height:170px;background:radial-gradient(circle,rgba(255,255,255,.26),rgba(255,255,255,0));pointer-events:none;}
+.student-gate-body{padding:16px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
+.student-gate-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr);gap:14px;align-items:start;}
+.student-gate-grid.single{grid-template-columns:1fr;}
+.student-verify-box,.student-guide-box{background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:14px;}
+.student-verify-label{font-size:.82rem;font-weight:600;color:#334155;}
+.student-id-input{height:44px;border-radius:10px;border-color:#cbd5e1;font-size:1rem;font-weight:600;letter-spacing:.02em;}
+.student-id-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
+.student-verify-btn{height:44px;border-radius:10px;}
+.student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:10px;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;text-align:center;}
+.student-guide-box{background:#f8fafc;border-color:#dbe3ef;}
+.student-guide-title{font-size:.96rem;font-weight:700;color:#1e40af;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.student-guide-list{list-style:none;padding:0;margin:0;counter-reset:verifyStep;}
+.student-guide-list li{display:flex;gap:10px;align-items:flex-start;color:#475569;line-height:1.55;font-size:.9rem;}
+.student-guide-list li+li{margin-top:9px;}
+.student-guide-list li::before{counter-increment:verifyStep;content:counter(verifyStep);min-width:22px;height:22px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:.72rem;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0;}
+.student-state-card{margin-top:10px;padding:12px;border-radius:11px;border:1px solid transparent;}
+.student-state-title{font-size:.83rem;font-weight:700;margin-bottom:4px;}
+.student-state-body{font-size:.82rem;line-height:1.52;}
+.student-state-card.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+.student-state-card.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+.student-state-card.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+.student-loadslip-box{margin-top:10px;padding:12px;border-radius:12px;background:#f8fafc;border:1px dashed #cbd5e1;}
+.student-quick-card{margin-top:10px;padding:12px;border-radius:11px;background:#eef2ff;border:1px solid #c7d2fe;}
+.student-quick-title{font-size:.86rem;font-weight:700;color:#1e3a8a;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.student-quick-note{font-size:.8rem;color:#475569;line-height:1.45;margin-bottom:10px;}
+@media(max-width:992px){
+    .student-gate-grid{grid-template-columns:1fr;}
+}
 @media(max-width:576px){
     .container{padding-left:8px;padding-right:8px;}
     .eval-form-paper{border-radius:8px;}
@@ -57,6 +88,11 @@
     .card-header{padding:12px 16px !important;}
     .card-header h6{font-size:.85rem;}
     .card-body{padding:16px !important;}
+    .student-gate-head{padding:12px 14px;}
+    .student-gate-body{padding:12px;}
+    .student-verify-box,.student-guide-box,.student-state-card{padding:12px;}
+    .student-id-input,.student-verify-btn{height:42px;}
+    .student-guide-list li{font-size:.86rem;}
     .eval-form-actions-bar{padding:12px 0;}
     .btn-norsu{width:100%;padding:12px;font-size:.85rem;}
 }
@@ -94,7 +130,17 @@
 {% else %}
 {# ── Student Verification + Evaluation Form ── #}
 
-{% if error %}
+{% set showMismatchModal = error is defined and error and 'Loadslip details do not match this QR evaluation' in error %}
+{% set showNoAccountHelp = error is defined and error and 'Student ID not found' in error %}
+{% set showNoAccountModal = showNoAccountHelp %}
+{% set showUnverifiedHelp = error is defined and error and ('Loadslip is not verified' in error or 'Loadslip verification expired or missing' in error) %}
+{% set showUnverifiedModal = showUnverifiedHelp %}
+{% set showInactiveHelp = error is defined and error and 'inactive' in error %}
+{% set createAccountUrl = path('app_register', {'role': 'student'}) %}
+{% set homeUrl = path('app_home') %}
+{% set importLoadslipUrl = path('evaluation_set_index') %}
+
+{% if error and not showMismatchModal and not showNoAccountModal and not showUnverifiedModal %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -104,57 +150,138 @@
 <form method="post" id="qrEvalForm">
 
 {# ── Student ID Gate ── #}
-<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
-    <div class="card-header py-3" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-person-vcard-fill" style="font-size:1.2rem;"></i>
+<div class="student-gate-card">
+    <div class="student-gate-head">
+        <div class="d-flex align-items-center gap-2 position-relative">
+            <i class="bi bi-person-vcard-fill" style="font-size:1.18rem;"></i>
             <div>
                 <h6 class="mb-0 fw-bold">Student ID Verification</h6>
                 <small class="opacity-75">Enter your Student ID first to continue</small>
             </div>
         </div>
     </div>
-    <div class="card-body p-4">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-8">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">Student ID <span class="text-danger">*</span></label>
-                <input type="text" name="school_id" class="form-control" placeholder="e.g. 2023-1234"
-                       value="{{ qrVerified and verifiedStudent ? verifiedStudent.schoolId : formValues.school_id|default('') }}"
-                       {{ qrVerified ? 'readonly' : '' }} required>
-            </div>
-            <div class="col-md-4">
-                {% if not qrVerified %}
-                <button type="submit" name="_action" value="verify_student" class="btn btn-norsu w-100">
-                    <i class="bi bi-check2-circle me-1"></i> Verify
-                </button>
-                {% else %}
-                <div class="alert alert-success mb-0 py-2 text-center" style="font-size:.85rem;">
-                    <i class="bi bi-patch-check-fill me-1"></i> Verified: {{ verifiedStudent.fullName }}
+    <div class="student-gate-body">
+        <div class="student-gate-grid{{ qrVerified ? ' single' : '' }}">
+            <div>
+                <div class="student-verify-box">
+                    <div class="small fw-semibold mb-2" style="color:#1e3a8a;">
+                        <i class="bi bi-shield-check me-1"></i> {{ qrVerified ? 'Account verified' : 'Verify your account first' }}
+                    </div>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label class="student-verify-label mb-1">Student ID <span class="text-danger">*</span></label>
+                            <input type="text" name="school_id" class="form-control student-id-input" placeholder="e.g. 2023-1234"
+                                   value="{{ qrVerified and verifiedStudent ? verifiedStudent.schoolId : formValues.school_id|default('') }}"
+                                   {{ qrVerified ? 'readonly' : '' }} required>
+                        </div>
+                        <div class="col-md-4">
+                            {% if not qrVerified %}
+                            <button type="submit" name="_action" value="verify_student" class="btn btn-primary student-verify-btn w-100">
+                                <i class="bi bi-check2-circle me-1"></i> Verify
+                            </button>
+                            {% else %}
+                            <div class="student-verified-chip">
+                                <i class="bi bi-patch-check-fill me-1"></i> Verified: {{ verifiedStudent.fullName }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if qrVerified and (qrLoadslipRows|default([])) is not empty %}
+                <div class="student-loadslip-box">
+                    <div class="small fw-semibold text-primary mb-2">
+                        <i class="bi bi-journal-check me-1"></i> Matched Loadslip Row
+                    </div>
+                    {% for row in qrLoadslipRows|slice(0, 3) %}
+                        {% set displaySection = row.section|default('') %}
+                        {% set displayDescription = row.description|default('') %}
+                        {% set displaySchedule = row.schedule|default('') %}
+                        {% set displayUnits = row.units|default('') %}
+                        {% if displaySection == '' and section|default('') != '' %}
+                            {% set displaySection = section %}
+                        {% endif %}
+                    <div class="small mb-2" style="color:#334155;">
+                        <div><strong>Subject:</strong> {{ row.code|default('N/A') }}</div>
+                        <div><strong>Section:</strong> {{ displaySection != '' ? displaySection : 'N/A' }}</div>
+                        <div><strong>Description:</strong> {{ displayDescription != '' ? displayDescription : 'N/A' }}</div>
+                        <div><strong>Schedule:</strong> {{ displaySchedule != '' ? displaySchedule : 'N/A' }}</div>
+                        <div><strong>Unit:</strong> {{ displayUnits != '' ? displayUnits : 'N/A' }}</div>
+                    </div>
+                    {% endfor %}
                 </div>
                 {% endif %}
             </div>
-        </div>
 
-        {% if qrVerified and (qrLoadslipRows|default([])) is not empty %}
-        <div class="mt-3 p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
-            <div class="small fw-semibold text-primary mb-2">
-                <i class="bi bi-journal-check me-1"></i> Matched Loadslip Row
-            </div>
-            {% for row in qrLoadslipRows|slice(0, 3) %}
-                {% set displaySection = row.section|default('') %}
-                {% if displaySection == '' and section|default('') != '' %}
-                    {% set displaySection = section %}
+            {% if not qrVerified %}
+            <div>
+                <div class="student-guide-box">
+                    <div class="student-guide-title">
+                        <i class="bi bi-info-circle-fill"></i> Student Verification Instructions
+                    </div>
+                    <ol class="student-guide-list">
+                        <li>Enter your Student ID exactly as registered.</li>
+                        <li>Click Verify to check account and loadslip status.</li>
+                        <li>If no account is found, create an account.</li>
+                        <li>If loadslip is not verified, import loadslip and verify it first.</li>
+                    </ol>
+                </div>
+
+                <div class="student-quick-card">
+                    <div class="student-quick-title">
+                        <i class="bi bi-link-45deg"></i> Quick Access
+                    </div>
+                    <div class="student-quick-note">
+                        Open the welcome page or create a student account before verification.
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ createAccountUrl }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-person-plus-fill me-1"></i>Student Register
+                        </a>
+                        <a href="{{ homeUrl }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-house-door-fill me-1"></i>Welcome / Home
+                        </a>
+                    </div>
+                </div>
+
+                {% if showNoAccountHelp %}
+                <div class="student-state-card warn">
+                    <div class="student-state-title">
+                        <i class="bi bi-person-x-fill me-1"></i> No Student Account Found
+                    </div>
+                    <div class="student-state-body">
+                        This Student ID does not exist in the system. Please create a student account to continue.
+                    </div>
+                </div>
                 {% endif %}
-            <div class="small mb-2" style="color:#334155;">
-                <strong>Subject:</strong> {{ row.code|default('N/A') }}
-                    &nbsp; | &nbsp;<strong>Section:</strong> {{ displaySection != '' ? displaySection : 'N/A' }}
-                {% if row.schedule|default('') != '' %}&nbsp; | &nbsp;<strong>Schedule:</strong> {{ row.schedule }}{% endif %}
-                {% if row.units|default('') != '' %}&nbsp; | &nbsp;<strong>Units:</strong> {{ row.units }}{% endif %}
-                {% if row.description|default('') != '' %}<br><strong>Description:</strong> {{ row.description }}{% endif %}
+
+                {% if showUnverifiedHelp %}
+                <div class="student-state-card info">
+                    <div class="student-state-title">
+                        <i class="bi bi-journal-x me-1"></i> Loadslip Not Verified
+                    </div>
+                    <div class="student-state-body">
+                        Import your loadslip in the student portal, complete verification, then return to this page and click Verify again.
+                    </div>
+                    <a href="{{ importLoadslipUrl }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="bi bi-upload me-1"></i>Import Loadslip
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if showInactiveHelp %}
+                <div class="student-state-card danger">
+                    <div class="student-state-title">
+                        <i class="bi bi-person-lock me-1"></i> Account Inactive
+                    </div>
+                    <div class="student-state-body">
+                        Your student account is inactive. Please contact your administrator to activate your account before verifying.
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -306,8 +433,98 @@
 
 </div>
 
+{% if showMismatchModal %}
+<div class="modal fade" id="loadslipMismatchModal" tabindex="-1" aria-labelledby="loadslipMismatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+            <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
+                <h5 class="modal-title" id="loadslipMismatchModalLabel" style="color:#7f1d1d;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Loadslip Mismatch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:#334155;line-height:1.6;">
+                <p class="mb-2">{{ error }}</p>
+                <p class="mb-0" style="font-size:.9rem;color:#64748b;">
+                    Please verify that your loadslip subject code, section, schedule, and description match this QR evaluation.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if showNoAccountModal %}
+<div class="modal fade" id="studentNotFoundModal" tabindex="-1" aria-labelledby="studentNotFoundModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+            <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
+                <h5 class="modal-title" id="studentNotFoundModalLabel" style="color:#7f1d1d;">
+                    <i class="bi bi-person-x-fill me-2"></i>Student Account Not Found
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:#334155;line-height:1.6;">
+                <p class="mb-2">{{ error }}</p>
+                <p class="mb-0" style="font-size:.9rem;color:#64748b;">
+                    Create a student account first, then return to this page and verify your Student ID again.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if showUnverifiedModal %}
+<div class="modal fade" id="loadslipUnverifiedModal" tabindex="-1" aria-labelledby="loadslipUnverifiedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+            <div class="modal-header" style="background:#dbeafe;border-bottom:1px solid #bfdbfe;">
+                <h5 class="modal-title" id="loadslipUnverifiedModalLabel" style="color:#1e3a8a;">
+                    <i class="bi bi-journal-x me-2"></i>Loadslip Not Verified
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:#334155;line-height:1.6;">
+                <p class="mb-2">{{ error }}</p>
+                <p class="mb-0" style="font-size:.9rem;color:#64748b;">
+                    Import and verify your loadslip first, then return to this page and click Verify again.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var mismatchModalEl = document.getElementById('loadslipMismatchModal');
+    if (mismatchModalEl && window.bootstrap && window.bootstrap.Modal) {
+        var mismatchModal = new bootstrap.Modal(mismatchModalEl);
+        mismatchModal.show();
+    }
+
+    var studentNotFoundModalEl = document.getElementById('studentNotFoundModal');
+    if (studentNotFoundModalEl && window.bootstrap && window.bootstrap.Modal) {
+        var studentNotFoundModal = new bootstrap.Modal(studentNotFoundModalEl);
+        studentNotFoundModal.show();
+    }
+
+    var loadslipUnverifiedModalEl = document.getElementById('loadslipUnverifiedModal');
+    if (loadslipUnverifiedModalEl && window.bootstrap && window.bootstrap.Modal) {
+        var loadslipUnverifiedModal = new bootstrap.Modal(loadslipUnverifiedModalEl);
+        loadslipUnverifiedModal.show();
+    }
+
     var form = document.getElementById('qrEvalForm');
     if (form) {
         form.addEventListener('submit', function (event) {
