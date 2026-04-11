@@ -2230,6 +2230,8 @@ class ReportController extends AbstractController
         return $this->render('admin/system_announcement.html.twig', [
             'title' => $descRepo->getSystemAnnouncementTitle(),
             'body' => $descRepo->getSystemAnnouncementBody(),
+            'imageUrl' => $meta['imageUrl'] ?? '',
+            'imageUrls' => $meta['imageUrls'] ?? [],
             'metaUpdatedBy' => $meta['updatedBy'] ?? '',
             'metaUpdatedAt' => $meta['updatedAt'] ?? '',
         ]);
@@ -2240,6 +2242,7 @@ class ReportController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         QuestionCategoryDescriptionRepository $descRepo,
+        SluggerInterface $slugger,
     ): Response {
         if (!$this->isCsrfTokenValid('save_system_announcement', $request->request->get('_token'))) {
             $this->addFlash('danger', 'Invalid security token.');
@@ -2248,10 +2251,66 @@ class ReportController extends AbstractController
 
         $title = trim((string) $request->request->get('title', ''));
         $body = trim((string) $request->request->get('body', ''));
+        $imageUrl = trim((string) $request->request->get('imageUrl', ''));
+        $imageUrlsRaw = trim((string) $request->request->get('imageUrls', ''));
 
         if ($title === '' || $body === '') {
             $this->addFlash('danger', 'Announcement title and content are required.');
             return $this->redirectToRoute('staff_announcements');
+        }
+
+        $imageUrls = [];
+        if ($imageUrlsRaw !== '') {
+            $lines = preg_split('/\r\n|\r|\n/', $imageUrlsRaw) ?: [];
+            foreach ($lines as $line) {
+                $value = trim((string) $line);
+                if ($value !== '') {
+                    $imageUrls[] = $value;
+                }
+            }
+        }
+
+        if ($imageUrl !== '') {
+            $imageUrls[] = $imageUrl;
+        }
+
+        $files = $request->files->all('images');
+        if (!is_array($files)) {
+            $files = $files ? [$files] : [];
+        }
+
+        if (!empty($files)) {
+            $projectDir = (string) $this->getParameter('kernel.project_dir');
+            $uploadDir = $projectDir . '/public/uploads/announcements';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0775, true);
+            }
+
+            $allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            foreach ($files as $file) {
+                if (!$file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile || !$file->isValid()) {
+                    continue;
+                }
+
+                $ext = strtolower((string) $file->guessExtension());
+                if ($ext === '' || !in_array($ext, $allowedExt, true)) {
+                    continue;
+                }
+
+                $base = (string) $slugger->slug(pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME));
+                if ($base === '') {
+                    $base = 'announcement';
+                }
+
+                $newFilename = $base . '-' . uniqid() . '.' . $ext;
+                $file->move($uploadDir, $newFilename);
+                $imageUrls[] = '/uploads/announcements/' . $newFilename;
+            }
+        }
+
+        $imageUrls = array_values(array_unique(array_filter(array_map('trim', $imageUrls), static fn($v) => $v !== '')));
+        if (count($imageUrls) > 20) {
+            $imageUrls = array_slice($imageUrls, 0, 20);
         }
 
         $titleEntity = $descRepo->findOneBy([
@@ -2298,6 +2357,8 @@ class ReportController extends AbstractController
         $metaEntity->setDescription((string) json_encode([
             'updatedBy' => $editorName,
             'updatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'imageUrl' => $imageUrls[0] ?? '',
+            'imageUrls' => $imageUrls,
         ]));
 
         $em->flush();

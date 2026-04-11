@@ -208,6 +208,10 @@
     justify-content: space-between;
     margin-bottom: 2px;
 }
+.fm-conv-header .fm-role-badge,
+.fm-conv-header .fm-college-badge {
+    display: none;
+}
 .fm-conv-name-wrap {
     display: inline-flex;
     align-items: center;
@@ -650,37 +654,37 @@
 
 /* Compose Area - Simple */
 .fm-compose {
-    padding: 14px 20px;
+    padding: 8px 14px;
     background: #fff;
     border-top: 1px solid var(--chat-border);
 }
 .fm-compose-inner {
     display: flex;
     align-items: flex-end;
-    gap: 10px;
+    gap: 6px;
     background: var(--chat-bg);
-    border-radius: 24px;
-    padding: 8px 8px 8px 16px;
+    border-radius: 8px;
+    padding: 5px 6px 5px 10px;
 }
 .fm-compose-left {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
 }
 .fm-textarea {
     width: 100%;
-    padding: 8px 0;
+    padding: 2px 0;
     border: none;
     font-size: .88rem;
     color: var(--chat-text-primary);
     background: transparent;
     outline: none;
     resize: none;
-    min-height: 24px;
-    max-height: 120px;
+    min-height: 18px;
+    max-height: 80px;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 .fm-textarea::placeholder {
     color: var(--chat-text-muted);
@@ -688,15 +692,15 @@
 .fm-compose-tools {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 .fm-tool-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
     border: none;
     background: transparent;
     color: var(--chat-text-muted);
@@ -709,9 +713,9 @@
     color: var(--chat-blue);
 }
 .fm-status-select {
-    padding: 6px 10px;
+    padding: 3px 9px;
     border: 1px solid var(--chat-border);
-    border-radius: 16px;
+    border-radius: 8px;
     font-size: .75rem;
     font-weight: 500;
     color: var(--chat-text-secondary);
@@ -723,9 +727,9 @@
     border-color: var(--chat-blue);
 }
 .fm-send-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     border: none;
     background: var(--chat-bubble-out);
     color: #fff;
@@ -816,7 +820,7 @@
         padding: 14px;
     }
     .fm-compose {
-        padding: 10px 14px;
+        padding: 7px 10px;
     }
     .fm-message {
         max-width: 90%;

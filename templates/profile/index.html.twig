@@ -70,6 +70,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: .7rem;
 }
+.sp-field-full { grid-column: 1 / -1; }
 .sp-field-label { display: block; font-size: .7rem; color: #64748b; margin-bottom: .2rem; font-weight: 600; }
 .sp-input {
     width: 100%;
@@ -132,7 +133,7 @@
 {% if user.isStudent %}
 <div class="sp-wrap">
     <div class="sp-head">
-        <h4 class="sp-title">User profile</h4>
+        <h4 class="sp-title">My Profile</h4>
         <p class="sp-sub">Manage your details, view your tier status and change your password.</p>
     </div>
 
@@ -248,167 +249,167 @@
 {% endif %}
 
 {% if not user.isStudent %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0"><i  class="bi bi-person-circle me-2"></i>My Profile</h4>
-    <div class="page-header-actions">
-        <a href="{{ path('app_profile_edit') }}" class="btn btn-norsu btn-sm">
-            <i  class="bi bi-pencil-square"></i> Edit Profile
-        </a>
-    </div>
-</div>
+{% set _is_assigned_superior = user.hasAssignedRole('ROLE_SUPERIOR') %}
+{% set roleLabels = [] %}
+{% if 'ROLE_ADMIN' in user.roles %}
+    {% set roleLabels = roleLabels|merge(['Administrator']) %}
+{% endif %}
+{% if _is_assigned_superior %}
+    {% set roleLabels = roleLabels|merge(['Superior']) %}
+{% endif %}
+{% if 'ROLE_FACULTY' in user.roles %}
+    {% set roleLabels = roleLabels|merge(['Faculty']) %}
+{% endif %}
+{% if 'ROLE_STAFF' in user.roles %}
+    {% set roleLabels = roleLabels|merge(['Staff']) %}
+{% endif %}
+{% if roleLabels is empty %}
+    {% set roleLabels = ['Student'] %}
+{% endif %}
 
-<div class="row g-4">
-    {# ── Profile Card ── #}
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm text-center">
-            <div class="card-body py-5">
-                <img src="{{ asset('images/' ~ user.profilePictureOrDefault) }}"
-                     alt="{{ user.fullName }}" class="rounded-circle mb-3"
-                     style="width:90px;height:90px;object-fit:cover">
-                <h5 class="fw-bold mb-1">{{ user.fullName }}</h5>
-                <p class="text-muted mb-2">{{ user.email }}</p>
+<div class="sp-wrap">
+    <div class="sp-head">
+        <h4 class="sp-title">My Profile</h4>
+        <p class="sp-sub">Manage your account details and security settings.</p>
+    </div>
+
+    <div class="sp-card sp-main">
+        <div class="sp-person">
+            <img src="{{ asset('images/' ~ user.profilePictureOrDefault) }}" alt="{{ user.fullName }}" class="sp-avatar">
+            <p class="sp-name">{{ user.fullName }}</p>
+            <p class="sp-id">{{ user.email ?? 'No email on record' }}</p>
+
+            <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
                 {% if 'ROLE_ADMIN' in user.roles %}
-                    <span class="pf-chip pf-chip-admin"><i  class="bi bi-shield-check me-1"></i>Administrator</span>
-                {% elseif user.hasAssignedRole('ROLE_SUPERIOR') %}
-                    <span class="pf-chip pf-chip-superior"><i  class="bi bi-star-fill me-1"></i>Superior</span>
-                {% elseif 'ROLE_FACULTY' in user.roles %}
-                    <span class="pf-chip pf-chip-faculty"><i  class="bi bi-mortarboard me-1"></i>Faculty</span>
-                {% elseif 'ROLE_STAFF' in user.roles %}
-                    <span class="pf-chip pf-chip-staff"><i  class="bi bi-card-checklist me-1"></i>Staff</span>
-                {% else %}
-                    <span class="pf-chip pf-chip-student"><i  class="bi bi-person me-1"></i>Student</span>
+                    <span class="pf-chip pf-chip-admin"><i class="bi bi-shield-check me-1"></i>Administrator</span>
                 {% endif %}
+                {% if _is_assigned_superior %}
+                    <span class="pf-chip pf-chip-superior"><i class="bi bi-star-fill me-1"></i>Superior</span>
+                {% endif %}
+                {% if 'ROLE_FACULTY' in user.roles %}
+                    <span class="pf-chip pf-chip-faculty"><i class="bi bi-mortarboard me-1"></i>Faculty</span>
+                {% endif %}
+                {% if 'ROLE_STAFF' in user.roles %}
+                    <span class="pf-chip pf-chip-staff"><i class="bi bi-card-checklist me-1"></i>Staff</span>
+                {% endif %}
+                {% if roleLabels == ['Student'] %}
+                    <span class="pf-chip pf-chip-student"><i class="bi bi-person me-1"></i>Student</span>
+                {% endif %}
+            </div>
 
-                {# Upload Picture #}
-                <form method="post" action="{{ path('app_profile_upload_picture') }}" enctype="multipart/form-data" class="mt-3">
-                    <input type="file" name="profilePicture" accept="image/*" class="form-control form-control-sm mb-2">
-                    <button type="submit" class="btn btn-outline-norsu btn-sm w-100">
-                        <i  class="bi bi-camera me-1"></i>Update Photo
-                    </button>
-                </form>
+            <form method="post" action="{{ path('app_profile_upload_picture') }}" enctype="multipart/form-data" class="sp-upload-form">
+                <input type="file" name="profilePicture" accept="image/*" class="form-control form-control-sm mb-2">
+                <button type="submit" class="btn btn-outline-norsu btn-sm w-100">
+                    <i class="bi bi-camera me-1"></i>Update photo
+                </button>
+            </form>
+        </div>
+
+        <div class="sp-general">
+            <h6 class="sp-section-title">General information</h6>
+            <div class="sp-grid">
+                <label>
+                    <span class="sp-field-label">First name</span>
+                    <input class="sp-input" value="{{ user.firstName }}" readonly>
+                </label>
+                <label>
+                    <span class="sp-field-label">Last name</span>
+                    <input class="sp-input" value="{{ user.lastName }}" readonly>
+                </label>
+                <label class="sp-field-full">
+                    <span class="sp-field-label">Email</span>
+                    <input class="sp-input" value="{{ user.email ?? '—' }}" readonly>
+                </label>
+                {% if 'ROLE_STAFF' not in user.roles %}
+                <label>
+                    <span class="sp-field-label">Campus</span>
+                    <input class="sp-input" value="{{ user.campus ?? '—' }}" readonly>
+                </label>
+                {% endif %}
+                {% if _is_assigned_superior %}
+                <label>
+                    <span class="sp-field-label">Position / Designation</span>
+                    <input class="sp-input" value="{{ user.position ?? '—' }}" readonly>
+                </label>
+                <label>
+                    <span class="sp-field-label">Academic rank</span>
+                    <input class="sp-input" value="{{ user.academicRank ?? '—' }}" readonly>
+                </label>
+                {% endif %}
+            </div>
+            <div class="sp-general-actions">
+                <a href="{{ path('app_profile_edit') }}" class="btn btn-norsu btn-sm">Update</a>
             </div>
         </div>
     </div>
 
-    {# ── Account Details ── #}
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold"><i  class="bi bi-info-circle me-1"></i> Account Information</div>
-            <div class="card-body">
-                <table class="table table-borderless mb-0">
-                    <tbody>
-                        {% set _is_assigned_superior = user.hasAssignedRole('ROLE_SUPERIOR') %}
-                        <tr>
-                            <td class="text-muted" style="width:200px"><i  class="bi bi-person me-2"></i>First Name</td>
-                            <td class="fw-semibold">{{ user.firstName }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-person me-2"></i>Last Name</td>
-                            <td class="fw-semibold">{{ user.lastName }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-envelope me-2"></i>Email Address</td>
-                            <td class="fw-semibold">{{ user.email }}</td>
-                        </tr>
-                        {% if 'ROLE_STAFF' not in user.roles and not _is_assigned_superior %}
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-buildings me-2"></i>Department</td>
-                            <td class="fw-semibold">{{ user.department ? user.department.departmentName : '—' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-bank me-2"></i>College</td>
-                            <td class="fw-semibold">{{ user.department and user.department.collegeName ? user.department.collegeName : '—' }}</td>
-                        </tr>
-                        {% endif %}
-                        {% if 'ROLE_STAFF' not in user.roles %}
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-geo-alt me-2"></i>Campus</td>
-                            <td class="fw-semibold">{{ user.campus ?? '—' }}</td>
-                        </tr>
-                        {% endif %}
-                        {% if _is_assigned_superior %}
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-briefcase me-2"></i>Position / Designation</td>
-                            <td class="fw-semibold">{{ user.position ?? '—' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-award me-2"></i>Academic Rank</td>
-                            <td class="fw-semibold">{{ user.academicRank ?? '—' }}</td>
-                        </tr>
-                        {% endif %}
-                        {% if user.isStudent %}
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-person-vcard me-2"></i>Student ID</td>
-                            <td class="fw-semibold">{{ user.schoolId ?? '—' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-patch-check me-2"></i>Verification</td>
-                            <td>
-                                {% if isStudentVerified|default(false) %}
-                                    <span class="pf-chip pf-chip-verified">Verified</span>
-                                {% else %}
-                                    <span class="pf-chip pf-chip-unverified">Unverified</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-mortarboard me-2"></i>Year Level</td>
-                            <td class="fw-semibold">{{ user.yearLevel ?? '—' }}</td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-shield me-2"></i>Role</td>
-                            <td>
-                                {% if 'ROLE_ADMIN' in user.roles %}
-                                    <span class="pf-chip pf-chip-admin me-1">Admin</span>
-                                {% endif %}
-                                {% if user.hasAssignedRole('ROLE_SUPERIOR') %}
-                                    <span class="pf-chip pf-chip-superior me-1">Superior</span>
-                                {% endif %}
-                                {% if 'ROLE_FACULTY' in user.roles %}
-                                    <span class="pf-chip pf-chip-faculty me-1">Faculty</span>
-                                {% endif %}
-                                {% if 'ROLE_STAFF' in user.roles %}
-                                    <span class="pf-chip pf-chip-staff me-1">Staff</span>
-                                {% endif %}
-                                {% if not ('ROLE_ADMIN' in user.roles or 'ROLE_FACULTY' in user.roles or 'ROLE_STAFF' in user.roles) %}
-                                    <span class="pf-chip pf-chip-student me-1">Student</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-check-circle-fill me-2"></i>Account Status</td>
-                            <td>
-                                {% if user.accountStatus == 'active' %}
-                                    <span class="pf-chip pf-chip-active">Active</span>
-                                {% else %}
-                                    <span class="pf-chip pf-chip-inactive">Inactive</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted"><i  class="bi bi-calendar3 me-2"></i>Registered</td>
-                            <td class="fw-semibold">{{ user.createdAt|date('F d, Y \\a\\t h:i A') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div class="sp-card sp-details">
+        <h6 class="sp-section-title mb-1">Account details</h6>
+        <div class="sp-detail-grid">
+            <div>
+                <span class="sp-sec-label">Role</span>
+                <div class="sp-sec-value">{{ roleLabels|join(', ') }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Account status</span>
+                <div class="sp-sec-value">{{ user.accountStatus == 'active' ? 'Active' : 'Inactive' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Registered</span>
+                <div class="sp-sec-value">{{ user.createdAt|date('M d, Y') }}</div>
+            </div>
+            {% if 'ROLE_STAFF' not in user.roles %}
+            <div>
+                <span class="sp-sec-label">Campus</span>
+                <div class="sp-sec-value">{{ user.campus ?? '—' }}</div>
+            </div>
+            {% endif %}
+            {% if 'ROLE_STAFF' not in user.roles and not _is_assigned_superior %}
+            <div>
+                <span class="sp-sec-label">Department</span>
+                <div class="sp-sec-value">{{ user.department ? user.department.departmentName : '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">College</span>
+                <div class="sp-sec-value">{{ user.department and user.department.collegeName ? user.department.collegeName : '—' }}</div>
+            </div>
+            {% endif %}
+            {% if _is_assigned_superior %}
+            <div>
+                <span class="sp-sec-label">Position / Designation</span>
+                <div class="sp-sec-value">{{ user.position ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Academic rank</span>
+                <div class="sp-sec-value">{{ user.academicRank ?? '—' }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="sp-card sp-security">
+        <h6 class="sp-section-title mb-1">Security</h6>
+        <div class="sp-security-grid">
+            <div>
+                <span class="sp-sec-label">Email</span>
+                <div class="sp-sec-value">{{ user.email ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Password</span>
+                <div class="sp-sec-value">••••••••</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Role</span>
+                <div class="sp-sec-value">{{ roleLabels|join(', ') }}</div>
             </div>
         </div>
-
-        {# ── Security Section ── #}
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-white fw-semibold"><i  class="bi bi-lock me-1"></i> Security</div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="mb-1 fw-semibold">Password</p>
-                        <p class="text-muted mb-0 small">Update your password regularly for security.</p>
-                    </div>
-                    <a href="{{ path('app_profile_change_password') }}" class="btn btn-outline-norsu btn-sm">
-                        <i  class="bi bi-key me-1"></i>Change Password
-                    </a>
-                </div>
-            </div>
+        <div class="sp-actions">
+            <a href="{{ path('app_profile_change_password') }}" class="btn btn-outline-norsu btn-sm">
+                <i class="bi bi-key me-1"></i>Change password
+            </a>
+            <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil-square me-1"></i>Edit profile
+            </a>
         </div>
     </div>
 </div>

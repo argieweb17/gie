@@ -76,8 +76,42 @@ class QuestionCategoryDescriptionRepository extends ServiceEntityRepository
         return nl2br($safe);
     }
 
+    public function getSystemAnnouncementImageUrl(): string
+    {
+        $meta = $this->getSystemAnnouncementMeta();
+        $images = $meta['imageUrls'] ?? [];
+        if (is_array($images) && isset($images[0])) {
+            return trim((string) $images[0]);
+        }
+
+        return trim((string) ($meta['imageUrl'] ?? ''));
+    }
+
     /**
-     * @return array{updatedBy: string, updatedAt: string}
+     * @return list<string>
+     */
+    public function getSystemAnnouncementImageUrls(): array
+    {
+        $meta = $this->getSystemAnnouncementMeta();
+        $images = $meta['imageUrls'] ?? [];
+
+        if (!is_array($images)) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ($images as $value) {
+            $item = trim((string) $value);
+            if ($item !== '') {
+                $clean[] = $item;
+            }
+        }
+
+        return array_values(array_unique($clean));
+    }
+
+    /**
+     * @return array{updatedBy: string, updatedAt: string, imageUrl: string, imageUrls: list<string>}
      */
     public function getSystemAnnouncementMeta(): array
     {
@@ -88,17 +122,37 @@ class QuestionCategoryDescriptionRepository extends ServiceEntityRepository
 
         $raw = trim((string) ($entity?->getDescription() ?? ''));
         if ($raw === '') {
-            return ['updatedBy' => '', 'updatedAt' => ''];
+            return ['updatedBy' => '', 'updatedAt' => '', 'imageUrl' => '', 'imageUrls' => []];
         }
 
         $decoded = json_decode($raw, true);
         if (!is_array($decoded)) {
-            return ['updatedBy' => '', 'updatedAt' => ''];
+            return ['updatedBy' => '', 'updatedAt' => '', 'imageUrl' => '', 'imageUrls' => []];
         }
+
+        $imageUrls = [];
+        if (isset($decoded['imageUrls']) && is_array($decoded['imageUrls'])) {
+            foreach ($decoded['imageUrls'] as $value) {
+                $item = trim((string) $value);
+                if ($item !== '') {
+                    $imageUrls[] = $item;
+                }
+            }
+        }
+
+        $legacyImageUrl = trim((string) ($decoded['imageUrl'] ?? ''));
+        if ($legacyImageUrl !== '') {
+            $imageUrls[] = $legacyImageUrl;
+        }
+
+        $imageUrls = array_values(array_unique($imageUrls));
+        $imageUrl = $imageUrls[0] ?? '';
 
         return [
             'updatedBy' => (string) ($decoded['updatedBy'] ?? ''),
             'updatedAt' => (string) ($decoded['updatedAt'] ?? ''),
+            'imageUrl' => $imageUrl,
+            'imageUrls' => $imageUrls,
         ];
     }
 

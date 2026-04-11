@@ -1,0 +1,51 @@
+
+Fatal error: Uncaught PDOException: SQLSTATE[HY000] [1049] Unknown database 'evaluation_db_test' in C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\PDO\PDOConnect.php:25
+Stack trace:
+#0 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\PDO\PDOConnect.php(25): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\PDO\MySQL\Driver.php(45): Doctrine\DBAL\Driver\PDO\MySQL\Driver->doConnect(Object(SensitiveParameterValue), 'root', Object(SensitiveParameterValue), Array)
+#2 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Doctrine\DBAL\Driver\PDO\MySQL\Driver->connect(Object(SensitiveParameterValue))
+#3 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Logging\Driver.php(30): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#4 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Doctrine\DBAL\Logging\Driver->connect(Object(SensitiveParameterValue))
+#5 C:\Users\user\QUAMC EVALUATION\vendor\symfony\doctrine-bridge\Middleware\Debug\Driver.php(37): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#6 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Symfony\Bridge\Doctrine\Middleware\Debug\Driver->connect(Array)
+#7 C:\Users\user\QUAMC EVALUATION\vendor\symfony\doctrine-bridge\Middleware\IdleConnection\Driver.php(35): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#8 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(222): Symfony\Bridge\Doctrine\Middleware\IdleConnection\Driver->connect(Array)
+#9 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(792): Doctrine\DBAL\Connection->connect()
+#10 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\Persisters\Entity\BasicEntityPersister.php(963): Doctrine\DBAL\Connection->executeQuery('SELECT t0.id AS...', Array, Array)
+#11 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(110): Doctrine\ORM\Persisters\Entity\BasicEntityPersister->loadAll(Array, NULL, NULL, NULL)
+#12 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\doctrine-bundle\src\Repository\ServiceEntityRepositoryProxy.php(73): Doctrine\ORM\EntityRepository->findBy(Array, NULL, NULL, NULL)
+#13 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(96): Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryProxy->findBy(Array)
+#14 C:\Users\user\QUAMC EVALUATION\scripts\test_dashboard_schedule_gate.php(90): Doctrine\ORM\EntityRepository->findAll()
+#15 {main}
+
+Next Doctrine\DBAL\Driver\PDO\Exception: SQLSTATE[HY000] [1049] Unknown database 'evaluation_db_test' in C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\PDO\Exception.php:24
+Stack trace:
+#0 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\PDO\MySQL\Driver.php(52): Doctrine\DBAL\Driver\PDO\Exception::new(Object(PDOException))
+#1 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Doctrine\DBAL\Driver\PDO\MySQL\Driver->connect(Object(SensitiveParameterValue))
+#2 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Logging\Driver.php(30): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#3 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Doctrine\DBAL\Logging\Driver->connect(Object(SensitiveParameterValue))
+#4 C:\Users\user\QUAMC EVALUATION\vendor\symfony\doctrine-bridge\Middleware\Debug\Driver.php(37): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#5 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\Middleware\AbstractDriverMiddleware.php(27): Symfony\Bridge\Doctrine\Middleware\Debug\Driver->connect(Array)
+#6 C:\Users\user\QUAMC EVALUATION\vendor\symfony\doctrine-bridge\Middleware\IdleConnection\Driver.php(35): Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware->connect(Object(SensitiveParameterValue))
+#7 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(222): Symfony\Bridge\Doctrine\Middleware\IdleConnection\Driver->connect(Array)
+#8 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(792): Doctrine\DBAL\Connection->connect()
+#9 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\Persisters\Entity\BasicEntityPersister.php(963): Doctrine\DBAL\Connection->executeQuery('SELECT t0.id AS...', Array, Array)
+#10 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(110): Doctrine\ORM\Persisters\Entity\BasicEntityPersister->loadAll(Array, NULL, NULL, NULL)
+#11 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\doctrine-bundle\src\Repository\ServiceEntityRepositoryProxy.php(73): Doctrine\ORM\EntityRepository->findBy(Array, NULL, NULL, NULL)
+#12 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(96): Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryProxy->findBy(Array)
+#13 C:\Users\user\QUAMC EVALUATION\scripts\test_dashboard_schedule_gate.php(90): Doctrine\ORM\EntityRepository->findAll()
+#14 {main}
+
+Next Doctrine\DBAL\Exception\ConnectionException: An exception occurred in the driver: SQLSTATE[HY000] [1049] Unknown database 'evaluation_db_test' in C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\API\MySQL\ExceptionConverter.php:91
+Stack trace:
+#0 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(1460): Doctrine\DBAL\Driver\API\MySQL\ExceptionConverter->convert(Object(Doctrine\DBAL\Driver\PDO\Exception), NULL)
+#1 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(1402): Doctrine\DBAL\Connection->handleDriverException(Object(Doctrine\DBAL\Driver\PDO\Exception), NULL)
+#2 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(224): Doctrine\DBAL\Connection->convertException(Object(Doctrine\DBAL\Driver\PDO\Exception))
+#3 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Connection.php(792): Doctrine\DBAL\Connection->connect()
+#4 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\Persisters\Entity\BasicEntityPersister.php(963): Doctrine\DBAL\Connection->executeQuery('SELECT t0.id AS...', Array, Array)
+#5 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(110): Doctrine\ORM\Persisters\Entity\BasicEntityPersister->loadAll(Array, NULL, NULL, NULL)
+#6 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\doctrine-bundle\src\Repository\ServiceEntityRepositoryProxy.php(73): Doctrine\ORM\EntityRepository->findBy(Array, NULL, NULL, NULL)
+#7 C:\Users\user\QUAMC EVALUATION\vendor\doctrine\orm\src\EntityRepository.php(96): Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryProxy->findBy(Array)
+#8 C:\Users\user\QUAMC EVALUATION\scripts\test_dashboard_schedule_gate.php(90): Doctrine\ORM\EntityRepository->findAll()
+#9 {main}
+  thrown in C:\Users\user\QUAMC EVALUATION\vendor\doctrine\dbal\src\Driver\API\MySQL\ExceptionConverter.php on line 91

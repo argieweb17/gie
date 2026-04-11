@@ -43,6 +43,34 @@
     animation: ev-import-spin .8s linear infinite;
 }
 .ev-loadslip .ev-loadslip-btn.is-loading .ev-btn-spinner { display: inline-block; }
+.ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn {
+    width: auto;
+    min-width: 118px;
+    padding: 0 .8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #475569;
+    font-weight: 700;
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
+    transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
+}
+.ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn i { font-size: .82rem; }
+.ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+    color: #334155;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
+    transform: translateY(-1px);
+}
+.ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+}
+.ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, .3), 0 1px 2px rgba(15, 23, 42, .08);
+}
 .ev-loadslip .ev-instruction-trigger {
     width: 34px;
     height: 34px;
@@ -250,7 +278,7 @@
         --ev-mobile-file-width: 130px;
         --ev-mobile-main-btn-width: 110px;
         --ev-mobile-info-btn-width: 34px;
-        --ev-mobile-clear-btn-width: 90px;
+        --ev-mobile-clear-btn-width: 108px;
         width: 100%;
         flex-direction: row;
         flex-wrap: nowrap;
@@ -286,10 +314,12 @@
     .ev-loadslip .ev-loadslip-clear-form {
         display: inline-flex;
         justify-content: center;
+        margin-left: auto;
     }
-    .ev-loadslip .ev-loadslip-clear-form .ev-loadslip-btn {
+    .ev-loadslip .ev-loadslip-clear-form .ev-loadslip-clear-btn {
         width: var(--ev-mobile-clear-btn-width);
         font-size: .72rem;
+        padding: 0 .6rem;
     }
     .ev-instruction-sample .carousel-item { height: clamp(190px, 42vh, 280px); }
     .ev-preview-empty-box { height: 360px; }
@@ -325,6 +355,8 @@
 <div class="ev-page">
 <div class="ev-header">
     <div class="ev-loadslip">
+        {% set hasVerifiedLoadslip = app.session.get('student_loadslip_verified', false) and (loadslipImportedCount|default(0) > 0) %}
+        {% if not hasVerifiedLoadslip %}
         <form id="loadslipImportForm" method="post" action="{{ path('evaluation_set_loadslip_import') }}" enctype="multipart/form-data" class="d-flex align-items-center gap-2 flex-wrap">
             <input type="hidden" name="_token" value="{{ csrf_token('import_set_loadslip') }}">
             <input id="loadslipFileInput" class="form-control ev-loadslip-file" type="file" name="loadslip_file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" required>
@@ -344,10 +376,11 @@
                 <i class="bi bi-lightbulb"></i>
             </button>
         </form>
+        {% endif %}
         {% if loadslipImportedCount|default(0) > 0 %}
             <form method="post" action="{{ path('evaluation_set_loadslip_clear') }}" class="ev-loadslip-clear-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('clear_set_loadslip') }}">
-                <button type="submit" class="btn btn-outline-secondary ev-loadslip-btn">
+                <button type="submit" class="btn ev-loadslip-btn ev-loadslip-clear-btn">
                     <i class="bi bi-x-circle me-1"></i> Clear
                 </button>
             </form>

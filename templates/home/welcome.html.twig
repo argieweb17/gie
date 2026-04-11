@@ -189,12 +189,19 @@
                 {% if systemAnnouncementUpdatedBy %} by {{ systemAnnouncementUpdatedBy }}{% endif %}
             </div>
             {% endif %}
-            <div class="fes-hero-announcement-links">
-                <a href="{{ path('app_login') }}" class="fes-hero-announcement-link">
-                    <i class="bi bi-arrow-right-circle"></i>
-                    View Details
-                </a>
+            {% set announcementImages = systemAnnouncementImageUrls|default([]) %}
+            {% if announcementImages|length == 0 and systemAnnouncementImageUrl is defined and systemAnnouncementImageUrl|trim != '' %}
+                {% set announcementImages = [systemAnnouncementImageUrl|trim] %}
+            {% endif %}
+            {% if announcementImages|length > 0 %}
+            <div class="row g-2 mt-3">
+                {% for imageSrc in announcementImages %}
+                <div class="col-12 col-md-6">
+                    <img src="{{ imageSrc }}" alt="Announcement image {{ loop.index }}" class="img-fluid rounded-3 border w-100" style="max-height:320px;object-fit:cover;">
+                </div>
+                {% endfor %}
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -286,16 +293,76 @@
         var closeBtn = document.getElementById('announcementClose');
         if (!trigger || !overlay || !closeBtn) return;
 
+        var slider = document.getElementById('announcementSlider');
+        var slides = slider ? Array.prototype.slice.call(slider.querySelectorAll('.fes-announcement-slide')) : [];
+        var dots = slider ? Array.prototype.slice.call(slider.querySelectorAll('.fes-announcement-dot')) : [];
+        var prevBtn = document.getElementById('announcementPrev');
+        var nextBtn = document.getElementById('announcementNext');
+        var activeSlide = 0;
+        var autoSlideTimer = null;
+
+        function renderSlide(index) {
+            if (!slides.length) return;
+            activeSlide = (index + slides.length) % slides.length;
+            slides.forEach(function(slide, idx) {
+                slide.classList.toggle('is-active', idx === activeSlide);
+            });
+            dots.forEach(function(dot, idx) {
+                dot.classList.toggle('is-active', idx === activeSlide);
+            });
+        }
+
+        function stopAutoSlide() {
+            if (autoSlideTimer) {
+                clearInterval(autoSlideTimer);
+                autoSlideTimer = null;
+            }
+        }
+
+        function startAutoSlide() {
+            if (slides.length <= 1) return;
+            stopAutoSlide();
+            autoSlideTimer = window.setInterval(function() {
+                renderSlide(activeSlide + 1);
+            }, 4500);
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                renderSlide(activeSlide - 1);
+                startAutoSlide();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                renderSlide(activeSlide + 1);
+                startAutoSlide();
+            });
+        }
+
+        dots.forEach(function(dot) {
+            dot.addEventListener('click', function() {
+                var index = parseInt(dot.getAttribute('data-slide-to') || '0', 10);
+                if (!Number.isNaN(index)) {
+                    renderSlide(index);
+                    startAutoSlide();
+                }
+            });
+        });
+
         function openOverlay() {
             overlay.classList.add('is-open');
             overlay.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
+            startAutoSlide();
         }
 
         function closeOverlay() {
             overlay.classList.remove('is-open');
             overlay.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
+            stopAutoSlide();
         }
 
         trigger.addEventListener('click', openOverlay);

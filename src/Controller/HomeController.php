@@ -225,6 +225,8 @@ class HomeController extends AbstractController
             'evaluationCount' => $evaluationCount,
             'systemAnnouncementTitle' => $descRepo->getSystemAnnouncementTitle(),
             'systemAnnouncementBodyHtml' => $descRepo->getSystemAnnouncementBodyHtml(),
+            'systemAnnouncementImageUrl' => $descRepo->getSystemAnnouncementImageUrl(),
+            'systemAnnouncementImageUrls' => $descRepo->getSystemAnnouncementImageUrls(),
             'systemAnnouncementUpdatedBy' => $announcementMeta['updatedBy'] ?? '',
             'systemAnnouncementUpdatedAt' => $announcementMeta['updatedAt'] ?? '',
             'heroView' => $heroView,

@@ -10,15 +10,19 @@
 .eh-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
 
 .eh-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.eh-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
-.eh-chip-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; color: #fff; flex-shrink: 0; }
+.eh-chip { display: inline-flex; align-items: center; gap: .5rem; background: transparent; border: none; border-radius: 0; padding: 0; font-size: .82rem; color: #334155; font-weight: 500; }
+.eh-chip-icon { width: auto; height: auto; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: .9rem; color: #2563eb; flex-shrink: 0; background: transparent; }
 .eh-chip-val { font-weight: 700; }
 
 .eh-panel { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.04); overflow: hidden; margin-bottom: 1rem; }
 .eh-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .85rem 1.25rem; border-bottom: 1px solid #f1f5f9; background: #fafbfc; }
 .eh-panel-title { font-size: .85rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: .45rem; }
 .eh-panel-title i { color: #2563eb; font-size: .95rem; }
-.eh-panel-badge { font-size: .7rem; font-weight: 600; background: #eff6ff; color: #2563eb; padding: .2rem .55rem; border-radius: 50px; }
+.eh-panel-badge { font-size: .7rem; font-weight: 600; background: transparent; color: #2563eb; padding: 0; border-radius: 0; }
+
+/* Remove card-style background box for grouped history panels */
+.eh-panel[data-period] { background: transparent; border: none; box-shadow: none; border-radius: 0; overflow: visible; }
+.eh-panel[data-period] .eh-panel-head { background: transparent; border-bottom: none; padding: .3rem 0 .65rem; }
 
 .eh-search-wrap { position: relative; }
 .eh-search-wrap > i { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: #94a3b8; pointer-events: none; }
@@ -33,7 +37,7 @@
 .eh-item-avatar { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: .5px; }
 .eh-item-body { flex: 1; min-width: 0; }
 .eh-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.eh-item-code { display: inline-flex; align-items: center; gap: .25rem; background: #eff6ff; color: #1d4ed8; padding: .15rem .5rem; border-radius: 6px; font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
+.eh-item-code { display: inline-flex; align-items: center; gap: .25rem; background: transparent; color: #1d4ed8; padding: 0; border-radius: 0; font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
 .eh-item-name { font-weight: 600; font-size: .85rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eh-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
 .eh-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
@@ -45,7 +49,7 @@
 .eh-rating-poor { background: #fee2e2; color: #991b1b; }
 .eh-rating i { font-size: .7rem; }
 
-.eh-submitted-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .55rem; border-radius: 50px; font-size: .68rem; font-weight: 600; background: #dcfce7; color: #166534; flex-shrink: 0; }
+.eh-submitted-badge { display: inline-flex; align-items: center; gap: .3rem; padding: 0; border-radius: 0; font-size: .68rem; font-weight: 600; background: transparent; color: #166534; flex-shrink: 0; }
 
 /* Empty State */
 .eh-empty { text-align: center; padding: 4rem 2rem 3.5rem; }
@@ -91,7 +95,7 @@
 {% if history|length > 0 %}
 <div class="eh-chips">
     <div class="eh-chip">
-        <span class="eh-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i  class="bi bi-check2-all"></i></span>
+        <span class="eh-chip-icon"><i  class="bi bi-check2-all"></i></span>
         <span><span class="eh-chip-val">{{ history|length }}</span> Submitted</span>
     </div>
 
@@ -100,7 +104,9 @@
 {# ── Group by semester/school year ── #}
 {% set grouped = {} %}
 {% for item in history %}
-    {% set key = item.semester ~ ' — ' ~ item.schoolYear %}
+    {% set key = item.semester and item.schoolYear
+        ? item.semester ~ ' — ' ~ item.schoolYear
+        : (item.schoolYear ?: item.semester) %}
     {% set grouped = grouped|merge({ (key): (grouped[key] is defined ? grouped[key] : [])|merge([item]) }) %}
 {% endfor %}
 
