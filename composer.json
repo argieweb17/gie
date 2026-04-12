@@ -86,6 +86,7 @@
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
             "importmap:install": "symfony-cmd"
         },
+        "run:vercel": "npx vercel dev",
         "post-install-cmd": [
             "@auto-scripts"
         ],

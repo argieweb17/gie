@@ -67,3 +67,12 @@ reports, and correspondence ID tracking with saved PDF artifacts.
 - Correspondence records are available under Reports > Correspondence.
 - Saved correspondence PDFs are generated from print templates and stored in public/uploads/correspondence.
 - API routes are attribute-based and auto-loaded from src/Controller.
+
+## Run With Vercel (Local)
+
+- Install Node.js and Vercel CLI access (`npx` is used automatically).
+- Start Vercel dev mode from the project root:
+
+```bash
+composer run run:vercel
+```
