@@ -96,6 +96,24 @@ composer run deploy:vercel
 
 - Note: OCR features that rely on system Tesseract may not be available on Vercel serverless runtime.
 
+## Deploy Frontend Only To Vercel
+
+- Use this mode if you only want the static frontend entry page and static files, without running Symfony/PHP on Vercel.
+- A dedicated config is provided in [vercel.frontend.json](vercel.frontend.json).
+- Start frontend-only Vercel dev:
+
+```bash
+composer run run:vercel:frontend
+```
+
+- Deploy frontend-only to Vercel:
+
+```bash
+composer run deploy:vercel:frontend
+```
+
+- In frontend-only mode, all routes rewrite to [index.html](index.html), and `/assets`, `/images`, `/sounds`, `/uploads` are served from `public/`.
+
 ## Troubleshooting: Still Seeing The Static GitHub Pages Page
 
 - If the browser still shows the static entry page, your domain is still resolving to GitHub Pages and not Vercel.

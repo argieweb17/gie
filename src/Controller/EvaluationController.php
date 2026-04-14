@@ -294,6 +294,19 @@ class EvaluationController extends AbstractController
             return $normalizedCode;
         }
 
+        // Description-first recovery for rows where OCR misreads the code cell.
+        if (preg_match('/\bCAPSTONE\b.*\bPROJECT\b.*\b2\b/u', $desc)) {
+            return 'ITS 403';
+        }
+
+        if (preg_match('/\bSOCIAL\b.*\bPROFESSIONAL\b/u', $desc) && preg_match('/\bISSUES?\b/u', $desc)) {
+            return 'ITS 404';
+        }
+
+        if (preg_match('/\bMULTIMEDIA\b/u', $desc) && preg_match('/\bSYSTEMS?\b/u', $desc)) {
+            return 'ITS 405';
+        }
+
         // OCR can flip the last digit for BSIT capstone rows; description is a stronger signal.
         if ($normalizedCode === 'ITS 402' && preg_match('/\bCAPSTONE\b.*\bPROJECT\b.*\b2\b/u', $desc)) {
             return 'ITS 403';
@@ -729,6 +742,11 @@ class EvaluationController extends AbstractController
             return null;
         }
 
+        // Treat 00:xx OCR time fragments as invalid for class schedules.
+        if (((int) ($start['hour'] ?? -1)) === 0 || ((int) ($end['hour'] ?? -1)) === 0) {
+            return null;
+        }
+
         $hasMeridiem = ((string) ($start['meridiem'] ?? '')) !== '' || ((string) ($end['meridiem'] ?? '')) !== '';
         if ($hasMeridiem && ((int) ($start['hour'] ?? 0) > 12 || (int) ($end['hour'] ?? 0) > 12)) {
             return null;
@@ -1028,6 +1046,112 @@ class EvaluationController extends AbstractController
         $units = '';
         if (preg_match('/\b(\d+(?:\.\d+)?)\s*$/u', $lineUpper, $unitMatch)) {
             $units = trim((string) ($unitMatch[1] ?? ''));
+        }
+
+        // Rebuild row columns by position when OCR keeps columns but mangles spacing in the full line.
+        if (!empty($columns)) {
+            $codeColumnIdx = null;
+            foreach ($columns as $idx => $columnRaw) {
+                $columnCode = $this->normalizeSubjectCode((string) $columnRaw);
+                if ($columnCode !== '' && $this->subjectCodesAreCompatible($code, $columnCode)) {
+                    $codeColumnIdx = $idx;
+                    break;
+                }
+            }
+
+            if ($codeColumnIdx !== null) {
+                $scheduleByColumn = '';
+                $scheduleColumnIdx = null;
+                $scheduleColumnEndIdx = null;
+                for ($idx = $codeColumnIdx + 1; $idx < count($columns); $idx++) {
+                    $candidate = trim((string) ($columns[$idx] ?? ''));
+                    if ($candidate === '') {
+                        continue;
+                    }
+
+                    $columnSchedule = $this->extractScheduleFromText($candidate, $schedulePattern);
+                    if ($columnSchedule === '' && ($idx + 1) < count($columns)) {
+                        $joined = trim($candidate . ' ' . (string) ($columns[$idx + 1] ?? ''));
+                        $columnSchedule = $this->extractScheduleFromText($joined, $schedulePattern);
+                        if ($columnSchedule !== '') {
+                            $scheduleColumnEndIdx = $idx + 1;
+                        }
+                    }
+
+                    if ($columnSchedule !== '') {
+                        $scheduleByColumn = $columnSchedule;
+                        $scheduleColumnIdx = $idx;
+                        if ($scheduleColumnEndIdx === null) {
+                            $scheduleColumnEndIdx = $idx;
+                        }
+                        break;
+                    }
+                }
+
+                if ($schedule === '' && $scheduleByColumn !== '') {
+                    $schedule = $scheduleByColumn;
+                }
+
+                $sectionByColumn = '';
+                $sectionIdx = $codeColumnIdx + 1;
+                if (isset($columns[$sectionIdx])) {
+                    $sectionCandidate = $this->normalizeSectionTokenFromOcr((string) $columns[$sectionIdx], $code);
+                    if ($this->isLikelySectionToken($sectionCandidate, $code)) {
+                        $sectionByColumn = $sectionCandidate;
+                    }
+                }
+                if ($section === '' && $sectionByColumn !== '') {
+                    $section = $sectionByColumn;
+                    $sectionSource = 'column_positional';
+                }
+
+                $unitsByColumn = '';
+                if ($scheduleColumnEndIdx !== null) {
+                    for ($idx = count($columns) - 1; $idx > $scheduleColumnEndIdx; $idx--) {
+                        $tail = trim((string) ($columns[$idx] ?? ''));
+                        if ($tail === '') {
+                            continue;
+                        }
+                        if (preg_match('/^\d+(?:\.\d+)?$/u', $tail) && (float) $tail <= 10.0) {
+                            $unitsByColumn = $tail;
+                            break;
+                        }
+                    }
+                }
+                if ($units === '' && $unitsByColumn !== '') {
+                    $units = $unitsByColumn;
+                }
+
+                $descriptionByColumn = '';
+                if ($scheduleColumnIdx !== null) {
+                    $descStart = $codeColumnIdx + 1;
+                    if ($sectionByColumn !== '' && $sectionIdx === $descStart) {
+                        $descStart++;
+                    }
+
+                    $descEnd = $scheduleColumnIdx - 1;
+                    if ($descEnd >= $descStart) {
+                        $descParts = [];
+                        for ($idx = $descStart; $idx <= $descEnd; $idx++) {
+                            $part = trim((string) ($columns[$idx] ?? ''));
+                            if ($part !== '') {
+                                $descParts[] = $part;
+                            }
+                        }
+                        $descriptionByColumn = trim(implode(' ', $descParts));
+                    }
+                }
+
+                if ($descriptionByColumn !== '') {
+                    if ($left === '') {
+                        $left = $descriptionByColumn;
+                        $descriptionSource = 'column_positional';
+                    } elseif (mb_strlen($left) < 8 && mb_strlen($descriptionByColumn) > mb_strlen($left)) {
+                        $left = $descriptionByColumn;
+                        $descriptionSource = 'column_positional_override';
+                    }
+                }
+            }
         }
 
         $normalizedSection = $this->normalizeSectionValue($section);
@@ -3204,6 +3328,17 @@ class EvaluationController extends AbstractController
 
             $normalizedSection = $this->normalizeSectionValue($section);
             $normalizedSchedule = $this->normalizeScheduleValue($schedule);
+
+            // Low-confidence OCR row: keep only when there is enough context besides a weak code/schedule pair.
+            if (!$strictOcrCode && $normalizedSection === '' && $description === '') {
+                $parsedSchedule = $this->parseNormalizedScheduleToken($normalizedSchedule);
+                $scheduleHasDay = trim((string) ($parsedSchedule['day'] ?? '')) !== '';
+                if (!$scheduleHasDay) {
+                    $traceDecision(false, 'weak_row_without_context');
+                    return false;
+                }
+            }
+
             $codeScheduleKey = $code . '|' . $normalizedSchedule;
             if (isset($rowIndexByCodeSchedule[$codeScheduleKey])) {
                 $existingIndex = (int) $rowIndexByCodeSchedule[$codeScheduleKey];
