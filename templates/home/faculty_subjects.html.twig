@@ -38,8 +38,8 @@
 .sb-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
 .sb-toolbar-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
 .sb-selected-count{font-size:.75rem;color:#6b7280;font-weight:600;padding:6px 14px;background:#f1f5f9;border-radius:8px;white-space:nowrap;}
-.sb-save-btn{display:inline-flex;align-items:center;gap:4px;padding:7px 18px;border-radius:8px;border:none;font-size:.78rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#059669,#10b981);cursor:pointer;transition:all .2s ease;box-shadow:0 2px 8px rgba(16,185,129,.25);white-space:nowrap;}
-.sb-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.35);background:linear-gradient(135deg,#047857,#059669);}
+.sb-save-btn{display:inline-flex;align-items:center;gap:4px;padding:7px 18px;border-radius:8px;border:none;font-size:.78rem;font-weight:700;color:#fff;background:#1E40AF;cursor:pointer;transition:all .2s ease;box-shadow:0 2px 8px rgba(30,64,175,.25);white-space:nowrap;}
+.sb-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(30,64,175,.35);background:#1E3A8A;}
 
 /* ─── Table Wrap ─── */
 .sb-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
@@ -50,14 +50,12 @@
 .sb-dept-header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#f8fafc;cursor:pointer;transition:all .15s ease;user-select:none;}
 .sb-dept-header:hover{background:#f1f5f9;}
 .sb-dept-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
-.sb-dept-icon{width:36px;height:36px;min-width:36px;border-radius:9px;background:linear-gradient(135deg,#1E3A8A,#1E40AF);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;box-shadow:0 2px 6px rgba(30,58,138,.18);}
+.sb-dept-icon{width:auto;height:auto;min-width:0;background:transparent;color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;box-shadow:none;}
 .sb-dept-info{display:flex;flex-direction:column;min-width:0;flex:1;}
 .sb-dept-name{font-size:.88rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sb-dept-meta{font-size:.68rem;color:#94a3b8;font-weight:500;}
 .sb-dept-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.sb-dept-link{width:30px;height:30px;border-radius:7px;background:rgba(30,64,175,.06);border:1px solid rgba(30,64,175,.12);color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:.7rem;text-decoration:none;transition:all .15s ease;opacity:.6;}
-.sb-dept-link:hover{background:#1E40AF;color:#fff;opacity:1;box-shadow:0 2px 8px rgba(30,64,175,.2);}
-.sb-dept-count{font-size:.72rem;font-weight:700;padding:4px 14px;border-radius:20px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);color:#1E40AF;border:1px solid #BFDBFE;}
+.sb-dept-count{font-size:.72rem;font-weight:700;padding:0;border-radius:0;background:transparent;color:#1E40AF;border:none;}
 .sb-dept-chevron{font-size:.7rem;color:#94a3b8;transition:transform .25s ease;}
 .sb-dept-chevron.open{transform:rotate(180deg);}
 .sb-dept-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
@@ -88,20 +86,20 @@
 /* Code cell */
 .sb-code-cell{display:flex;align-items:center;gap:10px;}
 .sb-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
-.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 /* Name */
 .sb-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
 
 /* Pills */
-.sb-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.sb-pill-sem{background:#ecfdf5;color:#059669;}
+.sb-pill{display:inline-flex;align-items:center;padding:0;border-radius:0;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.sb-pill-sem{background:transparent;color:#059669;}
 
 /* Text helpers */
 .sb-empty{color:#cbd5e1;font-size:.78rem;}
 
 /* Units badge */
-.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;border-radius:8px;background:#fef3c7;color:#b45309;font-weight:800;font-size:.78rem;padding:0 6px;}
+.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#b45309;font-weight:800;font-size:.78rem;padding:0;}
 
 /* Inline inputs for section/schedule */
 .sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;}
@@ -113,24 +111,24 @@
 .sb-td-schedule{width:180px;}
 
 /* Status badges */
-.sb-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;}
-.sb-status-badge.available{background:#F1F5F9;color:#94a3b8;}
+.sb-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;padding:0;border-radius:0;white-space:nowrap;}
+.sb-status-badge.available{background:transparent;color:#94a3b8;}
 .sb-status-badge.available i{font-size:.4rem;}
-.sb-status-badge.loaded{background:#ECFDF5;color:#059669;}
+.sb-status-badge.loaded{background:transparent;color:#059669;}
 .sb-status-badge.loaded i{font-size:.4rem;}
 
 /* Row states */
 .sb-row.is-loaded{background:#f0fdf4;}
 .sb-row.is-loaded:hover{background:#dcfce7;}
 .sb-row.is-loaded .sb-code-avatar{background:linear-gradient(135deg,#a7f3d0,#6ee7b7);color:#065f46;}
-.sb-row.is-loaded .sb-code-text{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}
+.sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#065f46;}
 
 /* Action buttons */
 .sb-action-btns{display:flex;gap:4px;justify-content:center;align-items:center;}
-.sb-btn-pick{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:.62rem;font-weight:700;color:#059669;background:#f0fdf4;cursor:pointer;transition:all .15s ease;white-space:nowrap;}
-.sb-btn-pick:hover{background:#059669;color:#fff;border-color:#059669;box-shadow:0 2px 6px rgba(5,150,105,.25);}
-.sb-btn-unload{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:6px;border:1px solid #fecaca;font-size:.62rem;font-weight:700;color:#dc2626;background:#fef2f2;cursor:pointer;transition:all .15s ease;white-space:nowrap;}
-.sb-btn-unload:hover{background:#dc2626;color:#fff;border-color:#dc2626;box-shadow:0 2px 6px rgba(220,38,38,.25);}
+.sb-btn-pick{display:inline-flex;align-items:center;gap:3px;padding:0;border:none;font-size:.66rem;font-weight:700;color:#059669;background:transparent;cursor:pointer;transition:color .15s ease;white-space:nowrap;appearance:none;}
+.sb-btn-pick:hover{background:transparent;color:#047857;border:none;box-shadow:none;text-decoration:underline;}
+.sb-btn-unload{display:inline-flex;align-items:center;gap:3px;padding:0;border:none;font-size:.66rem;font-weight:700;color:#dc2626;background:transparent;cursor:pointer;transition:color .15s ease;white-space:nowrap;appearance:none;}
+.sb-btn-unload:hover{background:transparent;color:#b91c1c;border:none;box-shadow:none;text-decoration:underline;}
 
 /* Extra section rows */
 .sb-extra-section{border-left:3px solid #10b981!important;}
@@ -173,7 +171,7 @@
 }
 
 /* Animations — only play on initial load, not Turbo cache restore */
-.sb-animate .sb-header,.sb-animate .sb-toolbar,.sb-animate .sb-table-wrap{animation:sbFadeIn .2s ease both;}
+.sb-animate .sb-toolbar,.sb-animate .sb-table-wrap{animation:sbFadeIn .2s ease both;}
 @keyframes sbFadeIn{from{opacity:0.6;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 .sb-animate .sb-row{animation:sbRowIn .15s ease both;}
 @keyframes sbRowIn{from{opacity:0.7;transform:translateX(-4px);}to{opacity:1;transform:translateX(0);}}
@@ -182,58 +180,6 @@
 
 {% block body %}
 <div class="sb-animate">
-{# ═══════════════════════════════════════
-   COMPUTE STATS
-   ═══════════════════════════════════════ #}
-{% set totalSubjects = 0 %}
-{% set totalDepts = 0 %}
-{% for dept in deptGroups %}
-    {% if dept.subjects|length > 0 %}
-        {% set totalDepts = totalDepts + 1 %}
-        {% set totalSubjects = totalSubjects + dept.subjects|length %}
-    {% endif %}
-{% endfor %}
-
-{# ═══════════════════════════════════════
-   PROFESSIONAL HEADER
-   ═══════════════════════════════════════ #}
-<div class="sb-header">
-    <div class="sb-header-inner">
-        <div class="sb-header-top">
-            <div class="sb-header-left">
-                <div class="sb-header-icon">
-                    <i class="bi bi-book-half"></i>
-                </div>
-                <div class="sb-header-content">
-                    <h4>Subject Load</h4>
-                    <div class="sb-header-meta">
-                        <span class="sb-meta-pill"><i class="bi bi-collection me-1"></i>{{ totalSubjects }} Subject{{ totalSubjects != 1 ? 's' : '' }}</span>
-                        {% if selectedSemester %}
-                            <span class="sb-meta-pill sb-meta-filter"><i class="bi bi-funnel-fill me-1"></i>{{ selectedSemester }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="sb-stats-row">
-            <div class="sb-stat">
-                <span class="sb-stat-val">{{ totalSubjects }}</span>
-                <span class="sb-stat-lbl">Total Subjects</span>
-            </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
-                <span class="sb-stat-val sb-val-success">{{ loadedSubjectIds|length }}</span>
-                <span class="sb-stat-lbl">Loaded</span>
-            </div>
-            <div class="sb-stat-divider"></div>
-            <div class="sb-stat">
-                <span class="sb-stat-val">{{ totalDepts }}</span>
-                <span class="sb-stat-lbl">Departments</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 {# ═══════════════════════════════════════
    FILTER / SEARCH BAR
    ═══════════════════════════════════════ #}
@@ -303,7 +249,7 @@
         <div class="sb-dept-header" data-dept="{{ dept.id }}" role="button" style="cursor: pointer;" onclick="toggleDept({{ dept.id }});">
             <div class="sb-dept-header-left">
                 <div class="sb-dept-icon">
-                    <i class="bi bi-building"></i>
+                    <i class="bi bi-buildings"></i>
                 </div>
                 <div class="sb-dept-info">
                     <span class="sb-dept-name">{{ dept.name }}</span>
@@ -311,10 +257,6 @@
                 </div>
             </div>
             <div class="sb-dept-header-right">
-                <a href="{{ path('faculty_department_detail', {deptId: dept.id}) }}{% if selectedSemester %}?semester={{ selectedSemester|url_encode }}{% endif %}"
-                   class="sb-dept-link" onclick="event.stopPropagation();" title="View department details">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                </a>
                 <span class="sb-dept-count">{{ dept.subjects|length }}</span>
                 <i class="bi bi-chevron-down sb-dept-chevron {% if activeDeptId == dept.id %}open{% endif %}"></i>
             </div>
@@ -419,9 +361,6 @@
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section">
                                         <i class="bi bi-plus-circle"></i> Pick
                                     </button>
-                                    <button type="button" class="sb-btn-unload" onclick="unloadSubject({{ subject.id }}, '{{ subject.subjectCode|e('js') }}')">
-                                        <i class="bi bi-x-circle"></i> Unload
-                                    </button>
                                 {% else %}
                                     <button type="button" class="sb-btn-pick" onclick="quickLoadSubject({{ subject.id }})">
                                         <i class="bi bi-plus-circle"></i> Pick
@@ -451,7 +390,7 @@
                             <td class="sb-td-sem"><span class="sb-empty">—</span></td>
                             <td class="sb-td-units"><span class="sb-empty">—</span></td>
                             <td class="sb-td-section">
-                                <span class="sb-pill" style="background:#ecfdf5;color:#059669;">{{ fslEntry.section ?? '—' }}</span>
+                                <span class="sb-pill" style="color:#059669;">{{ fslEntry.section ?? '—' }}</span>
                             </td>
                             <td class="sb-td-schedule">
                                 <span style="font-size:.72rem;color:#475569;">{{ fslEntry.schedule ?? '—' }}</span>
@@ -1274,14 +1213,8 @@ window.updateQRButtonsForLoadedSubjects = function() {
 
         let actionsHtml = '';
 
-        // Add QR button if there's an active evaluation
-        if (evalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + escapeHtmlAttr(subjectCode) + '" data-subject-name="' + escapeHtmlAttr(subjectName) + '" data-section="' + escapeHtmlAttr(section) + '" data-schedule="' + escapeHtmlAttr(schedule) + '" data-eval-id="' + evalId + '" data-eval-type="SET" data-faculty="' + escapeHtmlAttr(evalData.faculty || '') + '" data-school-year="' + escapeHtmlAttr(evalData.schoolYear || evalData.name || '') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-        }
-
         // Add other action buttons
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + subjectName.replace(/'/g,"\\'") + '\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
-        actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
 
         actionCell.innerHTML = actionsHtml;
     });
