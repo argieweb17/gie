@@ -530,12 +530,6 @@
         </div>
         {% if not isSefView %}
         {% if selectedEvaluation %}
-        <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
-            <i  class="bi bi-printer me-1"></i>Print
-        </button>
-        <a href="{{ path(prefix ~ '_results_export', {evaluation: selectedEvaluation, department: selectedDepartment}) }}" class="btn btn-sm rs-btn-white">
-            <i  class="bi bi-file-earmark-arrow-down me-1"></i>Export CSV
-        </a>
         {% endif %}
         {% endif %}
     </div>

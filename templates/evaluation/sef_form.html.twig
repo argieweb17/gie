@@ -31,8 +31,14 @@
     </div>
 
     <div class="eval-form-instructions">
-        <strong>Instructions:</strong> Rate each item using the scale:
-        <strong>5</strong> – Always manifested &nbsp; <strong>4</strong> – Often manifested &nbsp; <strong>3</strong> – Sometimes manifested &nbsp; <strong>2</strong> – Seldom manifested &nbsp; <strong>1</strong> – Never/Rarely manifested
+        <div><strong>Instructions:</strong> Rate each item using the scale:</div>
+        <div class="eval-form-scale">
+            <div><strong>5</strong> – Always manifested</div>
+            <div><strong>4</strong> – Often manifested</div>
+            <div><strong>3</strong> – Sometimes manifested</div>
+            <div><strong>2</strong> – Seldom manifested</div>
+            <div><strong>1</strong> – Never/Rarely manifested</div>
+        </div>
     </div>
 
     {% set currentCategory = '' %}
@@ -56,11 +62,11 @@
                         <th class="eval-form-num">#</th>
                         <th class="eval-form-question">Question</th>
                         <th class="eval-form-evidence">Means of Verification</th>
-                        <th class="eval-form-rating">1<br><small>Never</small></th>
-                        <th class="eval-form-rating">2<br><small>Seldom</small></th>
-                        <th class="eval-form-rating">3<br><small>Sometimes</small></th>
-                        <th class="eval-form-rating">4<br><small>Often</small></th>
-                        <th class="eval-form-rating">5<br><small>Always</small></th>
+                        <th class="eval-form-rating">1<br><small>Never/Rarely manifested</small></th>
+                        <th class="eval-form-rating">2<br><small>Seldom manifested</small></th>
+                        <th class="eval-form-rating">3<br><small>Sometimes manifested</small></th>
+                        <th class="eval-form-rating">4<br><small>Often manifested</small></th>
+                        <th class="eval-form-rating">5<br><small>Always manifested</small></th>
                     </tr>
                 </thead>
                 <tbody>

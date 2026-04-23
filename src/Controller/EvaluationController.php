@@ -3968,20 +3968,38 @@ class EvaluationController extends AbstractController
         $questions = $questionRepo->findByType('SET');
         $error = null;
         $success = false;
+        $session = $request->getSession();
         $verificationSessionKey = sprintf(
             'qr_verified_student_%d_%d_%s',
             $eval->getId(),
             $subject->getId(),
             strtoupper($finalSection !== '' ? $finalSection : 'NA')
         );
+        $privacySessionKeyFor = static function (int $studentId) use ($eval, $subject, $finalSection): string {
+            return sprintf(
+                'qr_privacy_consent_%d_%d_%s_%d',
+                $eval->getId(),
+                $subject->getId(),
+                strtoupper($finalSection !== '' ? $finalSection : 'NA'),
+                $studentId
+            );
+        };
 
-        $verifiedStudentId = (int) $request->getSession()->get($verificationSessionKey, 0);
+        $verifiedStudentId = (int) $session->get($verificationSessionKey, 0);
         $verifiedStudent = $verifiedStudentId > 0 ? $userRepo->find($verifiedStudentId) : null;
+        $privacyConsentChoice = '';
         if ($verifiedStudent && !$verifiedStudent->isStudent()) {
             $verifiedStudent = null;
-            $request->getSession()->remove($verificationSessionKey);
+            $session->remove($verificationSessionKey);
+            $session->remove($privacySessionKeyFor($verifiedStudentId));
         }
         if ($verifiedStudent) {
+            $privacyConsentChoice = trim((string) $session->get($privacySessionKeyFor($verifiedStudent->getId()), ''));
+            if ($privacyConsentChoice !== 'agree') {
+                $session->remove($privacySessionKeyFor($verifiedStudent->getId()));
+                $privacyConsentChoice = '';
+            }
+
             $stillVerified = $this->isLoadslipVerifiedForStudent($request, (string) $verifiedStudent->getSchoolId())
                 && $this->qrLoadslipRowMatches(
                     $request,
@@ -3992,8 +4010,10 @@ class EvaluationController extends AbstractController
                     (string) ($subject->getSubjectName() ?? '')
                 );
             if (!$stillVerified) {
+                $session->remove($privacySessionKeyFor($verifiedStudent->getId()));
                 $verifiedStudent = null;
-                $request->getSession()->remove($verificationSessionKey);
+                $privacyConsentChoice = '';
+                $session->remove($verificationSessionKey);
                 $error = 'Loadslip verification is required before entering the form.';
             }
         }
@@ -4036,16 +4056,32 @@ class EvaluationController extends AbstractController
                         } elseif (!$this->qrLoadslipRowMatches($request, $schoolId, (string) $subject->getSubjectCode(), $finalSection !== '' ? $finalSection : null, $schedule !== '' ? $schedule : null, (string) ($subject->getSubjectName() ?? ''))) {
                             $error = 'Loadslip details do not match this QR evaluation (subject code, section, schedule, or description).';
                         } else {
-                            $request->getSession()->set($verificationSessionKey, $student->getId());
+                            $session->set($verificationSessionKey, $student->getId());
+                            $session->remove($privacySessionKeyFor($student->getId()));
                             $verifiedStudent = $student;
+                            $privacyConsentChoice = '';
                         }
                     }
                 }
-            } elseif ($action === 'submit') {
+            } elseif ($action === 'privacy_gate') {
                 if (!$verifiedStudent) {
                     $error = 'Please verify your Student ID first.';
                 } elseif (!in_array($privacyConsent, ['agree', 'disagree'], true)) {
                     $error = 'Please select Agree or Disagree for the Data Privacy Disclaimer.';
+                } elseif ($privacyConsent !== 'agree') {
+                    $session->remove($verificationSessionKey);
+                    $session->remove($privacySessionKeyFor($verifiedStudent->getId()));
+                    $verifiedStudent = null;
+                    $privacyConsentChoice = '';
+                } else {
+                    $privacyConsentChoice = $privacyConsent;
+                    $session->set($privacySessionKeyFor($verifiedStudent->getId()), $privacyConsentChoice);
+                }
+            } elseif ($action === 'submit') {
+                if (!$verifiedStudent) {
+                    $error = 'Please verify your Student ID first.';
+                } elseif ($privacyConsentChoice !== 'agree') {
+                    $error = 'You must agree to the Data Privacy Disclaimer before continuing.';
                 } elseif (!$this->isLoadslipVerifiedForStudent($request, (string) $verifiedStudent->getSchoolId())) {
                     $error = 'Loadslip verification expired or missing. Please import and verify your loadslip again.';
                 } elseif (!$this->qrLoadslipRowMatches($request, (string) $verifiedStudent->getSchoolId(), (string) $subject->getSubjectCode(), $finalSection !== '' ? $finalSection : null, $schedule !== '' ? $schedule : null, (string) ($subject->getSubjectName() ?? ''))) {
@@ -4128,10 +4164,11 @@ class EvaluationController extends AbstractController
             'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
             'verifiedStudent' => $verifiedStudent,
             'qrVerified' => $verifiedStudent !== null,
+            'qrPrivacyConsentCaptured' => $privacyConsentChoice === 'agree',
             'qrLoadslipRows' => $qrLoadslipRows,
             'formValues' => [
                 'school_id' => (string) $request->request->get('school_id', ''),
-                'privacy_consent' => (string) $request->request->get('privacy_consent', ''),
+                'privacy_consent' => $privacyConsentChoice !== '' ? $privacyConsentChoice : (string) $request->request->get('privacy_consent', ''),
             ],
             'error' => $error,
             'success' => $success,
@@ -4506,117 +4543,100 @@ class EvaluationController extends AbstractController
         if (!empty($codes)) {
             $curriculumCodeMap = $this->getCurriculumSubjectCodeMapForUser($student, $curriculumRepo);
             $knownCodeByCompact = $this->buildKnownSubjectCodeByCompact($subjectRepo, $curriculumCodeMap);
-            $parsedRowCountBeforeResolution = count($parsedRows);
 
             if (is_array($ocrDebugData)) {
                 $ocrDebugData['importTrace']['curriculumCodeCount'] = count($curriculumCodeMap);
                 $ocrDebugData['importTrace']['curriculumFilterApplied'] = !empty($curriculumCodeMap);
             }
 
-            $resolveImportedLoadslipData = function (array $candidateCodes, array $candidateRows, bool $restrictToCurriculum) use ($curriculumCodeMap, $knownCodeByCompact): array {
-                $applyCurriculumFilter = $restrictToCurriculum && !empty($curriculumCodeMap);
+            $codeResolutionTrace = [];
+            $resolvedCodeMap = [];
+            foreach ($codes as $candidateCode) {
+                $normalizedCandidateCode = $this->normalizeSubjectCode((string) $candidateCode);
+                $resolvedCode = $this->resolveToKnownSubjectCode((string) $candidateCode, $knownCodeByCompact);
+                if ($resolvedCode === '') {
+                    $codeResolutionTrace[] = [
+                        'input' => $normalizedCandidateCode,
+                        'resolved' => '',
+                        'status' => 'dropped_unknown_code',
+                    ];
+                    continue;
+                }
 
-                $codeResolutionTrace = [];
-                $resolvedCodeMap = [];
-                foreach ($candidateCodes as $candidateCode) {
-                    $normalizedCandidateCode = $this->normalizeSubjectCode((string) $candidateCode);
-                    $resolvedCode = $this->resolveToKnownSubjectCode((string) $candidateCode, $knownCodeByCompact);
-                    if ($resolvedCode === '') {
-                        $codeResolutionTrace[] = [
-                            'input' => $normalizedCandidateCode,
-                            'resolved' => '',
-                            'status' => 'dropped_unknown_code',
-                        ];
-                        continue;
-                    }
-
-                    if ($applyCurriculumFilter && !isset($curriculumCodeMap[$resolvedCode])) {
-                        $codeResolutionTrace[] = [
-                            'input' => $normalizedCandidateCode,
-                            'resolved' => $resolvedCode,
-                            'status' => 'dropped_not_in_curriculum',
-                        ];
-                        continue;
-                    }
-
+                if (!empty($curriculumCodeMap) && !isset($curriculumCodeMap[$resolvedCode])) {
                     $codeResolutionTrace[] = [
                         'input' => $normalizedCandidateCode,
                         'resolved' => $resolvedCode,
-                        'status' => $resolvedCode === $normalizedCandidateCode ? 'exact' : 'fuzzy',
+                        'status' => 'dropped_not_in_curriculum',
                     ];
-                    $resolvedCodeMap[$resolvedCode] = true;
+                    continue;
                 }
 
-                $rowResolutionTrace = [];
-                $resolvedRows = [];
-                $resolvedRowKeys = [];
-                foreach ($candidateRows as $row) {
-                    if (!is_array($row)) {
-                        continue;
-                    }
+                $codeResolutionTrace[] = [
+                    'input' => $normalizedCandidateCode,
+                    'resolved' => $resolvedCode,
+                    'status' => $resolvedCode === $normalizedCandidateCode ? 'exact' : 'fuzzy',
+                ];
+                $resolvedCodeMap[$resolvedCode] = true;
+            }
+            $codes = array_keys($resolvedCodeMap);
 
-                    $inputCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
-                    $inputSection = trim((string) ($row['section'] ?? ''));
-                    $inputDescription = trim((string) ($row['description'] ?? ''));
-                    $inputSchedule = trim((string) ($row['schedule'] ?? ''));
-                    $inputUnits = trim((string) ($row['units'] ?? ''));
-                    $resolvedCode = $this->resolveToKnownSubjectCode((string) ($row['code'] ?? ''), $knownCodeByCompact);
-                    $resolvedCode = $this->applyLoadslipSubjectCodeDescriptionHeuristic($resolvedCode, $inputDescription);
-                    if ($resolvedCode === '') {
-                        $rowResolutionTrace[] = [
-                            'inputCode' => $inputCode,
-                            'resolvedCode' => '',
-                            'section' => $inputSection,
-                            'description' => $inputDescription,
-                            'schedule' => $inputSchedule,
-                            'units' => $inputUnits,
-                            'status' => 'dropped_unknown_code',
-                        ];
-                        continue;
-                    }
+            $rowResolutionTrace = [];
+            $resolvedRows = [];
+            $resolvedRowKeys = [];
+            foreach ($parsedRows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
 
-                    if ($applyCurriculumFilter && !isset($curriculumCodeMap[$resolvedCode])) {
-                        $rowResolutionTrace[] = [
-                            'inputCode' => $inputCode,
-                            'resolvedCode' => $resolvedCode,
-                            'section' => $inputSection,
-                            'description' => $inputDescription,
-                            'schedule' => $inputSchedule,
-                            'units' => $inputUnits,
-                            'status' => 'dropped_not_in_curriculum',
-                        ];
-                        continue;
-                    }
-
-                    $resolvedRow = [
-                        'code' => $resolvedCode,
-                        'section' => trim((string) ($row['section'] ?? '')),
-                        'description' => $this->normalizeLoadslipDescription(
-                            (string) ($row['description'] ?? ''),
-                            $resolvedCode
-                        ),
-                        'schedule' => trim((string) ($row['schedule'] ?? '')),
-                        'units' => trim((string) ($row['units'] ?? '')),
+                $inputCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+                $inputSection = trim((string) ($row['section'] ?? ''));
+                $inputDescription = trim((string) ($row['description'] ?? ''));
+                $inputSchedule = trim((string) ($row['schedule'] ?? ''));
+                $inputUnits = trim((string) ($row['units'] ?? ''));
+                $resolvedCode = $this->resolveToKnownSubjectCode((string) ($row['code'] ?? ''), $knownCodeByCompact);
+                $resolvedCode = $this->applyLoadslipSubjectCodeDescriptionHeuristic($resolvedCode, $inputDescription);
+                if ($resolvedCode === '') {
+                    $rowResolutionTrace[] = [
+                        'inputCode' => $inputCode,
+                        'resolvedCode' => '',
+                        'section' => $inputSection,
+                        'description' => $inputDescription,
+                        'schedule' => $inputSchedule,
+                        'units' => $inputUnits,
+                        'status' => 'dropped_unknown_code',
                     ];
+                    continue;
+                }
 
-                    $key = $resolvedRow['code']
-                        . '|' . $this->normalizeSectionValue($resolvedRow['section'])
-                        . '|' . $this->normalizeScheduleValue($resolvedRow['schedule']);
-                    if (isset($resolvedRowKeys[$key])) {
-                        $rowResolutionTrace[] = [
-                            'inputCode' => $inputCode,
-                            'resolvedCode' => $resolvedCode,
-                            'section' => $resolvedRow['section'],
-                            'description' => $resolvedRow['description'],
-                            'schedule' => $resolvedRow['schedule'],
-                            'units' => $resolvedRow['units'],
-                            'status' => 'dropped_duplicate',
-                        ];
-                        continue;
-                    }
+                if (!empty($curriculumCodeMap) && !isset($curriculumCodeMap[$resolvedCode])) {
+                    $rowResolutionTrace[] = [
+                        'inputCode' => $inputCode,
+                        'resolvedCode' => $resolvedCode,
+                        'section' => $inputSection,
+                        'description' => $inputDescription,
+                        'schedule' => $inputSchedule,
+                        'units' => $inputUnits,
+                        'status' => 'dropped_not_in_curriculum',
+                    ];
+                    continue;
+                }
 
-                    $resolvedRowKeys[$key] = true;
-                    $resolvedRows[] = $resolvedRow;
+                $resolvedRow = [
+                    'code' => $resolvedCode,
+                    'section' => trim((string) ($row['section'] ?? '')),
+                    'description' => $this->normalizeLoadslipDescription(
+                        (string) ($row['description'] ?? ''),
+                        $resolvedCode
+                    ),
+                    'schedule' => trim((string) ($row['schedule'] ?? '')),
+                    'units' => trim((string) ($row['units'] ?? '')),
+                ];
+
+                $key = $resolvedRow['code']
+                    . '|' . $this->normalizeSectionValue($resolvedRow['section'])
+                    . '|' . $this->normalizeScheduleValue($resolvedRow['schedule']);
+                if (isset($resolvedRowKeys[$key])) {
                     $rowResolutionTrace[] = [
                         'inputCode' => $inputCode,
                         'resolvedCode' => $resolvedCode,
@@ -4624,57 +4644,40 @@ class EvaluationController extends AbstractController
                         'description' => $resolvedRow['description'],
                         'schedule' => $resolvedRow['schedule'],
                         'units' => $resolvedRow['units'],
-                        'status' => $resolvedCode === $inputCode ? 'exact' : 'fuzzy',
+                        'status' => 'dropped_duplicate',
                     ];
+                    continue;
                 }
 
-                $readableRowCount = 0;
-                foreach ($resolvedRows as $row) {
-                    if (!is_array($row)) {
-                        continue;
-                    }
-
-                    $rowCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
-                    $rowSchedule = trim((string) ($row['schedule'] ?? ''));
-                    if ($rowCode !== '' && $rowSchedule !== '') {
-                        $readableRowCount++;
-                    }
-                }
-
-                return [
-                    'codes' => array_keys($resolvedCodeMap),
-                    'rows' => $resolvedRows,
-                    'codeResolutionTrace' => $codeResolutionTrace,
-                    'rowResolutionTrace' => $rowResolutionTrace,
-                    'readableRowCount' => $readableRowCount,
-                    'curriculumRestricted' => $applyCurriculumFilter,
+                $resolvedRowKeys[$key] = true;
+                $resolvedRows[] = $resolvedRow;
+                $rowResolutionTrace[] = [
+                    'inputCode' => $inputCode,
+                    'resolvedCode' => $resolvedCode,
+                    'section' => $resolvedRow['section'],
+                    'description' => $resolvedRow['description'],
+                    'schedule' => $resolvedRow['schedule'],
+                    'units' => $resolvedRow['units'],
+                    'status' => $resolvedCode === $inputCode ? 'exact' : 'fuzzy',
                 ];
-            };
+            }
+            $parsedRows = $resolvedRows;
 
-            $resolutionResult = $resolveImportedLoadslipData($codes, $parsedRows, true);
-            if (!empty($curriculumCodeMap) && (int) ($resolutionResult['readableRowCount'] ?? 0) === 0) {
-                $fallbackResolutionResult = $resolveImportedLoadslipData($codes, $parsedRows, false);
-                $fallbackHasRows = (int) ($fallbackResolutionResult['readableRowCount'] ?? 0) > 0;
-                $fallbackHasCodes = !empty($fallbackResolutionResult['codes'] ?? []);
-                if ($fallbackHasRows || $fallbackHasCodes) {
-                    $resolutionResult = $fallbackResolutionResult;
-                    if (is_array($ocrDebugData)) {
-                        $ocrDebugData['importTrace']['curriculumFallbackUsed'] = true;
-                        $ocrDebugData['importTrace']['curriculumFallbackReason'] = 'strict_curriculum_filter_removed_all_readable_rows';
-                    }
+            $readableRowCount = 0;
+            foreach ($parsedRows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $rowCode = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+                $rowSchedule = trim((string) ($row['schedule'] ?? ''));
+                if ($rowCode !== '' && $rowSchedule !== '') {
+                    $readableRowCount++;
                 }
             }
 
-            $codes = (array) ($resolutionResult['codes'] ?? []);
-            $parsedRows = (array) ($resolutionResult['rows'] ?? []);
-            $codeResolutionTrace = (array) ($resolutionResult['codeResolutionTrace'] ?? []);
-            $rowResolutionTrace = (array) ($resolutionResult['rowResolutionTrace'] ?? []);
-            $readableRowCount = (int) ($resolutionResult['readableRowCount'] ?? 0);
-
             if ($canStoreOcrDebug && is_array($ocrDebugData)) {
                 $ocrDebugData['importTrace']['readableRowCount'] = $readableRowCount;
-                $ocrDebugData['importTrace']['parsedRowCountBeforeResolution'] = $parsedRowCountBeforeResolution;
-                $ocrDebugData['importTrace']['curriculumResolutionRestricted'] = (bool) ($resolutionResult['curriculumRestricted'] ?? false);
             }
 
             if ($readableRowCount === 0) {
@@ -4689,12 +4692,7 @@ class EvaluationController extends AbstractController
                     $request->getSession()->set('student_loadslip_ocr_debug', $ocrDebugData);
                 }
 
-                $warningMessage = 'Image text is not readable enough for OCR. Import was stopped. Please upload a clearer JPG or PNG loadslip.';
-                if ($parsedRowCountBeforeResolution > 0) {
-                    $warningMessage = 'Loadslip text was detected, but the parsed subjects could not be matched to the current subject data. Please try again, and contact support if the problem persists on deployment.';
-                }
-
-                $this->addFlash('warning', $warningMessage);
+                $this->addFlash('warning', 'Image text is not readable enough for OCR. Import was stopped. Please upload a clearer JPG or PNG loadslip.');
                 return $this->redirectToRoute('evaluation_set_index');
             }
 

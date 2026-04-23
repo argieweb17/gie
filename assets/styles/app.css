@@ -3386,7 +3386,7 @@ html { scroll-behavior: smooth; }
 .eval-form-paper {
     background: #fff;
     border: 1px solid #D1D5DB;
-    border-radius: 0.75rem;
+    border-radius: 0;
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     overflow: hidden;
     margin-bottom: 1rem;
@@ -3455,9 +3455,18 @@ html { scroll-behavior: smooth; }
     padding: 0.65rem 1.25rem;
     font-size: 0.82rem;
     color: #92400E;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    line-height: 1.6;
 }
 .eval-form-instructions strong {
     color: #78350F;
+}
+.eval-form-scale {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
 }
 
 /* Category sections inside paper */

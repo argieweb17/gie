@@ -1,0 +1,36 @@
+{
+  "curriculumId": 7,
+  "curriculumName": "BSIT Curriculum 2026",
+  "curriculumYear": "2026",
+  "departmentId": 1,
+  "departmentName": "Information Technology",
+  "collegeName": "College of Arts and Sciences",
+  "courseId": null,
+  "description": "Sample curriculum import payload for the generic importer.",
+  "schoolYear": "2026",
+  "replaceLinks": true,
+  "subjects": [
+    {
+      "year": "First Year",
+      "sem": "1st Semester",
+      "code": "ITS 100",
+      "name": "Introduction to Computing",
+      "units": 3,
+      "term": null,
+      "section": null,
+      "room": null,
+      "schedule": null
+    },
+    {
+      "year": "First Year",
+      "sem": "1st Semester",
+      "code": "ITS 101",
+      "name": "Computer Programming I",
+      "units": 3,
+      "term": null,
+      "section": null,
+      "room": null,
+      "schedule": null
+    }
+  ]
+}

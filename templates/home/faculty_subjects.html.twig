@@ -213,11 +213,8 @@
             <i class="bi bi-mortarboard sb-filter-icon"></i>
             <select class="sb-filter-select" id="yearLevelFilter" onchange="filterByYearLevel(this.value)" style="min-width:150px;">
                 <option value="" selected>All Year Levels</option>
-                {% set yearOrder = {'1st Year': 'First Year', '2nd Year': 'Second Year', '3rd Year': 'Third Year', '4th Year': 'Fourth Year', '5th Year': 'Fifth Year'} %}
-                {% for val, label in yearOrder %}
-                    {% if val in yearLevels %}
-                        <option value="{{ val }}">{{ label }}</option>
-                    {% endif %}
+                {% for label in ['First Year', 'Second Year', 'Third Year', 'Summer', 'Fourth Year'] %}
+                    <option value="{{ label }}">{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -284,7 +281,8 @@
                     <tr class="sb-row{% if isLoaded %} is-loaded{% endif %}"
                         data-subject-id="{{ subject.id }}"
                         data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }}"
-                        data-yearlevel="{{ subject.yearLevel|default('')|lower }}">
+                        data-yearlevel="{{ subject.yearLevel|default('')|lower }}"
+                        data-semester="{{ subject.semester|default('')|lower }}">
                         <td class="sb-td-check">
                             <input type="checkbox" name="subject_ids[]" value="{{ subject.id }}"
                                    class="form-check-input subject-check sb-check"
@@ -374,6 +372,7 @@
                             data-subject-id="{{ subject.id }}"
                             data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }}"
                             data-yearlevel="{{ subject.yearLevel|default('')|lower }}"
+                            data-semester="{{ subject.semester|default('')|lower }}"
                             style="background:#f0fdf4;">
                             <td class="sb-td-check"></td>
                             <td class="sb-td-code">
@@ -471,7 +470,7 @@
             <form method="post" action="{{ path('faculty_subject_pick_again') }}" data-turbo="false" id="pickAgainForm">
                 <input type="hidden" name="_token" value="{{ csrf_token('pick_again_subject') }}">
                 <input type="hidden" name="subject_id" id="pickAgainSubjectId">
-                <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#059669,#10b981);padding:20px 24px 16px;">
+                <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#1E3A8A,#1E40AF);padding:20px 24px 16px;">
                     <div class="d-flex align-items-center gap-2">
                         <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(255,255,255,.15);">
                             <i class="bi bi-plus-circle-fill text-white"></i>
@@ -517,7 +516,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0" style="padding:0 24px 20px;">
                     <button type="button" class="btn btn-sm btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="font-size:.78rem;">Cancel</button>
-                    <button type="submit" id="pickAgainSubmitBtn" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:linear-gradient(135deg,#059669,#10b981);">
+                    <button type="submit" id="pickAgainSubmitBtn" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:linear-gradient(135deg,#1E3A8A,#1E40AF);">
                         <i class="bi bi-plus-circle-fill me-1"></i>Add Section
                     </button>
                 </div>
@@ -762,10 +761,13 @@ function applyFilters() {
 
             const rowSearchText = (row.getAttribute('data-search') || '').toLowerCase();
             const rowYear = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
+            const rowSemester = (row.getAttribute('data-semester') || '').toLowerCase().trim();
 
             // Check if row matches all active filters
             const matchesSearch = searchText === '' || rowSearchText.includes(searchText);
-            const matchesYear = selectedYear === '' || rowYear === selectedYear;
+            const matchesYear = selectedYear === ''
+                || rowYear === selectedYear
+                || (selectedYear === 'summer' && rowSemester === 'summer');
 
             const rowShouldShow = matchesSearch && matchesYear;
 

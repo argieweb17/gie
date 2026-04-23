@@ -14,16 +14,20 @@ final class Version20260319144946 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Drop legacy staff notification table when present and add evaluation response section';
     }
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE staff_notification_read DROP FOREIGN KEY `FK_STAFF_NOTIF_EVAL`');
-        $this->addSql('ALTER TABLE staff_notification_read DROP FOREIGN KEY `FK_STAFF_NOTIF_USER`');
-        $this->addSql('DROP TABLE staff_notification_read');
-        $this->addSql('ALTER TABLE evaluation_response ADD section VARCHAR(50) DEFAULT NULL');
+        if ($schema->hasTable('staff_notification_read')) {
+            $this->addSql('ALTER TABLE staff_notification_read DROP FOREIGN KEY `FK_STAFF_NOTIF_EVAL`');
+            $this->addSql('ALTER TABLE staff_notification_read DROP FOREIGN KEY `FK_STAFF_NOTIF_USER`');
+            $this->addSql('DROP TABLE staff_notification_read');
+        }
+
+        if (!$schema->getTable('evaluation_response')->hasColumn('section')) {
+            $this->addSql('ALTER TABLE evaluation_response ADD section VARCHAR(50) DEFAULT NULL');
+        }
     }
 
     public function down(Schema $schema): void

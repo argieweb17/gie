@@ -8,9 +8,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <style>
-.eval-form-paper{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,.06);margin-bottom:16px;}
-.eval-info-bar{display:flex;flex-wrap:wrap;gap:12px;padding:12px 20px;background:#f0f9ff;border-bottom:1px solid #e2e8f0;font-size:.82rem;}
-.eval-form-instructions{background:#fffbeb;border-bottom:1px solid #fde68a;padding:12px 24px;font-size:.82rem;color:#92400e;line-height:1.6;}
+.eval-form-paper{background:#fff;border:1px solid #e2e8f0;border-radius:0;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,.06);margin-bottom:16px;}
+.eval-info-bar{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 20px;background:#f0f9ff;border-bottom:1px solid #e2e8f0;font-size:.82rem;}
+.eval-info-bar>div{display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+.eval-form-instructions{background:#fffbeb;border-bottom:1px solid #fde68a;padding:12px 24px;font-size:.82rem;color:#92400e;display:flex;flex-direction:column;gap:.35rem;line-height:1.6;}
+.eval-form-scale{display:flex;flex-direction:column;gap:.15rem;}
 .eval-form-section{border-bottom:1px solid #e2e8f0;}
 .eval-form-section:last-child{border-bottom:0;}
 .eval-form-category{background:#1e40af;padding:10px 24px;display:flex;align-items:center;gap:8px;}
@@ -31,23 +33,23 @@
 .eval-radio-circle{width:22px;height:22px;border:2px solid #cbd5e1;border-radius:50%;transition:all .15s;}
 .eval-radio-label input:checked+.eval-radio-circle{border-color:#1e40af;background:#1e40af;box-shadow:inset 0 0 0 3px #fff;}
 .eval-radio-label:hover .eval-radio-circle{border-color:#3b82f6;background:#eff6ff;}
-.eval-form-textarea{border-radius:8px;border-color:#e2e8f0;font-size:.85rem;resize:vertical;}
+.eval-form-textarea{border-radius:0;border-color:#e2e8f0;font-size:.85rem;resize:vertical;}
 .eval-form-textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 .eval-form-actions-bar{display:flex;gap:10px;padding:16px 0;justify-content:center;}
-.btn-norsu{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border:0;border-radius:8px;padding:10px 32px;font-weight:600;font-size:.9rem;transition:all .2s;}
+.btn-norsu{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border:0;border-radius:0;padding:10px 32px;font-weight:600;font-size:.9rem;transition:all .2s;}
 .btn-norsu:hover{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.3);}
-.student-gate-card{background:#fff;border:1px solid #dbe3f0;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.08);margin-bottom:16px;}
-.student-gate-head{position:relative;padding:14px 18px;background:linear-gradient(132deg,#1e3a8a 0%,#1d4ed8 55%,#3b82f6 100%);color:#fff;}
-.student-gate-head::after{content:'';position:absolute;top:-56px;right:-44px;width:170px;height:170px;background:radial-gradient(circle,rgba(255,255,255,.26),rgba(255,255,255,0));pointer-events:none;}
+.student-gate-card{background:#fff;border:1px solid #dbe3f0;border-radius:0;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.08);margin-bottom:16px;}
+.student-gate-head{position:relative;padding:14px 18px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;}
+.student-gate-head::after{display:none;}
 .student-gate-body{padding:16px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
 .student-gate-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr);gap:14px;align-items:start;}
 .student-gate-grid.single{grid-template-columns:1fr;}
-.student-verify-box,.student-guide-box{background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:14px;}
+.student-verify-box,.student-guide-box{background:#fff;border:1px solid #dbeafe;border-radius:0;padding:14px;}
 .student-verify-label{font-size:.82rem;font-weight:600;color:#334155;}
-.student-id-input{height:44px;border-radius:10px;border-color:#cbd5e1;font-size:1rem;font-weight:600;letter-spacing:.02em;}
+.student-id-input{height:44px;border-radius:0;border-color:#cbd5e1;font-size:1rem;font-weight:600;letter-spacing:.02em;}
 .student-id-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
-.student-verify-btn{height:44px;border-radius:10px;}
-.student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:10px;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.student-verify-btn{height:44px;border-radius:0;}
+.student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:0;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .student-verified-name{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .student-verified-icon{font-size:1rem;line-height:1;flex-shrink:0;}
 .student-guide-box{background:#f8fafc;border-color:#dbe3ef;}
@@ -55,15 +57,15 @@
 .student-guide-list{list-style:none;padding:0;margin:0;counter-reset:verifyStep;}
 .student-guide-list li{display:flex;gap:10px;align-items:flex-start;color:#475569;line-height:1.55;font-size:.9rem;}
 .student-guide-list li+li{margin-top:9px;}
-.student-guide-list li::before{counter-increment:verifyStep;content:counter(verifyStep);min-width:22px;height:22px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:.72rem;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0;}
-.student-state-card{margin-top:10px;padding:12px;border-radius:11px;border:1px solid transparent;}
+.student-guide-list li::before{counter-increment:verifyStep;content:counter(verifyStep) '.';min-width:auto;height:auto;border-radius:0;background:transparent;color:#1d4ed8;font-weight:700;font-size:.72rem;display:inline-flex;align-items:flex-start;justify-content:flex-start;margin-top:1px;flex-shrink:0;}
+.student-state-card{margin-top:10px;padding:12px;border-radius:0;border:1px solid transparent;}
 .student-state-title{font-size:.83rem;font-weight:700;margin-bottom:4px;}
 .student-state-body{font-size:.82rem;line-height:1.52;}
 .student-state-card.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
 .student-state-card.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
 .student-state-card.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
-.student-loadslip-box{margin-top:10px;padding:12px;border-radius:12px;background:#f8fafc;border:1px dashed #cbd5e1;}
-.student-quick-card{margin-top:10px;padding:12px;border-radius:11px;background:#eef2ff;border:1px solid #c7d2fe;}
+.student-loadslip-box{margin-top:10px;padding:12px;border-radius:0;background:#f8fafc;border:1px dashed #cbd5e1;}
+.student-quick-card{margin-top:10px;padding:12px;border-radius:0;background:#eef2ff;border:1px solid #c7d2fe;}
 .student-quick-title{font-size:.86rem;font-weight:700;color:#1e3a8a;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
 .student-quick-note{font-size:.8rem;color:#475569;line-height:1.45;margin-bottom:10px;}
 @media(max-width:992px){
@@ -71,8 +73,8 @@
 }
 @media(max-width:576px){
     .container{padding-left:8px;padding-right:8px;}
-    .eval-form-paper{border-radius:8px;}
-    .eval-info-bar{flex-direction:column;gap:4px;padding:10px 14px;font-size:.75rem;}
+    .eval-form-paper{border-radius:0;}
+    .eval-info-bar{gap:4px;padding:10px 14px;font-size:.75rem;}
     .eval-form-instructions{padding:10px 14px;font-size:.75rem;}
     .eval-form-category{padding:8px 14px;}
     .eval-form-category-label{font-size:.78rem;}
@@ -137,12 +139,14 @@
 {% set showNoAccountModal = showNoAccountHelp %}
 {% set showUnverifiedHelp = error is defined and error and ('Loadslip is not verified' in error or 'Loadslip verification expired or missing' in error) %}
 {% set showUnverifiedModal = showUnverifiedHelp %}
+{% set showPrivacyConsentModal = error is defined and error and ('You must agree to the Data Privacy Disclaimer to continue with the evaluation.' in error or 'You must agree to the Data Privacy Disclaimer before continuing.' in error or 'Please select Agree or Disagree for the Data Privacy Disclaimer.' in error) %}
 {% set showInactiveHelp = error is defined and error and 'inactive' in error %}
 {% set createAccountUrl = path('app_register', {'role': 'student'}) %}
 {% set homeUrl = path('app_home') %}
 {% set importLoadslipUrl = path('evaluation_set_index') %}
+{% set showPrivacyDisclaimerFirst = qrVerified and not qrPrivacyConsentCaptured %}
 
-{% if error and not showMismatchModal and not showNoAccountModal and not showUnverifiedModal %}
+{% if error and not showMismatchModal and not showNoAccountModal and not showUnverifiedModal and not showPrivacyConsentModal %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -152,6 +156,7 @@
 <form method="post" id="qrEvalForm">
 
 {# ── Student ID Gate ── #}
+{% if not showPrivacyDisclaimerFirst %}
 <div class="student-gate-card">
     <div class="student-gate-head">
         <div class="d-flex align-items-center gap-2 position-relative">
@@ -287,24 +292,13 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 {% if qrVerified %}
 
-<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
-    <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
-        <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
-    </div>
-    <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
-        <span style="display:inline-block;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#1e3a8a;border-radius:20px;padding:6px 20px;font-size:.85rem;font-weight:600;">Student Evaluation for Teacher (SET)</span>
-    </div>
-    <div style="text-align:center;padding:12px 32px 14px;background:#fff;">
-        <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(NBC 461 Evaluation Instrument for Teaching Effectiveness)</div>
-        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">It's time to evaluate your teacher. Please answer honestly based on your experience. All responses are confidential, and your identity will not be shared with faculty members. Your feedback is valuable in improving the quality of teaching.</p>
-    </div>
-</div>
-
 {# ── Data Privacy Disclaimer ── #}
-<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
+{% if showPrivacyDisclaimerFirst %}
+<div class="card border-0 shadow-sm mb-3" style="border-radius:0;overflow:hidden;">
     <div class="card-header py-3" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-shield-lock-fill" style="font-size:1.15rem;"></i>
@@ -331,10 +325,13 @@
                 <label class="form-check-label" for="privacyDisagree">Disagree</label>
             </div>
         </div>
+        <button type="submit" name="_action" value="privacy_gate" class="d-none" tabindex="-1" aria-hidden="true"></button>
     </div>
 </div>
+{% endif %}
 
 {# ── Evaluation Form Paper ── #}
+{% if qrPrivacyConsentCaptured %}
 <div class="eval-form-paper">
     {# ── Evaluation Info Bar ── #}
     <div class="eval-info-bar">
@@ -346,8 +343,14 @@
     </div>
 
     <div class="eval-form-instructions">
-        <strong>Instructions:</strong> Rate each item using the scale:
-        <strong>5</strong> – Always manifested &nbsp; <strong>4</strong> – Often manifested &nbsp; <strong>3</strong> – Sometimes manifested &nbsp; <strong>2</strong> – Seldom manifested &nbsp; <strong>1</strong> – Never/Rarely manifested
+        <div><strong>Instructions:</strong> Rate each item using the scale:</div>
+        <div class="eval-form-scale">
+            <div><strong>5</strong> – Always manifested</div>
+            <div><strong>4</strong> – Often manifested</div>
+            <div><strong>3</strong> – Sometimes manifested</div>
+            <div><strong>2</strong> – Seldom manifested</div>
+            <div><strong>1</strong> – Never/Rarely manifested</div>
+        </div>
     </div>
 
     {% set currentCategory = '' %}
@@ -375,11 +378,11 @@
                     <tr>
                         <th class="eval-form-num"></th>
                         <th class="eval-form-question">Question</th>
-                        <th class="eval-form-rating">1<br><small>Never</small></th>
-                        <th class="eval-form-rating">2<br><small>Seldom</small></th>
-                        <th class="eval-form-rating">3<br><small>Sometimes</small></th>
-                        <th class="eval-form-rating">4<br><small>Often</small></th>
-                        <th class="eval-form-rating">5<br><small>Always</small></th>
+                            <th class="eval-form-rating">1<br><small>Never/Rarely manifested</small></th>
+                            <th class="eval-form-rating">2<br><small>Seldom manifested</small></th>
+                            <th class="eval-form-rating">3<br><small>Sometimes manifested</small></th>
+                            <th class="eval-form-rating">4<br><small>Often manifested</small></th>
+                            <th class="eval-form-rating">5<br><small>Always manifested</small></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -414,7 +417,7 @@
     {# Comment #}
     <div class="eval-form-section">
         <div class="eval-form-category">
-            <span class="eval-form-category-label">Additional Comments <span class="text-danger">*</span></span>
+            <span class="eval-form-category-label">Feedback/Comments <span class="text-danger">*</span></span>
         </div>
         <div class="p-3">
             <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" required
@@ -431,6 +434,7 @@
     </button>
 </div>
 {% endif %}
+{% endif %}
 </form>
 {% endif %}
 
@@ -439,7 +443,7 @@
 {% if showMismatchModal|default(false) %}
 <div class="modal fade" id="loadslipMismatchModal" tabindex="-1" aria-labelledby="loadslipMismatchModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+        <div class="modal-content" style="border-radius:0;overflow:hidden;">
             <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
                 <h5 class="modal-title" id="loadslipMismatchModalLabel" style="color:#7f1d1d;">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>Loadslip Mismatch
@@ -463,7 +467,7 @@
 {% if showNoAccountModal|default(false) %}
 <div class="modal fade" id="studentNotFoundModal" tabindex="-1" aria-labelledby="studentNotFoundModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+        <div class="modal-content" style="border-radius:0;overflow:hidden;">
             <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
                 <h5 class="modal-title" id="studentNotFoundModalLabel" style="color:#7f1d1d;">
                     <i class="bi bi-person-x-fill me-2"></i>Student Account Not Found
@@ -487,7 +491,7 @@
 {% if showUnverifiedModal|default(false) %}
 <div class="modal fade" id="loadslipUnverifiedModal" tabindex="-1" aria-labelledby="loadslipUnverifiedModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+        <div class="modal-content" style="border-radius:0;overflow:hidden;">
             <div class="modal-header" style="background:#dbeafe;border-bottom:1px solid #bfdbfe;">
                 <h5 class="modal-title" id="loadslipUnverifiedModalLabel" style="color:#1e3a8a;">
                     <i class="bi bi-journal-x me-2"></i>Loadslip Not Verified
@@ -498,6 +502,30 @@
                 <p class="mb-2">{{ error }}</p>
                 <p class="mb-0" style="font-size:.9rem;color:#64748b;">
                     Import and verify your loadslip first, then return to this page and click Verify again.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if showPrivacyConsentModal|default(false) %}
+<div class="modal fade" id="privacyConsentRequiredModal" tabindex="-1" aria-labelledby="privacyConsentRequiredModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0;overflow:hidden;">
+            <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
+                <h5 class="modal-title" id="privacyConsentRequiredModalLabel" style="color:#7f1d1d;">
+                    <i class="bi bi-shield-exclamation me-2"></i>Privacy Consent Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:#334155;line-height:1.6;">
+                <p class="mb-2">{{ error }}</p>
+                <p class="mb-0" style="font-size:.9rem;color:#64748b;">
+                    Select Agree if you want to proceed with the evaluation. If you choose Disagree, the form will remain unavailable.
                 </p>
             </div>
             <div class="modal-footer">
@@ -528,18 +556,57 @@ document.addEventListener('DOMContentLoaded', function () {
         loadslipUnverifiedModal.show();
     }
 
+    var privacyConsentRequiredModalEl = document.getElementById('privacyConsentRequiredModal');
+    if (privacyConsentRequiredModalEl && window.bootstrap && window.bootstrap.Modal) {
+        var privacyConsentRequiredModal = new bootstrap.Modal(privacyConsentRequiredModalEl);
+        privacyConsentRequiredModal.show();
+    }
+
     var form = document.getElementById('qrEvalForm');
     if (form) {
+        var privacyAgree = document.getElementById('privacyAgree');
+        var privacyDisagree = document.getElementById('privacyDisagree');
+        var privacyGateButton = form.querySelector('button[name="_action"][value="privacy_gate"]');
+
+        var submitPrivacyGate = function () {
+            if (!privacyGateButton) {
+                return;
+            }
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit(privacyGateButton);
+                return;
+            }
+
+            privacyGateButton.click();
+        };
+
+        if (privacyAgree) {
+            privacyAgree.addEventListener('change', function () {
+                if (privacyAgree.checked) {
+                    submitPrivacyGate();
+                }
+            });
+        }
+
+        if (privacyDisagree) {
+            privacyDisagree.addEventListener('change', function () {
+                if (privacyDisagree.checked) {
+                    submitPrivacyGate();
+                }
+            });
+        }
+
         form.addEventListener('submit', function (event) {
             var action = (event.submitter && event.submitter.value) ? event.submitter.value : '';
-            if (action !== 'submit') {
+            if (action !== 'privacy_gate') {
                 return;
             }
 
             var consentSelected = form.querySelector('input[name="privacy_consent"]:checked');
             if (!consentSelected) {
                 event.preventDefault();
-                alert('Please select Agree or Disagree for the Data Privacy Disclaimer before submitting.');
+                alert('Please select Agree or Disagree for the Data Privacy Disclaimer before continuing.');
                 var agree = document.getElementById('privacyAgree');
                 if (agree) agree.focus();
             }
